@@ -14,7 +14,7 @@ Port of [MSX core version by Kdl](http://gnogni.altervista.org/)
 
 ### Installation:
 * Copy the [*.rbf](https://github.com/MiSTer-devel/MSX_MISTer/tree/master/releases) file at the root of the SD card.
-* Use sdcreate util (you need to start it with Administrator rights) from Utils folder to format and create a basic SD card for MSX core. If you want to make it manually, then make sure OCM-BIOS.DAT is the first file copied to SD card after format! Only FAT16 is supported.
+* Use sdcreate util (you need to start it with Administrator rights) from [Utils](https://github.com/MiSTer-devel/MSX_MiSTer/tree/master/Utils) folder to format and create a basic SD card for MSX core. If you want to make it manually, then make sure OCM-BIOS.DAT is the first file copied to SD card after format! Only FAT16 is supported.
 
 ### Notes about SD card:
 * Core requires a secondary SD card located on I/O Board v5.x. Probably future versions will be able to use an images on the main SD card.
