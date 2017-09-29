@@ -9,6 +9,7 @@ Port of [MSX core version by Kdl](http://gnogni.altervista.org/)
 - Turbo modes for CPU.
 - Mouse.
 - Joystick.
+- Real time clock.
 - SD card support <4GB (SDSC) and >4GB (SDHC/SDXC).
 - Requires secondary SD card on I/O board v5.x. Supports both SDSC and SDHC cards.
 
