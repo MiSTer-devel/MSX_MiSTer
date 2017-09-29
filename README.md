@@ -26,7 +26,3 @@ Port of [MSX core version by Kdl](http://gnogni.altervista.org/)
 * Core recognizes short reset (warm reset) and long reset (cold reset). Long reset is reset held for more than 2 seconds.
 * use supplied (in sdcreate package) file manager **mm** to load various kind of apps like ROM and DSK files.
 * More advanced BIOSes can be downloaded from [KdL site](http://gnogni.altervista.org/) by sending request as per instruction on that site.
-
-
-### Download precompiled binaries and system ROMs:
-Go to [releases](https://github.com/MiSTer-devel/ZX-Spectrum_MISTer/tree/master/releases) folder. 
