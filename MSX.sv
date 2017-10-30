@@ -112,14 +112,14 @@ localparam CONF_STR = {
 	"-;",
 	"O1,CPU speed,Normal,Turbo(+F11);",
 	"-;",
-	"O4,Cartridge Slot 1,Empty,SCC-I;",
-	"O56,Cartridge Slot 2,Empty,SCC-I,ASCII-8K,ASCII-16K;",
+	"O4,Slot1,Empty,MegaSCC+ 1MB;",
+	"O56,Slot2,Empty,MegaSCC+ 2MB,MegaRAM ASCII-8K 1MB,MegaRAM ASCII-16K 2MB;",
 	"-;",
 	"O7,Internal Mapper,2048KB RAM,4096KB RAM;",
 	"-;",
 	"TA,Reset;",
 	"J,Fire 1,Fire 2;",
-	"V,v3.41.10.",`BUILD_DATE
+	"V,v3.50.10.",`BUILD_DATE
 };
 
 

@@ -332,7 +332,7 @@ architecture RTL of emsx_top is
 
             ramreq      : out   std_logic;
             ramwrt      : out   std_logic;
-            ramadr      : out   std_logic_vector( 19 downto 0 );
+            ramadr      : out   std_logic_vector( 20 downto 0 );
             ramdbi      : in    std_logic_vector(  7 downto 0 );
             ramdbo      : out   std_logic_vector(  7 downto 0 );
 
@@ -439,7 +439,10 @@ architecture RTL of emsx_top is
             -- 'IPL-ROM' group
             JIS2_ena        : inout std_logic;                              -- JIS2 enabler             :   0=JIS1 only (BIOS 384 kB), 1=JIS1+JIS2 (BIOS 512 kB)
             portF4_mode     : inout std_logic;                              -- Port F4 mode             :   0=F4 Device Inverted (MSX2+), 1=F4 Device Normal (MSXtR)
-            ff_ldbios_n     : in    std_logic                               -- MSX-BIOS loading status 
+            ff_ldbios_n     : in    std_logic;                              -- MSX-BIOS loading status
+            -- 'SPECIAL' group
+            Slot0_req       : inout std_logic;                              -- Slot-0 Primary Mode req  :   Warm Reset is necessary to complete the request
+            Slot0Mode       : inout std_logic                               -- Current Slot-0 state     :   0=Primary, 1=Expanded
         );
     end component;
 
@@ -487,6 +490,8 @@ architecture RTL of emsx_top is
     signal  ZemmixNeo       : std_logic;
     signal  JIS2_ena        : std_logic;
     signal  portF4_mode     : std_logic;
+    signal  Slot0_req       : std_logic;                                    -- here to reduce LEs
+    signal  Slot0Mode       : std_logic;
 
     -- System timer (S1990)
     signal  systim_req      : std_logic;
@@ -666,7 +671,7 @@ architecture RTL of emsx_top is
     signal  Scc1Dbi         : std_logic_vector(  7 downto 0 );
     signal  Scc1Ram         : std_logic;
     signal  Scc1Wrt         : std_logic;
-    signal  Scc1Adr         : std_logic_vector( 19 downto 0 );
+    signal  Scc1Adr         : std_logic_vector( 20 downto 0 );
     signal  Scc1AmpL        : std_logic_vector( 14 downto 0 );
 
     signal  Scc2Req         : std_logic;
@@ -674,7 +679,7 @@ architecture RTL of emsx_top is
     signal  Scc2Dbi         : std_logic_vector(  7 downto 0 );
     signal  Scc2Ram         : std_logic;
     signal  Scc2Wrt         : std_logic;
-    signal  Scc2Adr         : std_logic_vector( 19 downto 0 );
+    signal  Scc2Adr         : std_logic_vector( 20 downto 0 );
     signal  Scc2AmpL        : std_logic_vector( 14 downto 0 );
 
     signal  Scc1Type        : std_logic_vector(  1 downto 0 );
@@ -1549,7 +1554,11 @@ begin
             -- Memory mapped I/O port access on FFFFh ... expansion slot register (master mode)
             if( req = '1' and iSltMerq_n = '0' and wrt = '1' and adr = X"FFFF" )then
                 if( PpiPortA(7 downto 6) = "00" )then
+                    if( Slot0Mode = '1' )then
                     ExpSlot0 <= dbo;
+                    else
+                        ExpSlot0 <= (others => '0');
+                    end if;
                 end if;
             end if;
         end if;
@@ -1632,31 +1641,31 @@ begin
     --  Address Decode for CPU
     ----------------------------------------------------------------
     -- Slot0-X
-    rom_main    <=  mem when( (w_prislt_dec(0) and w_expslt0_dec(0) and (w_page_dec(0) or w_page_dec(1))) = '1' )else                   -- 0-0 (0000h-7FFFh)   32kB  MSX2P   .ROM / MSXTR   .ROM
+    rom_main    <=  mem when( (w_prislt_dec(0) and (w_expslt0_dec(0) or (not Slot0Mode)) and (w_page_dec(0) or w_page_dec(1))) = '1'  )else     -- 0-0 (0000-7FFFh)    32 kB  MSX2P   .ROM / MSXTR   .ROM
                     '0';
-    rom_xbas    <=  mem when( (w_prislt_dec(0) and w_expslt0_dec(1) and  w_page_dec(1)                  ) = '1' )else                   -- 0-1 (4000h-7FFFh)   16kB  XBASIC2 .ROM / XBASIC21.ROM
+    rom_opll    <=  mem when( (w_prislt_dec(0) and w_expslt0_dec(2) and Slot0Mode and  w_page_dec(1)) = '1'                           )else     -- 0-2 (4000-7FFFh)    16 kB  MSX2PMUS.ROM / MSXTRMUS.ROM
                     '0';
-    rom_opll    <=  mem when( (w_prislt_dec(0) and w_expslt0_dec(2) and  w_page_dec(1)                  ) = '1' )else                   -- 0-2 (4000h-7FFFh)   16kB  MSX2PMUS.ROM / MSXTRMUS.ROM
-                    '0';
-    rom_free    <=  mem when( (w_prislt_dec(0) and w_expslt0_dec(3) and  w_page_dec(1)                  ) = '1' )else                   -- 0-3 (4000h-7FFFh)   16kB  FREE16KB.ROM / MSXTROPT.ROM
+    rom_free    <=  mem when( (w_prislt_dec(0) and w_expslt0_dec(3) and Slot0Mode and  w_page_dec(1)) = '1'                           )else     -- 0-3 (4000-7FFFh)    16 kB  FREE16KB.ROM / MSXTROPT.ROM
                     '0';
     -- Slot1
-    iSltScc1    <=  mem when( (w_prislt_dec(1) and (w_page_dec(1) or w_page_dec(2))) = '1' and Scc1Type /= "00" )else
+    iSltScc1    <=  mem when( (w_prislt_dec(1) and (w_page_dec(1) or w_page_dec(2))) = '1' and Scc1Type /= "00"                       )else
                     '0';
     -- Slot2
-    iSltScc2    <=  mem when( (w_prislt_dec(2) and (w_page_dec(1) or w_page_dec(2))) = '1' and Slot2Mode  /= "00" )else
+    iSltScc2    <=  mem when( (w_prislt_dec(2) and (w_page_dec(1) or w_page_dec(2))) = '1' and Slot2Mode /= "00"                      )else
                     '0';
     -- Slot3-X
-    iSltMap     <=  mem when( (w_prislt_dec(3) and w_expslt3_dec(0)                ) = '1' and adr /= X"FFFF"   )else
+    iSltMap     <=  mem when( (w_prislt_dec(3) and w_expslt3_dec(0)) = '1' and adr /= X"FFFF"                                         )else     -- 3-0 (0000-FFFFh)  4096 kB  Internal Mapper
                     '0';
-    rom_extd    <=  mem when( (w_prislt_dec(3) and w_expslt3_dec(1) and (w_page_dec(0) or w_page_dec(1) or w_page_dec(2))) = '1' )else  -- 3-1 (0000-BFFFh)    48kB  (MSX2PEXT.ROM or MSXTREXT.ROM) + MSXKANJI.ROM
+    rom_extd    <=  mem when( (w_prislt_dec(3) and w_expslt3_dec(1) and (w_page_dec(0) or w_page_dec(1) or w_page_dec(2))) = '1'      )else     -- 3-1 (0000-BFFFh)    48 kB  (MSX2PEXT.ROM or MSXTREXT.ROM) + MSXKANJI.ROM
                     '0';
-    iSltErm     <=  mem when( (w_prislt_dec(3) and w_expslt3_dec(2) and (w_page_dec(1) or w_page_dec(2))) = '1' )else                   -- 3-2 (4000-BFFFh)   128kB  (MEGASDHC.ROM + FILL64KB.ROM) or NEXTOR16.ROM
+    iSltErm     <=  mem when( (w_prislt_dec(3) and w_expslt3_dec(2) and (w_page_dec(1) or w_page_dec(2))) = '1'                       )else     -- 3-2 (4000-BFFFh)   128 kB  (MEGASDHC.ROM + FILL64KB.ROM) or NEXTOR16.ROM
                     '0';
-    iSltBot     <=  mem when( (w_prislt_dec(3) and w_expslt3_dec(3) and (w_page_dec(0) or w_page_dec(3))) = '1' )else
+    rom_xbas    <=  mem when( (w_prislt_dec(3) and w_expslt3_dec(3) and  w_page_dec(1) and ff_ldbios_n) = '1'                         )else     -- 3-3 (4000-7FFFh)    16 kB  XBASIC2 .ROM / XBASIC21.ROM
+                    '0';
+    iSltBot     <=  mem when( (w_prislt_dec(3) and w_expslt3_dec(3) and (w_page_dec(0) or w_page_dec(3)) and (not ff_ldbios_n)) = '1' )else     -- 3-3 (0000-FFFFh)     1 kB  IPL-ROM (pre-boot state)
                     '0';
     -- I/O
-    rom_kanj    <=  (not mem)   when( adr(7 downto 2) = "110110" )else
+    rom_kanj    <=  not mem     when( adr(7 downto 2) = "110110" )else
                     '0';
 
     -- RamX / RamY access request
@@ -1752,39 +1761,38 @@ begin
     -- Slot map / SD-RAM memory map
     --
     -- Slot 0-0 : MainROM               620000-627FFF (  32 kB)
-    -- Slot 0-1 : XBASIC                628000-62BFFF (  16 kB)
+    -- Slot 3-3 : XBASIC                628000-62BFFF (  16 kB)
     -- Slot 0-2 : FM-BIOS               62C000-62FFFF (  16 kB)
     -- Slot 0-3 : rom_free(OPT)         63C000-63FFFF (  16 kB)
     -- Slot 1   : (EXTERNAL-SLOT)
-    --            / ESE-SCC1            400000-4FFFFF (1024 kB)
+    --            / ESE-SCC1            500000-5FFFFF (1024 kB) <= shared w/ the 2nd half of ESE-SCC2
     -- Slot 2   : (EXTERNAL-SLOT)
-    --            / ESE-SCC2            500000-5FFFFF (1024 kB)
+    --            / ESE-SCC2            400000-5FFFFF (2048 kB)
     -- Slot 3-0 : Mapper                000000-3FFFFF (4096 kB)
     -- Slot 3-1 : ExtROM + KanjiROM     630000-63BFFF (  48 kB)
     -- Slot 3-2 : MegaSDHC / NEXTOR     600000-61FFFF ( 128 kB)
     --            EseRAM                600000-67FFFF (BIOS: 512 kB)
-    -- Slot 3-3 : IPL-ROM               (blockRAM: < 1024 Bytes, see IPLROM.VHD)
+    -- Slot 3-3 : IPL-ROM               (blockRAM: 1 kB, see IPLROM.VHD) <= shared w/ XBASIC
     -- VRAM     : VRAM                  700000-7FFFFF (1024 kB)
     -- I/O      : Kanji-data            640000-67FFFF ( 256 kB)
 
-    CpuAdr(22 downto 20) <= "00" & MapAdr(20)           when( iSltMap  = '1' and FullRAM = '0' )else    -- 2048 kB RAM
-                            "0" & MapAdr(21 downto 20)  when( iSltMap  = '1' )else                      -- 4096 kB RAM
-                            "100"                       when( iSltScc1 = '1' )else                      -- 4xxxxx -> 1024 kB ESE-SCC1
-                            "101"                       when( iSltScc2 = '1' )else                      -- 5xxxxx -> 1024 kB ESE-SCC2
-                            "110";                                                                      -- 6xxxxx -> 1024 kB ESE-RAM
---                          "111";                                                                      -- 7xxxxx -> 1024 kB Video RAM
+    CpuAdr(22 downto 20) <= "0" & MapAdr(21 downto 20)  when( iSltMap  = '1' and FullRAM = '1' )else    -- 0xxxxx => 4096 kB RAM
+                            "00" & MapAdr(20)           when( iSltMap  = '1' )else                      -- 0xxxxx => 2048 kB RAM
+                            "10" & Scc2Adr(20)          when( iSltScc2 = '1' )else                      -- 4xxxxx => 2048 kB ESE-SCC2
+                            "101"                       when( iSltScc1 = '1' )else                      -- 5xxxxx => 1024 kB ESE-SCC1
+                            "110";                                                                      -- 6xxxxx => 1024 kB ESE-RAM
+--                          "111";                                                                      -- 7xxxxx => 1024 kB Video RAM
 
-    CpuAdr(19 downto 0)  <= MapAdr (19 downto  0)           when iSltMap  = '1' else    -- 000000-3FFFFF (4096 kB)  Slot3-0
-                            Scc1Adr(19 downto  0)           when iSltScc1 = '1' else    -- 400000-4FFFFF (1024 kB)  Slot1
-                            Scc2Adr(19 downto  0)           when iSltScc2 = '1' else    -- 500000-5FFFFF (1024 kB)  Slot2
-
-                            "0"      & ErmAdr(18 downto  0) when iSltErm  = '1' else    -- 600000-67FFFF ( 512 kB)  Slot3-2
-                            "00100"  & adr(14 downto  0)    when rom_main = '1' else    -- 620000-627FFF (  32 kB)  Slot0-0
-                            "001010" & adr(13 downto  0)    when rom_xbas = '1' else    -- 628000-62BFFF (  16 kB)  Slot0-1
-                            "001011" & adr(13 downto  0)    when rom_opll = '1' else    -- 62C000-62FFFF (  16 kB)  Slot0-2
-                            "0011"   & adr(15 downto  0)    when rom_extd = '1' else    -- 630000-63BFFF (  48 kB)  Slot3-1
-                            "001111" & adr(13 downto  0)    when rom_free = '1' else    -- 63C000-63FFFF (  16 kB)  Slot0-3
-                            "01"     & KanAdr(17 downto  0) when rom_kanj = '1' else    -- 640000-67FFFF ( 256 kB)  Kanji-data (JIS1+JIS2)
+    CpuAdr(19 downto 0)  <= MapAdr (19 downto  0)           when( iSltMap  = '1' )else      -- 000000-3FFFFF (4096 kB)  Slot3-0
+                            Scc2Adr(19 downto  0)           when( iSltScc2 = '1' )else      -- 400000-5FFFFF (2048 kB)  Slot2
+                            Scc1Adr(19 downto  0)           when( iSltScc1 = '1' )else      -- 500000-5FFFFF (1024 kB)  Slot1
+                            "0"      & ErmAdr(18 downto  0) when( iSltErm  = '1' )else      -- 600000-67FFFF ( 512 kB)  Slot3-2
+                            "00100"  & adr(14 downto  0)    when( rom_main = '1' )else      -- 620000-627FFF (  32 kB)  Slot0-0
+                            "001010" & adr(13 downto  0)    when( rom_xbas = '1' )else      -- 628000-62BFFF (  16 kB)  Slot3-3
+                            "001011" & adr(13 downto  0)    when( rom_opll = '1' )else      -- 62C000-62FFFF (  16 kB)  Slot0-2
+                            "0011"   & adr(15 downto  0)    when( rom_extd = '1' )else      -- 630000-63BFFF (  48 kB)  Slot3-1
+                            "001111" & adr(13 downto  0)    when( rom_free = '1' )else      -- 63C000-63FFFF (  16 kB)  Slot0-3
+                            "01"     & KanAdr(17 downto  0) when( rom_kanj = '1' )else      -- 640000-67FFFF ( 256 kB)  Kanji-data (JIS1+JIS2)
                             null;
 
     ----------------------------------------------------------------
@@ -1933,9 +1941,9 @@ begin
                     elsif( RstSeq(4 downto 2) = "100" )then
                         SdrAdr(8 downto 0) <= "000" & "000" & ClrAdr(15 downto 13);     -- clear MainRAM (128 kB)     => start adr 000000h
                     elsif( RstSeq(4 downto 1) = "1010" )then
-                        SdrAdr(8 downto 0) <= "100" & "000" & ClrAdr(15 downto 13);     -- clear ESE-SCC1             => start adr 400000h
+                        SdrAdr(8 downto 0) <= "100" & "000" & ClrAdr(15 downto 13);     -- clear ESE-SCC2             => start adr 400000h
                     elsif( RstSeq(4 downto 1) = "1011" )then
-                        SdrAdr(8 downto 0) <= "101" & "000" & ClrAdr(15 downto 13);     -- clear ESE-SCC2             => start adr 500000h
+                        SdrAdr(8 downto 0) <= "101" & "000" & ClrAdr(15 downto 13);     -- clear ESE-SCC1             => start adr 500000h
                     elsif( VideoDLClk = '0' )then
                         SdrAdr(8 downto 0) <= CpuAdr(22 downto 14);
                     elsif( VdpAdr(15) = '0' )then
@@ -2236,7 +2244,10 @@ begin
 
         JIS2_ena        => JIS2_ena     ,
         portF4_mode     => portF4_mode  ,
-        ff_ldbios_n     => ff_ldbios_n
+        ff_ldbios_n     => ff_ldbios_n  ,
+
+        Slot0_req       => Slot0_req    ,   -- here to reduce LEs
+        Slot0Mode       => Slot0Mode
     );
 
 end RTL;

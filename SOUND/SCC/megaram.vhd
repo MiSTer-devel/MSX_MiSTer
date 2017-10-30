@@ -1,7 +1,7 @@
 --
 -- megaram.vhd
---   Mega-ROM emulation, ASC8K/16K/SCC+(8Mbits)
---   Revision 1.00
+--   Mega-ROM emulation, ASC8K(8Mbits), ASC16K/SCC+(16Mbits)
+--   Revision 2.01
 --
 -- Copyright (c) 2006 Kazuhiro Tsujikawa (ESE Artists' factory)
 -- All rights reserved.
@@ -31,7 +31,7 @@
 --
 
 --
---  modified by t.hara
+--  modified by t.hara / KdL
 --
 
 library ieee;
@@ -52,7 +52,7 @@ entity megaram is
 
         ramreq  : out   std_logic;
         ramwrt  : out   std_logic;
-        ramadr  : out   std_logic_vector(19 downto 0);
+        ramadr  : out   std_logic_vector(20 downto 0);
         ramdbi  : in    std_logic_vector( 7 downto 0);
         ramdbo  : out   std_logic_vector( 7 downto 0);
 
@@ -91,6 +91,8 @@ architecture rtl of megaram is
     signal WavAdr       : std_logic_vector( 7 downto 0);
     signal WavDbi       : std_logic_vector( 7 downto 0);
 
+    signal SccBankL     : std_logic;
+    signal SccBankM     : std_logic;
     signal SccBank0     : std_logic_vector( 7 downto 0);
     signal SccBank1     : std_logic_vector( 7 downto 0);
     signal SccBank2     : std_logic_vector( 7 downto 0);
@@ -135,13 +137,25 @@ begin
                 '0';
     RamWrt  <=  wrt;
 
-    --ram address (MSB is fixed to '0' in 6000-7FFFh)
-    RamAdr(19)          <=  SccModeA(6) when( adr(14 downto 13) /= "11" and mapsel(0) = '0' )else
-                            '0'         when(                               mapsel(0) = '0' )else
-                            SccBank0(6) when( adr(14 downto 13) = "10"  )else
-                            SccBank1(6) when( adr(14 downto 13) = "11"  )else
-                            SccBank2(6) when( adr(14 downto 13) = "00"  )else
+    -- 2048 kB bank indexing $00~$FF = SCC+
+    -- 2048 kB bank indexing $00~$7F = ASC16K
+    -- 1024 kB bank indexing $00~$7F = ASC8K
+    RamAdr(20)          <=  '0'         when( mapsel = "01" )else
+                            SccBankL    when( adr(14) = '1' and mapsel = "11" )else
+                            SccBankM    when( adr(14) = '0' and mapsel = "11" )else
+                            SccBank0(7) when( adr(14 downto 13) = "10" )else
+                            SccBank1(7) when( adr(14 downto 13) = "11" )else
+                            SccBank2(7) when( adr(14 downto 13) = "00" )else
+                            SccBank3(7);
+
+    -- RAM address (MSB is fixed to '0' in 6000-7FFFh)
+    RamAdr(19)          <=  -- SccModeA(6) when( adr(14 downto 13) /= "11" and mapsel(0) = '0' )else
+                            -- '0'         when( mapsel(0) = '0' )else
+                            SccBank0(6) when( adr(14 downto 13) = "10" )else
+                            SccBank1(6) when( adr(14 downto 13) = "11" )else
+                            SccBank2(6) when( adr(14 downto 13) = "00" )else
                             SccBank3(6);
+
     RamAdr(18 downto 0) <=  SccBank0(5 downto 0) & adr(12 downto 0) when( adr(14 downto 13) = "10" )else
                             SccBank1(5 downto 0) & adr(12 downto 0) when( adr(14 downto 13) = "11" )else
                             SccBank2(5 downto 0) & adr(12 downto 0) when( adr(14 downto 13) = "00" )else
@@ -168,15 +182,15 @@ begin
                         (DecSccA = '1' or DecSccB = '1')) else
             "01" when   -- memory access (MEGA-ROM)
                         -- 4000-7FFFh(R/-, ASC8K/16K)
-                        (adr(15 downto 14) = "01"  and mapsel(0) = '1'  and                     wrt = '0') or
+                        (adr(15 downto 14) = "01"  and mapsel(0) = '1' and                     wrt = '0') or
                         -- 8000-BFFFh(R/-, ASC8K/16K)
-                        (adr(15 downto 14) = "10"  and mapsel(0) = '1'  and                     wrt = '0') or
+                        (adr(15 downto 14) = "10"  and mapsel(0) = '1' and                     wrt = '0') or
                         -- 4000-5FFFh(R/W, ASC8K/16K)
-                        (adr(15 downto 13) = "010" and mapsel(0) = '1'  and SccBank0(7) = '1'            ) or
+                        (adr(15 downto 13) = "010" and mapsel(0) = '1' and SccBank0(7) = '1'            ) or
                         -- 8000-9FFFh(R/W, ASC8K/16K)
-                        (adr(15 downto 13) = "100" and mapsel(0) = '1'  and SccBank2(7) = '1'            ) or
+                        (adr(15 downto 13) = "100" and mapsel(0) = '1' and SccBank2(7) = '1'            ) or
                         -- A000-BFFFh(R/W, ASC8K/16K)
-                        (adr(15 downto 13) = "101" and mapsel(0) = '1'  and SccBank3(7) = '1'            ) or
+                        (adr(15 downto 13) = "101" and mapsel(0) = '1' and SccBank3(7) = '1'            ) or
                         -- 4000-5FFFh(R/-, SCC)
                         (adr(15 downto 13) = "010" and SccModeA(6) = '0' and                   wrt = '0') or
                         -- 6000-7FFFh(R/-, SCC)
@@ -262,6 +276,7 @@ begin
                         SccBank1 <= dbo;
                     -- ASC16K / 6000-67FFh
                     elsif (adr(11) = '0') then
+                        SccBankL <= dbo(6);
                         SccBank0 <= dbo(7) & dbo(5 downto 0) & '0';
                         SccBank1 <= dbo(7) & dbo(5 downto 0) & '1';
                     end if;
@@ -277,6 +292,7 @@ begin
                         SccBank3 <= dbo;
                     -- ASC16K / 7000-77FFh
                     elsif (adr(11) = '0') then
+                        SccBankM <= dbo(6);
                         SccBank2 <= dbo(7) & dbo(5 downto 0) & '0';
                         SccBank3 <= dbo(7) & dbo(5 downto 0) & '1';
                     end if;

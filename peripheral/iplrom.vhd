@@ -46,7 +46,7 @@ entity iplrom is
 end iplrom;
 
 architecture rtl of iplrom is
-    type rom_type is array ( 0 to 763 + 304 ) of std_logic_vector (  7 downto 0 );
+    type rom_type is array ( 0 to 763 + 260 ) of std_logic_vector (  7 downto 0 );
     constant ipl_data : rom_type := (
         X"F3",X"01",X"FC",X"02",X"11",X"00",X"FC",X"63",X"6B",X"ED",X"B0",X"21",X"4C",X"FD",X"01",X"99",
         X"02",X"ED",X"B3",X"01",X"9A",X"20",X"ED",X"BB",X"C3",X"1B",X"FC",X"31",X"FF",X"FF",X"3E",X"D4",
@@ -108,6 +108,7 @@ architecture rtl of iplrom is
         X"CD",X"E9",X"FD",X"D8",X"FE",X"01",X"28",X"CB",X"1E",X"00",X"B7",X"C9",
 
         -- a lot of $FF to reduce LEs (optimization trick)
+                                                                                X"FF",X"FF",X"FF",X"FF",    -- 00
         X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",    -- 01
         X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",    -- 02
         X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",    -- 03
@@ -123,14 +124,7 @@ architecture rtl of iplrom is
         X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",    -- 13
         X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",    -- 14
         X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",    -- 15
-        X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",    -- 16
-        X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",    -- 17
-        X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",    -- 18 
-        X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF"     -- 19
-
-        -- variant 8421 (deprecated optimization trick)
-        -- the next two bytes are used to overcome any issues caused by the optimizations of Quartus II
-        -- X"84",X"21"
+        X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF",X"FF"     -- 16
     );
 
 begin
@@ -138,7 +132,7 @@ begin
     process( clk )
     begin
         if( clk'event and clk = '1' )then
-            dbi <= ipl_data( conv_integer( adr(  9 downto 0 )));
+            dbi <= ipl_data( conv_integer( adr(  9 downto 0 )));    -- conv_integer is limited to 1024 bytes
         end if;
     end process;
 

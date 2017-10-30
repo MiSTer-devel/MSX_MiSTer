@@ -1,7 +1,7 @@
 --
 -- swioports.vhd
 --   Switched I/O ports ($40-$4F)
---   Revision 5
+--   Revision 6
 --
 -- Copyright (c) 2011-2017 KdL
 -- All rights reserved.
@@ -101,7 +101,10 @@ entity switched_io_ports is
         -- 'IPL-ROM' group
         JIS2_ena        : inout std_logic;                                  -- JIS2 enabler             :   0=JIS1 only (BIOS 384 kB), 1=JIS1+JIS2 (BIOS 512 kB)
         portF4_mode     : inout std_logic;                                  -- Port F4 mode             :   0=F4 Device Inverted (MSX2+), 1=F4 Device Normal (MSXtR)
-        ff_ldbios_n     : in    std_logic                                   -- MSX-BIOS loading status 
+        ff_ldbios_n     : in    std_logic;                                  -- MSX-BIOS loading status
+        -- 'SPECIAL' group
+        Slot0_req       : inout std_logic;                                  -- Slot-0 Primary Mode req  :   Warm Reset is necessary to complete the request
+        Slot0Mode       : inout std_logic                                   -- Current Slot-0 state     :   0=Primary, 1=Expanded
     );
 end switched_io_ports;
 
@@ -110,11 +113,11 @@ architecture RTL of switched_io_ports is
     signal  swio_ack    : std_logic;
 
     -- 'OCM-PLD' version number (x \ 10).(y mod 10).(z(0~3))                -- OCM-PLD version 0.0(.0) ~ 25.5(.3)
-    signal  ocm_pld_xy  : std_logic_vector(  7 downto 0 ) := "00100010";    -- 34
-    signal  ocm_pld_z   : std_logic_vector(  1 downto 0 ) :=       "01";    -- 1
+    signal  ocm_pld_xy  : std_logic_vector(  7 downto 0 ) := "00100011";    -- 35
+    signal  ocm_pld_z   : std_logic_vector(  1 downto 0 ) :=       "00";    -- 0
 
     -- 'Switched I/O Ports' revision number (0-31)                          -- Switched I/O ports Revision 0 ~ 31
-    signal  swioRevNr   : std_logic_vector(  4 downto 0 ) :=    "00101";    -- 5
+    signal  swioRevNr   : std_logic_vector(  4 downto 0 ) :=    "00110";    -- 6
 
 begin
     -- out assignment: 'ports $40-$4F'
@@ -203,6 +206,8 @@ begin
                 ntsc_pal_type   <=  '1';                -- NTSC/PAL Type is Auto
                 forced_v_mode   <=  '0';                -- Manual NTSC/PAL is NTSC
                 right_inverse   <=  '0';                -- Right Inverse Audio is Off
+                Slot0_req       <=  '1';                -- Set Slot-0 Expanded Mode
+                Slot0Mode       <=  '1';                -- Prevent system crash using Reset Key
             else
                 -- Warm Reset
                 io42_id212(6)   <=  Mapper_req;         -- Set Mapper state to last required
@@ -210,6 +215,7 @@ begin
                 io42_id212(7)   <=  MegaSD_req;         -- Set MegaSD state to last required
                 MegaSD_ack      <=  MegaSD_req;         -- Confirm the last MegaSD state
                 LastRst_sta     <=  not WarmMSXlogo;    -- Warm state
+                Slot0Mode       <=  Slot0_req;          -- Set Slot-0 state to last required
             end if;
 
         elsif( clk21m'event and clk21m = '1' )then
@@ -220,7 +226,7 @@ begin
                 -- in assignment: 'Green Level Enabler'
                 GreenLvEna  <=  '0';
                 -- in assignment: 'Reset Request State' (internal signal)
-                if( (Mapper_req /= io42_id212(6)) or (MegaSD_req /= io42_id212(7)) )then
+                if( (Mapper_req /= io42_id212(6)) or (MegaSD_req /= io42_id212(7)) or (Slot0_req /= Slot0Mode) )then
                     RstReq_sta  <=  '1';                                    -- Yes
                 else
                     RstReq_sta  <=  '0';                                    -- No
@@ -737,7 +743,10 @@ begin
                             io41_id008_n    <=  '1';
                             Red_sta         <=  not io41_id008_n;
                             extclk3m        <=  '0';
-                        -- SMART CODES  #214, #..., #249                    -- Free Group
+                        -- SMART CODES  #214, #..., #248                    -- Free Group
+                        -- SMART CODES  #249
+                        when "11111001" =>                                  -- Slot-0 Primary Mode (warm reset is required)
+                            Slot0_req       <=  '0';
                         -- SMART CODES  #250
                         when "11111010" =>                                  -- MSX logo will be On after a Warm Reset
                             WarmMSXlogo     <=  not portF4_mode;
@@ -782,6 +791,7 @@ begin
                             ntsc_pal_type   <=  '1';
                             forced_v_mode   <=  '0';
                             right_inverse   <=  '0';
+                            Slot0_req       <=  '1';
                         -- NULL CODES
                         when others     =>
                             io41_id212_n    <=  "11111111";                 -- Not found
