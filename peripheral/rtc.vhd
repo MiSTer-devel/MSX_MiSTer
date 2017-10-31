@@ -40,7 +40,7 @@ entity rtc is
         reset       : in    std_logic;
 
         setup       : in    std_logic;
-        rt          : in    std_logic_vector( 63 downto 0 );
+        rt          : in    std_logic_vector( 64 downto 0 );
 
         clkena      : in    std_logic;          -- 10Hz
         req         : in    std_logic;

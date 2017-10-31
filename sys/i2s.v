@@ -22,6 +22,40 @@ localparam WHOLE_CYCLES          = (CLK_RATE) / (AUDIO_RATE*AUDIO_DW*4);
 localparam ERROR_BASE            = 10000;
 localparam [63:0] ERRORS_PER_BIT = ((CLK_RATE * ERROR_BASE) / (AUDIO_RATE*AUDIO_DW*4)) - (WHOLE_CYCLES * ERROR_BASE);
 
+reg lpf_ce;
+always @(negedge clk_sys) begin
+	reg [3:0] div;
+	
+	div <= div + 1'd1;
+	if(div == (half_rate ? 13 : 6)) div <= 0;
+	
+	lpf_ce <= !div;
+end
+
+wire [AUDIO_DW-1:0] al, ar;
+
+lpf48k #(AUDIO_DW-1) lpf_l
+(
+   .RESET(reset),
+   .CLK(clk_sys),
+   .CE(lpf_ce),
+	.ENABLE(1),
+
+   .IDATA(left_chan),
+   .ODATA(al)
+);
+
+lpf48k #(AUDIO_DW-1) lpf_r
+(
+   .RESET(reset),
+   .CLK(clk_sys),
+   .CE(lpf_ce),
+	.ENABLE(1),
+
+   .IDATA(right_chan),
+   .ODATA(ar)
+);
+
 always @(posedge clk_sys) begin
 	reg [31:0]  count_q;
 	reg [31:0]  error_q;
@@ -68,8 +102,8 @@ always @(posedge clk_sys) begin
 						bit_cnt <= 1;
 						lrclk <= ~lrclk;
 						if(lrclk) begin
-							left  <= left_chan;
-							right <= right_chan;
+							left  <= al;
+							right <= ar;
 						end
 					end
 					else begin

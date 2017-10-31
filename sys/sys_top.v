@@ -231,6 +231,8 @@ always @(posedge FPGA_CLK2_50) begin
 	resetd2 <= resetd;
 end
 
+// 100MHz
+wire ctl_clk;
 
 ///////////////////////// VIP version  ///////////////////////////////
 
@@ -306,7 +308,6 @@ wire        ctl_write;
 wire [31:0] ctl_writedata;
 wire        ctl_waitrequest;
 wire        ctl_reset;
-wire        ctl_clk;
 wire  [7:0] ARX, ARY;
 
 vip_config vip_config
@@ -421,6 +422,7 @@ sysmem_lite sysmem
 	//Reset/Clock
 	.reset_reset_req(reset_req),
 	.reset_reset(reset),
+	.ctl_clock(ctl_clk),
 
 	//DE10-nano has no reset signal on GPIO, so core has to emulate cold reset button.
 	.reset_cold_req(~btn_reset),
@@ -614,7 +616,7 @@ emu emu
 (
 	.CLK_50M(FPGA_CLK3_50),
 	.RESET(reset),
-	.HPS_BUS({io_wait, clk_sys, io_fpga, io_uio, io_strobe, io_wide, io_din, io_dout}),
+	.HPS_BUS({ctl_clk, clk_vid, ce_pix, de, hs, vs, io_wait, clk_sys, io_fpga, io_uio, io_strobe, io_wide, io_din, io_dout}),
 
 	.CLK_VIDEO(clk_vid),
 	.CE_PIXEL(ce_pix),
@@ -626,7 +628,7 @@ emu emu
 	.VGA_VS(vs),
 	.VGA_DE(de),
 
-	//.LED_USER(led_user),
+	.LED_USER(led_user),
 	.LED_POWER(led_power),
 	.LED_DISK(led_disk),
 
@@ -675,24 +677,5 @@ emu emu
 	.SDRAM_CLK(SDRAM_CLK),
 	.SDRAM_CKE(SDRAM_CKE)
 );
-
-reg sd_act;
-assign led_user = sd_act;
-
-always @(posedge clk_sys) begin
-	reg old_di, old_do;
-	integer timeout = 0;
-	
-	old_di <= SDIO_CMD;
-	old_do <= SDIO_DAT[0];
-
-	sd_act <= 0;
-	if(timeout < 1000000) begin
-		timeout <= timeout + 1;
-		sd_act <= 1;
-	end
-
-	if((old_di ^ SDIO_CMD) || (old_do ^ SDIO_DAT[0])) timeout <= 0;
-end
 
 endmodule

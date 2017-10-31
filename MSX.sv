@@ -29,7 +29,7 @@ module emu
 	input         RESET,
 
 	//Must be passed to hps_io module
-	inout  [37:0] HPS_BUS,
+	inout  [43:0] HPS_BUS,
 
 	//Base video clock. Usually equals to CLK_SYS.
 	output        CLK_VIDEO,
@@ -97,7 +97,7 @@ module emu
 
 assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = 0;
 
-assign LED_USER  = 0;
+assign LED_USER  = sd_act;
 assign LED_DISK  = 0;
 assign LED_POWER = 0;
 
@@ -161,7 +161,7 @@ wire [15:0] joy_0;
 wire [15:0] joy_1;
 wire  [1:0] buttons;
 wire [31:0] status;
-wire [63:0] rtc;
+wire [64:0] rtc;
 
 hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 (
@@ -282,5 +282,24 @@ always @(posedge clk_sys) begin
 	if(joy_0[5:0]) use_mouse <= 0;
 end
 
+
+//////////////////   SD LED   ///////////////////
+reg sd_act;
+
+always @(posedge clk_sys) begin
+	reg old_mosi, old_miso;
+	integer timeout = 0;
+
+	old_mosi <= SD_MOSI;
+	old_miso <= SD_MISO;
+
+	sd_act <= 0;
+	if(timeout < 1000000) begin
+		timeout <= timeout + 1;
+		sd_act <= 1;
+	end
+
+	if((old_mosi ^ SD_MOSI) || (old_miso ^ SD_MISO)) timeout <= 0;
+end
 
 endmodule

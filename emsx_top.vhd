@@ -67,7 +67,7 @@ entity emsx_top is
         pCaps           : out   std_logic;
 
         rtc_setup       : in    std_logic;
-        rtc_time        : in    std_logic_vector( 63 downto 0);
+        rtc_time        : in    std_logic_vector( 64 downto 0);
 
         -- Joystick ports (Port_A, Port_B)
         pJoyA           : in    std_logic_vector(  5 downto 0);
@@ -220,7 +220,7 @@ architecture RTL of emsx_top is
             clk21m      : in    std_logic;
             reset       : in    std_logic;
             setup       : in    std_logic;
-            rt          : in    std_logic_vector( 63 downto 0 );
+            rt          : in    std_logic_vector( 64 downto 0 );
             clkena      : in    std_logic;
             req         : in    std_logic;
             ack         : out   std_logic;
