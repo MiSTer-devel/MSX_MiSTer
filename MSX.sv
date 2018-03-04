@@ -197,10 +197,6 @@ hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 	.ioctl_wait(0)
 );
 
-assign CLK_VIDEO = clk_sys;
-assign CE_PIXEL = 1;
-assign {VGA_R[1:0], VGA_G[1:0], VGA_B[1:0]} = {VGA_R[7:6], VGA_G[7:6], VGA_B[7:6]};
-
 wire [13:0] audioOPLL;
 wire  [9:0] audioPSG;
 wire [15:0] audioPCM;
@@ -213,6 +209,35 @@ assign AUDIO_L = compr[audio[16:14]];
 assign AUDIO_R = AUDIO_L;
 assign AUDIO_S = 1;
 assign AUDIO_MIX = 0;
+
+wire [5:0] r,g,b;
+wire de,vs,hs;
+
+reg [7:0] ro,go,bo;
+reg deo,vso,hso;
+
+assign CLK_VIDEO = clk_sys;
+assign CE_PIXEL  = ce_pix;
+assign VGA_R  = ro;
+assign VGA_G  = go;
+assign VGA_B  = bo;
+assign VGA_DE = deo;
+assign VGA_VS = vso;
+assign VGA_HS = hso;
+
+reg ce_pix = 0;
+always @(posedge clk_sys) begin
+
+	if(forced_scandoubler) ce_pix <= 1;
+	else ce_pix <= ~ce_pix;
+
+	if(ce_pix) begin
+		ro <= {r,r[5:4]};
+		go <= {g,g[5:4]};
+		bo <= {b,b[5:4]};
+		{deo,vso,hso} <= {de,vs,hs};
+	end
+end
 
 emsx_top emsx
 (
@@ -254,12 +279,12 @@ emsx_top emsx
 	.pLed(),
 	.pLedPwr(),
 
-	.pDac_VR(VGA_R[7:2]),
-	.pDac_VG(VGA_G[7:2]),
-	.pDac_VB(VGA_B[7:2]),
-	.pVideoDE(VGA_DE),
-	.pVideoHS(VGA_HS),
-	.pVideoVS(VGA_VS),
+	.pDac_VR(r),
+	.pDac_VG(g),
+	.pDac_VB(b),
+	.pVideoDE(de),
+	.pVideoHS(hs),
+	.pVideoVS(vs),
 	.pScandoubler(forced_scandoubler),
 
 	.pAudioPSG(audioPSG),   //10bits unsigned

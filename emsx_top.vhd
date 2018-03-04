@@ -94,7 +94,7 @@ entity emsx_top is
         pVideoDE        : out   std_logic;
         pVideoHS        : out   std_logic;
         pVideoVS        : out   std_logic;
-		  pScandoubler    : in    std_logic;
+        pScandoubler    : in    std_logic;
 
         pAudioPSG       : out   std_logic_vector(  9 downto 0);
         pAudioOPLL      : out   std_logic_vector( 13 downto 0);

@@ -36,17 +36,26 @@ module in_split (
 	always @(posedge clk) begin
 		reg odd = 0;
 		
+		reg de0,f0,hs0,vs0;
+		reg [23:0] data0;
+		
 		vid_datavalid <= 0;
 		if(ce) begin
-			vid_de[odd] <= de;
-			vid_f[odd] <= f;
-			vid_h_sync[odd] <= h_sync;
-			vid_v_sync[odd] <= v_sync;
-			if(odd) vid_data[47:24] <= data;
-				else vid_data[23:0] <= data;
-			
+			if(~odd) begin
+				de0 <= de;
+				f0  <= f;
+				hs0 <= h_sync;
+				vs0 <= v_sync;
+				data0 <= data;
+			end else begin
+				vid_de <= {de,de0};
+				vid_f <= {f,f0};
+				vid_h_sync <= {h_sync,hs0};
+				vid_v_sync <= {v_sync,vs0};
+				vid_data <= {data,data0};
+				vid_datavalid <= 1;
+			end
 			odd <= ~odd;
-			vid_datavalid <= odd;
 		end
 	end
 endmodule
