@@ -29,7 +29,7 @@ module emu
 	input         RESET,
 
 	//Must be passed to hps_io module
-	inout  [43:0] HPS_BUS,
+	inout  [44:0] HPS_BUS,
 
 	//Base video clock. Usually equals to CLK_SYS.
 	output        CLK_VIDEO,
@@ -51,7 +51,7 @@ module emu
 
 	output        LED_USER,  // 1 - ON, 0 - OFF.
 
-	// b[1]: 0 - LED status is system status ORed with b[0]
+	// b[1]: 0 - LED status is system status OR'd with b[0]
 	//       1 - LED status is controled solely by b[0]
 	// hint: supply 2'b00 to let the system control the LED.
 	output  [1:0] LED_POWER,
@@ -59,7 +59,8 @@ module emu
 
 	output [15:0] AUDIO_L,
 	output [15:0] AUDIO_R,
-	output        AUDIO_S, // 1 - signed audio samples, 0 - unsigned
+	output        AUDIO_S,   // 1 - signed audio samples, 0 - unsigned
+	output  [1:0] AUDIO_MIX, // 0 - no mix, 1 - 25%, 2 - 50%, 3 - 100% (mono)
 	input         TAPE_IN,
 
 	// SD-SPI
@@ -67,6 +68,7 @@ module emu
 	output        SD_MOSI,
 	input         SD_MISO,
 	output        SD_CS,
+	input         SD_CD,
 
 	//High latency DDR3 RAM interface
 	//Use for non-critical time purposes
@@ -119,7 +121,7 @@ localparam CONF_STR = {
 	"-;",
 	"TA,Reset;",
 	"J,Fire 1,Fire 2;",
-	"V,v3.50.10.",`BUILD_DATE
+	"V,v3.50.11.",`BUILD_DATE
 };
 
 
@@ -156,6 +158,7 @@ wire        ps2_kbd_data_out;
 wire        ps2_mouse_clk_out;
 wire        ps2_mouse_data_out;
 wire        ps2_caps_led;
+wire        forced_scandoubler;
 
 wire [15:0] joy_0;
 wire [15:0] joy_1;
@@ -175,6 +178,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 
 	.buttons(buttons),
 	.status(status),
+	.forced_scandoubler(forced_scandoubler),
 
 	.RTC(rtc),
 	.ps2_kbd_clk_out(ps2_kbd_clk_out),
@@ -208,6 +212,7 @@ wire [15:0] compr[7:0] = '{ {1'b1, audio[13:0], 1'b0}, 16'h8000, 16'h8000, 16'h8
 assign AUDIO_L = compr[audio[16:14]];
 assign AUDIO_R = AUDIO_L;
 assign AUDIO_S = 1;
+assign AUDIO_MIX = 0;
 
 emsx_top emsx
 (
@@ -255,6 +260,7 @@ emsx_top emsx
 	.pVideoDE(VGA_DE),
 	.pVideoHS(VGA_HS),
 	.pVideoVS(VGA_VS),
+	.pScandoubler(forced_scandoubler),
 
 	.pAudioPSG(audioPSG),   //10bits unsigned
 	.pAudioOPLL(audioOPLL), //14bits signed

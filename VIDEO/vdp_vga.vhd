@@ -260,7 +260,7 @@ BEGIN
         ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
             IF( (HCOUNTERIN = DISP_START_X) OR
                     ((HCOUNTERIN = DISP_START_X + (CLOCKS_PER_LINE/2)) AND INTERLACEMODE = '0') ) THEN
-                VIDEOOUTX <= '1';
+                VIDEOOUTX <= VIDEOOUTY;
             ELSIF( (HCOUNTERIN = DISP_START_X + DISP_WIDTH) OR
                        (HCOUNTERIN = DISP_START_X + DISP_WIDTH + (CLOCKS_PER_LINE/2)) ) THEN
                 VIDEOOUTX <= '0';
@@ -297,14 +297,6 @@ BEGIN
         END IF;
     END PROCESS;
 
-    PROCESS( RESET, CLK21M )
-    BEGIN
-        IF( RESET = '1' )THEN
-            VIDEODEOUT <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            VIDEODEOUT <= VIDEOOUTX AND VIDEOOUTY;
-        END IF;
-    END PROCESS;
-	 
+	 VIDEODEOUT <= VIDEOOUTX;
     VIDEOHSOUT_N <= FF_HSYNC_N;
 END RTL;
