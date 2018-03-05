@@ -54,8 +54,8 @@ set_global_assignment -name OPTIMIZATION_TECHNIQUE SPEED
 set_global_assignment -name ECO_OPTIMIZE_TIMING ON
 set_global_assignment -name ALM_REGISTER_PACKING_EFFORT LOW
 set_global_assignment -name ALLOW_SYNCH_CTRL_USAGE OFF
-set_global_assignment -name OPTIMIZATION_MODE "AGGRESSIVE PERFORMANCE"
-set_global_assignment -name SEED 3
+set_global_assignment -name OPTIMIZATION_MODE "HIGH PERFORMANCE EFFORT"
+set_global_assignment -name SEED 1
 
 #============================================================
 # ADC
