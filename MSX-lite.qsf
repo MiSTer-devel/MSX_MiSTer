@@ -355,6 +355,7 @@ set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:sys/build_id.tcl"
 
 set_global_assignment -name CDF_FILE jtag.cdf
 set_global_assignment -name QIP_FILE sys/sys.qip
+set_global_assignment -name VERILOG_FILE scanlines.v
 set_global_assignment -name VHDL_FILE video/vdp.vhd
 set_global_assignment -name VHDL_FILE video/vdp_colordec.vhd
 set_global_assignment -name VHDL_FILE video/vdp_command.vhd

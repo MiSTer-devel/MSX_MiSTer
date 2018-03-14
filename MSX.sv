@@ -111,6 +111,7 @@ localparam CONF_STR = {
 	"MSX;;",
 	"-;",
 	"O9,Aspect ratio,4:3,16:9;",
+	"O23,Scanlines,No,25%,50%,75%;",
 	"-;",
 	"O1,CPU speed,Normal,Turbo(+F11);",
 	"-;",
@@ -159,7 +160,7 @@ wire        ps2_mouse_clk_out;
 wire        ps2_mouse_data_out;
 wire        ps2_caps_led;
 wire        forced_scandoubler;
-
+wire        scandoubler = forced_scandoubler || status[3:2];
 wire [15:0] joy_0;
 wire [15:0] joy_1;
 wire  [1:0] buttons;
@@ -218,9 +219,6 @@ reg deo,vso,hso;
 
 assign CLK_VIDEO = clk_sys;
 assign CE_PIXEL  = ce_pix;
-assign VGA_R  = ro;
-assign VGA_G  = go;
-assign VGA_B  = bo;
 assign VGA_DE = deo;
 assign VGA_VS = vso;
 assign VGA_HS = hso;
@@ -228,7 +226,7 @@ assign VGA_HS = hso;
 reg ce_pix = 0;
 always @(posedge clk_sys) begin
 
-	if(forced_scandoubler) ce_pix <= 1;
+	if(scandoubler) ce_pix <= 1;
 	else ce_pix <= ~ce_pix;
 
 	if(ce_pix) begin
@@ -238,6 +236,17 @@ always @(posedge clk_sys) begin
 		{deo,vso,hso} <= {de,vs,hs};
 	end
 end
+
+scanlines scanlines
+(
+	.clk(clk_sys),
+
+	.scanlines(status[3:2]),
+	.din({ro,go,bo}),
+	.dout({VGA_R,VGA_G,VGA_B}),
+	.hs(hso),
+	.vs(vso)
+);
 
 emsx_top emsx
 (
@@ -285,7 +294,7 @@ emsx_top emsx
 	.pVideoDE(de),
 	.pVideoHS(hs),
 	.pVideoVS(vs),
-	.pScandoubler(forced_scandoubler),
+	.pScandoubler(scandoubler),
 
 	.pAudioPSG(audioPSG),   //10bits unsigned
 	.pAudioOPLL(audioOPLL), //14bits signed
