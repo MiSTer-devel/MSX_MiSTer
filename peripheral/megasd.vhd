@@ -148,9 +148,9 @@ begin
       MmcDbo := (others => '1');
       mmcdbi <= (others => '1');
 
-      mmc_ck <= '1';
+      mmc_ck <= '0';
       mmc_cs <= '1';
-      mmc_di <= 'Z';
+      mmc_di <= '0';
       epc_ck <= '1';
       epc_cs <= '1';
       epc_di <= 'Z';
@@ -171,7 +171,6 @@ begin
 
       if (MmcSeq(0) = '0') then
         case MmcSeq(4 downto 1) is
-          when "1010" => mmc_di <= MmcDbo(7); epc_di <= MmcDbo(7);
           when "1001" => mmc_di <= MmcDbo(6); epc_di <= MmcDbo(6);
           when "1000" => mmc_di <= MmcDbo(5); epc_di <= MmcDbo(5);
           when "0111" => mmc_di <= MmcDbo(4); epc_di <= MmcDbo(4);
@@ -179,13 +178,12 @@ begin
           when "0101" => mmc_di <= MmcDbo(2); epc_di <= MmcDbo(2);
           when "0100" => mmc_di <= MmcDbo(1); epc_di <= MmcDbo(1);
           when "0011" => mmc_di <= MmcDbo(0); epc_di <= MmcDbo(0);
-          when "0010" => mmc_di <= '1';       epc_di <= '1';
-          when "0001" => mmc_di <= 'Z';       epc_di <= '1';
-          when others => mmc_di <= 'Z';       epc_di <= '1';
+          when "0010" => mmc_di <= '0';       epc_di <= '1';
+          when others => null;
         end case;
       end if;
 
-      if (MmcSeq(0) = '0' and EpcEna = '0') then
+      if (MmcSeq(0) = '1' and EpcEna = '0') then
         case MmcSeq(4 downto 1) is
           when "1001" => MmcTmp(7) := mmc_do;
           when "1000" => MmcTmp(6) := mmc_do;
@@ -198,7 +196,7 @@ begin
           when "0001" => mmcdbi <= MmcTmp;
           when others => null;
         end case;
-      elsif (MmcSeq(0) = '0' and EpcEna = '1') then
+      elsif (MmcSeq(0) = '1' and EpcEna = '1') then
         case MmcSeq(4 downto 1) is
           when "1001" => MmcTmp(7) := epc_do;
           when "1000" => MmcTmp(6) := epc_do;
@@ -213,16 +211,16 @@ begin
         end case;
       end if;
 
-      if (MmcSeq(4 downto 1) < "1011" and MmcSeq(4 downto 1) > "0010") then
+      if (MmcSeq(4 downto 1) < "1011" and MmcSeq(4 downto 1) > "0001") then
         if (EpcEna = '0') then
           mmc_ck <= MmcSeq(0);
           epc_ck <= '1';
         else
-          mmc_ck <= '1';
+          mmc_ck <= '0';
           epc_ck <= MmcSeq(0);
         end if;
       else
-        mmc_ck <= '1';
+        mmc_ck <= '0';
         epc_ck <= '1';
       end if;
 
@@ -241,7 +239,9 @@ begin
           mmc_cs <= '1';
           epc_cs <= adr(12);
         end if;
-        MmcSeq := "10101";
+        MmcSeq := "10011";
+        mmc_di <= MmcDbo(7);
+		  epc_di <= MmcDbo(7);
       elsif (MmcSeq /= "00000") then
         MmcSeq := MmcSeq - 1;
       end if;
@@ -263,6 +263,5 @@ begin
 
   mmcena <= '1' when ErmBank0(7 downto 6) = "01" else '0';
   epc_oe <= '1' when reset = '1' else '0';  -- epc_oe = 0:enable, 1:disable
-
 
 end rtl;

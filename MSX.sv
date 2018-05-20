@@ -99,8 +99,8 @@ module emu
 
 assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = 0;
 
-assign LED_USER  = sd_act;
-assign LED_DISK  = 0;
+assign LED_USER  = vsd_sel & sd_act;
+assign LED_DISK  = {1'b1, ~vsd_sel & sd_act};
 assign LED_POWER = 0;
 
 assign VIDEO_ARX = status[9] ? 8'd16 : 8'd4;
@@ -109,6 +109,8 @@ assign VIDEO_ARY = status[9] ? 8'd9  : 8'd3;
 `include "build_id.v"
 localparam CONF_STR = {
 	"MSX;;",
+	"-;",
+	"S,VHD;",
 	"-;",
 	"O9,Aspect ratio,4:3,16:9;",
 	"O23,Scanlines,No,25%,50%,75%;",
@@ -122,7 +124,7 @@ localparam CONF_STR = {
 	"-;",
 	"TA,Reset;",
 	"J,Fire 1,Fire 2;",
-	"V,v3.50.11.",`BUILD_DATE
+	"V,v3.50.21.",`BUILD_DATE
 };
 
 
@@ -167,6 +169,19 @@ wire  [1:0] buttons;
 wire [31:0] status;
 wire [64:0] rtc;
 
+wire [31:0] sd_lba;
+wire        sd_rd;
+wire        sd_wr;
+wire        sd_ack;
+wire  [8:0] sd_buff_addr;
+wire  [7:0] sd_buff_dout;
+wire  [7:0] sd_buff_din;
+wire        sd_buff_wr;
+wire        img_mounted;
+wire        img_readonly;
+wire [63:0] img_size;
+wire        sd_ack_conf;
+
 hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 (
 	.clk_sys(clk_sys),
@@ -190,11 +205,19 @@ hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 	.ps2_kbd_led_use(3'b001),
 	.ps2_kbd_led_status({2'b00, ps2_caps_led}),
 
-	.sd_lba(0),
-	.sd_rd(0),
-	.sd_wr(0),
-	.sd_conf(0),
-	.sd_buff_din(0),
+	.sd_lba(sd_lba),
+	.sd_rd(sd_rd),
+	.sd_wr(sd_wr),
+	.sd_ack(sd_ack),
+	.sd_ack_conf(sd_ack_conf),
+	.sd_buff_addr(sd_buff_addr),
+	.sd_buff_dout(sd_buff_dout),
+	.sd_buff_din(sd_buff_din),
+	.sd_buff_wr(sd_buff_wr),
+	.img_mounted(img_mounted),
+	.img_readonly(img_readonly),
+	.img_size(img_size),
+
 	.ioctl_wait(0)
 );
 
@@ -279,10 +302,10 @@ emsx_top emsx
 	.pJoyB(~{joy_1[5:4], joy_1[0], joy_1[1], joy_1[2], joy_1[3]}),
 	.pStrB(),
 
-	.mmc_sck(SD_SCK),
-	.mmc_mosi(SD_MOSI),
-	.mmc_cs(SD_CS),
-	.mmc_miso(SD_MISO),
+	.mmc_sck(sdclk),
+	.mmc_mosi(sdmosi),
+	.mmc_cs(sdss),
+	.mmc_miso(sdmiso),
 
 	.pDip({1'b0,~status[7],~status[6:5],~status[4],2'b00,~status[1]}),
 	.pLed(),
@@ -323,15 +346,41 @@ always @(posedge clk_sys) begin
 end
 
 
-//////////////////   SD LED   ///////////////////
+//////////////////   SD   ///////////////////
+
+wire sdclk;
+wire sdmosi;
+wire sdmiso = vsd_sel ? vsdmiso : SD_MISO;
+wire sdss;
+
+reg vsd_sel = 0;
+always @(posedge clk_sys) if(img_mounted) vsd_sel <= |img_size;
+
+wire vsdmiso;
+sd_card sd_card
+(
+	.*,
+
+	.clk_spi(clk_mem),
+	.sdhc(1),
+	.sck(sdclk),
+	.ss(sdss | ~vsd_sel),
+	.mosi(sdmosi),
+	.miso(vsdmiso)
+);
+
+assign SD_CS   = sdss   |  vsd_sel;
+assign SD_SCK  = sdclk  & ~vsd_sel;
+assign SD_MOSI = sdmosi & ~vsd_sel;
+
 reg sd_act;
 
 always @(posedge clk_sys) begin
 	reg old_mosi, old_miso;
 	integer timeout = 0;
 
-	old_mosi <= SD_MOSI;
-	old_miso <= SD_MISO;
+	old_mosi <= sdmosi;
+	old_miso <= sdmiso;
 
 	sd_act <= 0;
 	if(timeout < 1000000) begin
@@ -339,7 +388,7 @@ always @(posedge clk_sys) begin
 		sd_act <= 1;
 	end
 
-	if((old_mosi ^ SD_MOSI) || (old_miso ^ SD_MISO)) timeout <= 0;
+	if((old_mosi ^ sdmosi) || (old_miso ^ sdmiso)) timeout <= 0;
 end
 
 endmodule
