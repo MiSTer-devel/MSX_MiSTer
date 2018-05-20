@@ -164,9 +164,10 @@ begin
 
     ack <=  swio_ack;
 
-    process( reset, clk21m )
+    process( clk21m )
     begin
-        if( reset = '1' )then
+        if rising_edge(clk21m)then
+          if( reset = '1' )then
 
             swioRESET_n     <=  '1';                    -- End of Reset pulse
             io40_n          <=  "11111111";             -- Default Port $40 after any reboot
@@ -218,7 +219,7 @@ begin
                 Slot0Mode       <=  Slot0_req;          -- Set Slot-0 state to last required
             end if;
 
-        elsif( clk21m'event and clk21m = '1' )then
+          else
             if( warmRESET /= '0' )then
                 WarmMSXlogo <=  portF4_mode;            -- MSX logo will be Off after a Warm Reset
                 warmRESET   <=  '0';                    -- End of Warm Reset cycle
@@ -836,6 +837,7 @@ begin
                     WarmMSXlogo         <=  not dbo(7);                     -- MSX logo will be Off after a Warm Reset
                 end if;
             end if;
+			 end if;
         end if;
     end process;
 

@@ -873,14 +873,16 @@ begin
     -- logo speed limiter
     process( clk21m )
     begin
-        if( ff_ldbios_n = '0' )then
+        if rising_edge( clk21m )then
+          if( ff_ldbios_n = '0' )then
             if( LastRst_sta = portF4_mode )then
                 LogoRstCnt <= "11111";                                                  -- 3100ms
             end if;
-        elsif( clk21m'event and clk21m = '1' )then
+          else
             if( w_10hz = '1' and SdPaus = '0' and LogoRstCnt /= "00000" )then
                 LogoRstCnt <= LogoRstCnt - 1;
             end if;
+			 end if;
         end if;
     end process;
 
@@ -989,14 +991,16 @@ begin
 
     process( memclk )
     begin
-        if( HardRst_cnt = "0011" )then                  -- 200ms from "0001"
+        if rising_edge(memclk) then
+          if( HardRst_cnt = "0011" )then                  -- 200ms from "0001"
             if( w_10hz = '1' and RstSeq /= "00000" )then
                 RstSeq <= (others => '0');
             end if;
-        elsif( memclk'event and memclk = '1' )then
+          else
             if( ff_mem_seq = "00" and FreeCounter = X"FFFF" and RstSeq /= "11111" )then
                 RstSeq <= RstSeq + 1;                   -- 3ms (= 65536 / 21.48MHz)
             end if;
+			 end if;
         end if;
     end process;
 
