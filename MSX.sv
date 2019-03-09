@@ -2,7 +2,7 @@
 //  MSX replica
 // 
 //  Port to MiSTer
-//  Copyright (C) 2017 Sorgelig
+//  Copyright (C) 2017-2019 Sorgelig
 //
 //  This program is free software; you can redistribute it and/or modify it
 //  under the terms of the GNU General Public License as published by the Free
@@ -48,6 +48,8 @@ module emu
 	output        VGA_HS,
 	output        VGA_VS,
 	output        VGA_DE,    // = ~(VBlank | HBlank)
+	output        VGA_F1,
+	output  [1:0] VGA_SL,
 
 	output        LED_USER,  // 1 - ON, 0 - OFF.
 
@@ -94,9 +96,28 @@ module emu
 	output        SDRAM_nCS,
 	output        SDRAM_nCAS,
 	output        SDRAM_nRAS,
-	output        SDRAM_nWE
+	output        SDRAM_nWE,
+
+	input         UART_CTS,
+	output        UART_RTS,
+	input         UART_RXD,
+	output        UART_TXD,
+	output        UART_DTR,
+	input         UART_DSR,
+
+	// Open-drain User port.
+	// 0 - D+/RX
+	// 1 - D-/TX
+	// 2..5 - USR1..USR4
+	// Set USER_OUT to 1 to read from USER_IN.
+	input   [5:0] USER_IN,
+	output  [5:0] USER_OUT,
+
+	input         OSD_STATUS
 );
 
+assign USER_OUT = '1;
+assign {UART_RTS, UART_TXD, UART_DTR} = 0;
 assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = 0;
 
 assign LED_USER  = vsd_sel & sd_act;
@@ -245,6 +266,8 @@ assign CE_PIXEL  = ce_pix;
 assign VGA_DE = deo;
 assign VGA_VS = vso;
 assign VGA_HS = hso;
+assign VGA_SL = status[3:2];
+assign VGA_F1 = 0;
 
 reg ce_pix = 0;
 always @(posedge clk_sys) begin
@@ -253,23 +276,12 @@ always @(posedge clk_sys) begin
 	else ce_pix <= ~ce_pix;
 
 	if(ce_pix) begin
-		ro <= {r,r[5:4]};
-		go <= {g,g[5:4]};
-		bo <= {b,b[5:4]};
+		VGA_R <= {r,r[5:4]};
+		VGA_G <= {g,g[5:4]};
+		VGA_B <= {b,b[5:4]};
 		{deo,vso,hso} <= {de,vs,hs};
 	end
 end
-
-scanlines scanlines
-(
-	.clk(clk_sys),
-
-	.scanlines(status[3:2]),
-	.din({ro,go,bo}),
-	.dout({VGA_R,VGA_G,VGA_B}),
-	.hs(hso),
-	.vs(vso)
-);
 
 emsx_top emsx
 (

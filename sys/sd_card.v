@@ -23,7 +23,7 @@
 
 //
 // Made module syncrhronous. Total code refactoring. (Sorgelig)
-//
+// clk_spi must be at least 4 x sck for proper work.
 
 module sd_card
 (
@@ -31,7 +31,7 @@ module sd_card
 	input         reset,
 
 	input         sdhc,
-
+	
 	output [31:0] sd_lba,
 	output reg    sd_rd,
 	output reg    sd_wr,
@@ -52,7 +52,7 @@ module sd_card
 	output reg    miso
 );
 
-assign sd_lba     = sdhc ? lba : {9'd0, lba[31:9]};
+assign sd_lba = sdhc ? lba : {9'd0, lba[31:9]};
 
 wire[31:0] OCR = { 1'b1, sdhc, 30'd0 };  // bit30 = 1 -> high capaciry card (sdhc) // bit31 = 0 -> card power up finished
 wire [7:0] READ_DATA_TOKEN     = 8'hfe;
@@ -61,18 +61,19 @@ wire [7:0] WRITE_DATA_RESPONSE = 8'h05;
 // number of bytes to wait after a command before sending the reply
 localparam NCR=3;
 
-localparam RD_STATE_IDLE       = 2'd0;
-localparam RD_STATE_WAIT_IO    = 2'd1;
-localparam RD_STATE_SEND_TOKEN = 2'd2;
-localparam RD_STATE_SEND_DATA  = 2'd3;
+localparam RD_STATE_IDLE       = 0;
+localparam RD_STATE_WAIT_IO    = 1;
+localparam RD_STATE_SEND_TOKEN = 2;
+localparam RD_STATE_SEND_DATA  = 3;
+localparam RD_STATE_WAIT_M     = 4;
 
-localparam WR_STATE_IDLE       = 3'd0;
-localparam WR_STATE_EXP_DTOKEN = 3'd1;
-localparam WR_STATE_RECV_DATA  = 3'd2;
-localparam WR_STATE_RECV_CRC0  = 3'd3;
-localparam WR_STATE_RECV_CRC1  = 3'd4;
-localparam WR_STATE_SEND_DRESP = 3'd5;
-localparam WR_STATE_BUSY       = 3'd6;
+localparam WR_STATE_IDLE       = 0;
+localparam WR_STATE_EXP_DTOKEN = 1;
+localparam WR_STATE_RECV_DATA  = 2;
+localparam WR_STATE_RECV_CRC0  = 3;
+localparam WR_STATE_RECV_CRC1  = 4;
+localparam WR_STATE_SEND_DRESP = 5;
+localparam WR_STATE_BUSY       = 6;
 
 sdbuf buffer
 (
@@ -101,7 +102,7 @@ sdbuf conf
 	.q_b(config_dout)
 );
 
-reg [31:0] lba;
+reg [31:0] lba, new_lba;
 reg  [8:0] buffer_ptr;
 reg  [7:0] buffer_din;
 wire [7:0] buffer_dout;
@@ -109,7 +110,7 @@ wire [7:0] config_dout;
 reg        buffer_wr;
 
 always @(posedge clk_spi) begin
-	reg [1:0] read_state;
+	reg [2:0] read_state;
 	reg [2:0] write_state;
 	reg [6:0] sbuf;
 	reg       cmd55;
@@ -125,18 +126,11 @@ always @(posedge clk_spi) begin
 	reg       synced;
 	reg [5:0] ack;
 	reg       io_ack;
-	reg [2:0] write_prc;
 	reg [4:0] idle_cnt = 0;
+	reg [2:0] wait_m_cnt;
 
-	if(write_prc) begin
-		write_prc <= write_prc + 1'b1;
-		if(write_prc < 3) buffer_wr <= 1;
-		else if(write_prc < 5) buffer_wr <= 0;
-		else begin
-			buffer_ptr <= buffer_ptr + 1'b1;
-			write_prc <= 0;
-		end
-	end else buffer_wr <= 0;
+	if(buffer_wr & ~&buffer_ptr) buffer_ptr <= buffer_ptr + 1'd1;
+	buffer_wr <= 0;
 
 	ack <= {ack[4:0], sd_ack};
 	if(ack[5:4] == 2'b10) io_ack <= 1;
@@ -175,10 +169,11 @@ always @(posedge clk_spi) begin
 				if((cmd == 'h49) | (cmd ==  'h4a))
 					read_state <= RD_STATE_SEND_TOKEN;      // jump directly to data transmission
 						
-				// CMD17: READ_SINGLE_BLOCK
-				if(cmd == 'h51) begin
+				// CMD17/CMD18
+				if((cmd == 'h51) | (cmd == 'h52)) begin
 					io_ack <= 0;
 					read_state <= RD_STATE_WAIT_IO;         // start waiting for data from io controller
+					lba <= new_lba;
 					sd_rd <= 1;                      // trigger request to io controller
 				end
 			end
@@ -189,7 +184,6 @@ always @(posedge clk_spi) begin
 		else if((reply_len > 3) && (byte_cnt == 5+NCR+4)) miso <= reply3[~bit_cnt];
 		else begin
 			if(byte_cnt > 5+NCR && read_state==RD_STATE_IDLE && write_state==WR_STATE_IDLE) tx_finish <= 1;
-			miso <= 1;
 		end
 
 		// ---------- read state machine processing -------------
@@ -220,13 +214,31 @@ always @(posedge clk_spi) begin
 				miso <= ((cmd == 'h49) | (cmd == 'h4A)) ? config_dout[~bit_cnt] : buffer_dout[~bit_cnt];
 
 				if(bit_cnt == 7) begin
+
 					// sent 512 sector data bytes?
-					if((cmd == 'h51) & (&buffer_ptr[8:0])) read_state <= RD_STATE_IDLE;
+					if((cmd == 'h51) & &buffer_ptr) read_state <= RD_STATE_IDLE;
+					else if((cmd == 'h52) & &buffer_ptr) begin
+						read_state <= RD_STATE_WAIT_M;
+						wait_m_cnt <= 0;
+					end
 
 					// sent 16 cid/csd data bytes?
 					else if(((cmd == 'h49) | (cmd == 'h4a)) & (&buffer_ptr[3:0])) read_state <= RD_STATE_IDLE;
 
-					else buffer_ptr <= buffer_ptr + 1'd1;    // not done yet -> trigger read of next data byte
+					// not done yet -> trigger read of next data byte
+					else buffer_ptr <= buffer_ptr + 1'd1;
+				end
+			end
+
+			RD_STATE_WAIT_M: begin
+				if(bit_cnt == 7) begin
+					wait_m_cnt <= wait_m_cnt + 1'd1;
+					if(&wait_m_cnt) begin
+						lba <= lba + 1;
+						io_ack <= 0;
+						sd_rd <= 1;
+						read_state <= RD_STATE_WAIT_IO;
+					end
 				end
 			end
 		endcase
@@ -243,12 +255,33 @@ always @(posedge clk_spi) begin
 
 	   if(synced) bit_cnt <= bit_cnt + 1'd1;
 
-		if((bit_cnt != 7) && (write_state==WR_STATE_EXP_DTOKEN) && ({ sbuf, mosi} == 8'hfe )) begin
-			write_state <= WR_STATE_RECV_DATA;
-			bit_cnt <= 0; // atchoum
-		end
 		// assemble byte
-		else if(bit_cnt != 7) sbuf[6:0] <= { sbuf[5:0], mosi };
+		if(bit_cnt != 7) begin
+			sbuf[6:0] <= { sbuf[5:0], mosi };
+
+			// resync while waiting for token
+			if(write_state==WR_STATE_EXP_DTOKEN) begin
+				if(cmd == 'h58) begin
+					if({sbuf,mosi} == 8'hfe) begin
+						write_state <= WR_STATE_RECV_DATA;
+						buffer_ptr <= 0;
+						bit_cnt <= 0;
+					end
+				end
+				else begin
+					if({sbuf,mosi} == 8'hfc) begin
+						write_state <= WR_STATE_RECV_DATA;
+						buffer_ptr <= 0;
+						bit_cnt <= 0;
+					end
+					if({sbuf,mosi} == 8'hfd) begin
+						write_state <= WR_STATE_IDLE;
+						rx_finish <= 1;
+						bit_cnt <= 0;
+					end
+				end
+			end
+		end
 		else begin
 			// finished reading one byte
 			// byte counter runs against 15 byte boundary
@@ -265,11 +298,18 @@ always @(posedge clk_spi) begin
 			   cmd55 <= (cmd == 'h77);
 			end
 
+ 			if((byte_cnt > 5) & (read_state == RD_STATE_WAIT_M) && ({sbuf, mosi} == 8'h4c)) begin
+				byte_cnt <= 0;
+				rx_finish <= 0;
+				cmd <= {sbuf, mosi};
+				read_state <= RD_STATE_IDLE;
+			end
+
 			// parse additional command bytes
-			if(byte_cnt == 0) lba[31:24] <= { sbuf, mosi};
-			if(byte_cnt == 1) lba[23:16] <= { sbuf, mosi};
-			if(byte_cnt == 2) lba[15:8]  <= { sbuf, mosi};
-			if(byte_cnt == 3) lba[7:0]   <= { sbuf, mosi};
+			if(byte_cnt == 0) new_lba[31:24] <= { sbuf, mosi};
+			if(byte_cnt == 1) new_lba[23:16] <= { sbuf, mosi};
+			if(byte_cnt == 2) new_lba[15:8]  <= { sbuf, mosi};
+			if(byte_cnt == 3) new_lba[7:0]   <= { sbuf, mosi};
 
 			// last byte (crc) received, evaluate
 			if(byte_cnt == 4) begin
@@ -303,22 +343,30 @@ always @(posedge clk_spi) begin
 					// CMD10: SEND_CID
 					'h4a: reply <= 0;    // ok
 
+					// CMD12: STOP_TRANSMISSION 
+					'h4c: reply <= 0;    // ok
+
 					// CMD16: SET_BLOCKLEN
 					'h50: begin
 							// we only support a block size of 512
-							if(sd_lba == 512) reply <= 0;  // ok
+							if(new_lba == 512) reply <= 0;  // ok
 								else reply <= 'h40;         // parmeter error
 						end
 
 					// CMD17: READ_SINGLE_BLOCK
 					'h51: reply <= 0;    // ok
 
+					// CMD18: READ_MULTIPLE
+					'h52: reply <= 0;    // ok
+
 					// CMD24: WRITE_BLOCK
-					'h58: begin
+					'h58,
+					// CMD25: WRITE_MULTIPLE
+					'h59: begin
 							reply <= 0;    // ok
 							write_state <= WR_STATE_EXP_DTOKEN;  // expect data token
 							rx_finish <=0;
-							buffer_ptr <= 0;
+							lba <= new_lba;
 						end
 
 					// ACMD41: APP_SEND_OP_COND
@@ -349,17 +397,28 @@ always @(posedge clk_spi) begin
 				WR_STATE_IDLE: ;
 
 				// waiting for data token
-				WR_STATE_EXP_DTOKEN:
-					if({ sbuf, mosi} == 8'hfe ) write_state <= WR_STATE_RECV_DATA;
+				WR_STATE_EXP_DTOKEN: begin
+					buffer_ptr <= 0;
+					if(cmd == 'h58) begin
+						if({sbuf,mosi} == 8'hfe) write_state <= WR_STATE_RECV_DATA;
+					end
+					else begin
+						if({sbuf,mosi} == 8'hfc) write_state <= WR_STATE_RECV_DATA;
+						if({sbuf,mosi} == 8'hfd) begin
+							write_state <= WR_STATE_IDLE;
+							rx_finish <= 1;
+						end
+					end
+				end
 
 				// transfer 512 bytes
 				WR_STATE_RECV_DATA: begin
 					// push one byte into local buffer
-					write_prc  <= 1;
+					buffer_wr  <= 1;
 					buffer_din <= {sbuf, mosi};
 
 					// all bytes written?
-					if(buffer_ptr == 511) write_state <= WR_STATE_RECV_CRC0;
+					if(&buffer_ptr) write_state <= WR_STATE_RECV_CRC0;
 				end
 
 				// transfer 1st crc byte
@@ -374,14 +433,20 @@ always @(posedge clk_spi) begin
 				WR_STATE_SEND_DRESP: begin
 					write_state <= WR_STATE_BUSY;
 					io_ack <= 0;
-					sd_wr <= 1;               // trigger write request to io ontroller
+					sd_wr <= 1;
 				end
 
 				// wait for io controller to accept data
 				WR_STATE_BUSY:
 					if(io_ack) begin
-						write_state <= WR_STATE_IDLE;
-						rx_finish <= 1;
+						if(cmd == 'h59) begin
+							write_state <= WR_STATE_EXP_DTOKEN;
+							lba <= lba + 1;
+						end
+						else begin
+							write_state <= WR_STATE_IDLE;
+							rx_finish <= 1;
+						end
 					end
 			endcase
 		end
