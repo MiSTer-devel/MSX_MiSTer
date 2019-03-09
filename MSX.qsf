@@ -377,7 +377,7 @@ set_global_assignment -name VHDL_FILE video/vdp_wait_control.vhd
 set_global_assignment -name VHDL_FILE sound/scc/megaram.vhd
 set_global_assignment -name VHDL_FILE sound/scc/scc_wave.vhd
 set_global_assignment -name VHDL_FILE sound/psg/psg.vhd
-set_global_assignment -name VHDL_FILE sound/psg/psg_wave.vhd
+set_global_assignment -name SYSTEMVERILOG_FILE SOUND/psg/ym2149.sv
 set_global_assignment -name VHDL_FILE sound/opll/vm2413/AttackTable.vhd
 set_global_assignment -name VHDL_FILE sound/opll/vm2413/Controller.vhd
 set_global_assignment -name VHDL_FILE sound/opll/vm2413/EnvelopeGenerator.vhd

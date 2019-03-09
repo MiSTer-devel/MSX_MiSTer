@@ -62,150 +62,70 @@ end psg;
 
 architecture rtl of psg is
 
-    component psg_wave
-        port (
-            clk21m      : in    std_logic;
-            reset       : in    std_logic;
-            clkena      : in    std_logic;
-            req         : in    std_logic;
-            ack         : out   std_logic;
-            wrt         : in    std_logic;
-            adr         : in    std_logic_vector( 15 downto 0 );
-            dbi         : out   std_logic_vector(  7 downto 0 );
-            dbo         : in    std_logic_vector(  7 downto 0 );
-            wave        : out   std_logic_vector(  9 downto 0 ) -- fix caro
-        );
-    end component;
-
-    -- psg signals
-    signal psgdbi       : std_logic_vector(  7 downto 0 );
-    signal psgregptr    : std_logic_vector(  3 downto 0 );
-
-    signal rega         : std_logic_vector(  7 downto 0 );
-    signal regb         : std_logic_vector(  7 downto 0 );
+	signal rega         : std_logic_vector(  7 downto 0 );
+	signal regb         : std_logic_vector(  7 downto 0 );
+	signal cha,chb,chc  : std_logic_vector(  7 downto 0 );
+	 
+	component ym2149
+		port (
+			CLK       : in    std_logic;
+			CE        : in    std_logic;
+			RESET     : in    std_logic;
+			BDIR      : in    std_logic;
+			BC        : in    std_logic;
+			DI        : in    std_logic_vector(  7 downto 0 );
+			DO        : out   std_logic_vector(  7 downto 0 );
+			CHANNEL_A : out   std_logic_vector(  7 downto 0 );
+			CHANNEL_B : out   std_logic_vector(  7 downto 0 );
+			CHANNEL_C : out   std_logic_vector(  7 downto 0 );
+			
+			SEL       : in    std_logic;
+			MODE      : in    std_logic;
+			
+			IOA_in    : in    std_logic_vector(  7 downto 0 );
+			IOA_out   : out   std_logic_vector(  7 downto 0 );
+			
+			IOB_in    : in    std_logic_vector(  7 downto 0 );
+			IOB_out   : out   std_logic_vector(  7 downto 0 )
+		);
+	end component;
+	 
 
 begin
 
-    ----------------------------------------------------------------
-    -- psg register read
-    ----------------------------------------------------------------
-    dbi <=  rega    when( psgregptr = "1110" and adr(1 downto 0) = "10" )else
-            regb    when( psgregptr = "1111" and adr(1 downto 0) = "10" )else
-            psgdbi;
+	ym2149_inst : ym2149
+	port map
+	(
+		CLK       => clk21m,
+		CE        => clkena,
+		RESET     => reset,
+		BDIR      => not adr(1) and wrt and req,
+		BC        => not adr(0),
+		DI        => dbo,
+		DO        => dbi,
+		CHANNEL_A => cha,
+		CHANNEL_B => chb,
+		CHANNEL_C => chc,
+		
+		SEL       => '0',
+		MODE      => '0',
+		
+		IOA_in    => rega,
+		IOA_out   => open,
+		
+		IOB_in    => regb,
+		IOB_out   => regb
+	);
+	
+	wave <= ("00"&cha)+("00"&chb)+("00"&chc);
+	ack <= req;
+	
+	rega(5 downto 0) <= joya when regb(6) = '0' else joyb;
+	rega(6) <= keymode;     -- keyboard mode : 1=jis
+	rega(7) <= cmtin;       -- cassete voice input : always '0' on msx turbor
 
-    ----------------------------------------------------------------
-    -- psg register write
-    ----------------------------------------------------------------
-    process( reset, clk21m )
-    begin
-        if( reset = '1' )then
-            psgregptr   <= (others => '0');
-        elsif( clk21m'event and clk21m = '1' )then
-            if (req = '1' and wrt = '1' and adr(1 downto 0) = "00") then
-                -- register pointer
-                psgregptr <= dbo(3 downto 0);
-            end if;
-        end if;
-    end process;
-
-    process( reset, clk21m )
-    begin
-        if( reset = '1' )then
-            rega <= (others => '0');
-        elsif( clk21m'event and clk21m = '1' )then
-            -- psg register #15 bit6 - joystick select : 0=porta, 1=portb
-            if( regb(6) = '0' )then
-                rega(5 downto 0) <= joya;
-            else
-                rega(5 downto 0) <= joyb;
-            end if;
-
-            rega(7) <= cmtin;       -- cassete voice input : always '0' on msx turbor
-            rega(6) <= keymode;     -- keyboard mode : 1=jis
-        end if;
-    end process;
-
-    process( reset, clk21m )
-    begin
-        if( reset = '1' )then
-            regb        <= (others => '0');
-        elsif( clk21m'event and clk21m = '1' )then
-            if( req = '1' and wrt = '1' and adr(1 downto 0) = "01" )then
-                -- psg registers
-                if( psgregptr = "1111" )then
-                    regb <= dbo;
-                end if;
-            end if;
-        end if;
-    end process;
-
-    process( clk21m )
-    begin
-        if( clk21m'event and clk21m = '1' )then
-            -- strobe output
-            strb <= regb(5);
-            stra <= regb(4);
-        end if;
-    end process;
-
-    process( reset, clk21m )
-    begin
-        if( reset = '1' )then
-            kana <= '0';
-        elsif( clk21m'event and clk21m = '1' )then
-            if( regb(7) = '0' )then
-                kana <= '0'; -- kana-led : 0=on, Z=off
-            else
-                kana <= '1'; -- kana-led : 0=on, Z=off
-            end if;
-        end if;
-    end process;
-
---    process( reset, clk21m )
---    begin
---        if( reset = '1' )then
---            joya        <= (others => 'Z');
---        elsif( clk21m'event and clk21m = '1' )then
---            -- trigger a/b output joystick porta
---            case regb(1 downto 0) is
---                when "00"   => joya(5 downto 4) <= "00";
---                when "01"   => joya(5 downto 4) <= "0Z";
---                when "10"   => joya(5 downto 4) <= "Z0";
---                when others => joya(5 downto 4) <= "ZZ";
---            end case;
---        end if;
---    end process;
---
---    process( reset, clk21m )
---    begin
---        if( reset = '1' )then
---            joyb <= (others => 'Z');
---        elsif( clk21m'event and clk21m = '1' )then
---            -- trigger a/b output joystick portb
---            case regb( 3 downto 2 ) is
---                when "00"   => joyb(5 downto 4) <= "00";
---                when "01"   => joyb(5 downto 4) <= "0Z";
---                when "10"   => joyb(5 downto 4) <= "Z0";
---                when others => joyb(5 downto 4) <= "ZZ";
---            end case;
---        end if;
---    end process;
-
-    ----------------------------------------------------------------
-    -- connect components
-    ----------------------------------------------------------------
-    u_psgch: psg_wave
-    port map(
-        clk21m      => clk21m   ,
-        reset       => reset    ,
-        clkena      => clkena   ,
-        req         => req      ,
-        ack         => ack      ,
-        wrt         => wrt      ,
-        adr         => adr      ,
-        dbi         => psgdbi   ,
-        dbo         => dbo      ,
-        wave        => wave     
-    );
+	strb <= regb(5);
+	stra <= regb(4);
+	kana <= regb(7);
 
 end rtl;
