@@ -496,8 +496,14 @@ ARCHITECTURE RTL OF VDP IS
             RESET           : IN    STD_LOGIC;
             CLK21M          : IN    STD_LOGIC;
 
-            VDP_COMMAND     : IN    STD_LOGIC_VECTOR(  7 DOWNTO 4 );
-            HISPEED_MODE    : IN    STD_LOGIC;
+            VDP_COMMAND     : IN    STD_LOGIC_VECTOR(  7 DOWNTO  4 );
+
+            VDPR9PALMODE    : IN    STD_LOGIC;      -- 0=60Hz (NTSC), 1=50Hz (PAL)
+            REG_R1_DISP_ON  : IN    STD_LOGIC;      -- 0=Display Off, 1=Display On
+            REG_R8_SP_OFF   : IN    STD_LOGIC;      -- 0=Sprite On, 1=Sprite Off
+            REG_R9_Y_DOTS   : IN    STD_LOGIC;      -- 0=192 Lines, 1=212 Lines
+
+            VDPSPEEDMODE    : IN    STD_LOGIC;
             DRIVE           : IN    STD_LOGIC;
 
             ACTIVE          : OUT   STD_LOGIC
@@ -1271,7 +1277,7 @@ BEGIN
         IF (RESET = '1') THEN
 
             IRAMADR <= (OTHERS => '1');
-            PRAMDBO <= (OTHERS => 'Z');
+            PRAMDBO <= (OTHERS => '1');
             PRAMOE_N <= '1';
             PRAMWE_N <= '1';
 
@@ -1392,7 +1398,7 @@ BEGIN
                 ELSE
                     VDPVRAMACCESSADDR <= VDPVRAMACCESSADDRV + 1;
                 END IF;
-                PRAMDBO <= (OTHERS => 'Z');
+                PRAMDBO <= (OTHERS => '1');
                 PRAMOE_N <= '0';
                 PRAMWE_N <= '1';
                 VDPVRAMRDACK <= NOT VDPVRAMRDACK;
@@ -1420,7 +1426,7 @@ BEGIN
                 ELSE
                     IRAMADR <= VDPCMDVRAMACCESSADDR;
                 END IF;
-                PRAMDBO <= (OTHERS => 'Z');
+                PRAMDBO <= (OTHERS => '1');
                 PRAMOE_N <= '0';
                 PRAMWE_N <= '1';
                 VDPCMDVRAMREADINGR <= NOT VDPCMDVRAMREADINGA;
@@ -1429,13 +1435,13 @@ BEGIN
                 IRAMADR <= PRAMADRSPRITE;
                 PRAMOE_N <= '0';
                 PRAMWE_N <= '1';
-                PRAMDBO <= (OTHERS => 'Z');
+                PRAMDBO <= (OTHERS => '1');
             ELSE
                 -- VRAM_ACCESS_DRAW
                 -- VRAM READ FOR SCREEN IMAGE BUILDING
                 CASE DOTSTATE IS
                     WHEN "10" =>
-                        PRAMDBO <= (OTHERS => 'Z' );
+                        PRAMDBO <= (OTHERS => '1' );
                         PRAMOE_N <= '0';
                         PRAMWE_N <= '1';
                         IF( (VDPMODETEXT1 = '1') OR (VDPMODETEXT2 = '1') )THEN
@@ -1448,7 +1454,7 @@ BEGIN
                             IRAMADR <= PRAMADRG4567;
                         END IF;
                     WHEN "01" =>
-                        PRAMDBO <= (OTHERS => 'Z' );
+                        PRAMDBO <= (OTHERS => '1' );
                         PRAMOE_N <= '0';
                         PRAMWE_N <= '1';
                         IF( (VDPMODEGRAPHIC6 = '1') OR (VDPMODEGRAPHIC7 = '1') )THEN
@@ -1779,7 +1785,12 @@ BEGIN
         CLK21M              => CLK21M               ,
 
         VDP_COMMAND         => CUR_VDP_COMMAND      ,
-        HISPEED_MODE        => HISPEED_MODE         ,
+
+        VDPR9PALMODE        => VDPR9PALMODE         ,
+        REG_R1_DISP_ON      => REG_R1_DISP_ON       ,
+        REG_R8_SP_OFF       => REG_R8_SP_OFF        ,
+        REG_R9_Y_DOTS       => REG_R9_Y_DOTS        ,
+        VDPSPEEDMODE        => HISPEED_MODE         ,
         DRIVE               => VDP_COMMAND_DRIVE    ,
 
         ACTIVE              => VDP_COMMAND_ACTIVE

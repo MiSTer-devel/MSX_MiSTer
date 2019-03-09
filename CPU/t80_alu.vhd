@@ -1,7 +1,7 @@
 --
 -- Z80 compatible microprocessor core
 --
--- Version : 0249
+-- Version : 0250 (+k02)
 --
 -- Copyright (c) 2001-2002 Daniel Wallner (jesus@opencores.org)
 --
@@ -54,7 +54,11 @@
 --
 --  0247 : Cleanup
 --
---  0249 : add undocumented XY-Flags for CPI/CPD by TobiFlex 22.07.2012
+--  0249 : Added undocumented XY-Flags for CPI/CPD by TobiFlex 2012.07.22
+--
+--  0250 : Version alignment by KdL 2017.10.23
+--
+--  +k02 : Version alignment by KdL 2018.05.14
 --
 
 library IEEE;
@@ -63,15 +67,15 @@ use IEEE.numeric_std.all;
 
 entity T80_ALU is
     generic(
-        Mode   : integer := 0;
-        Flag_C : integer := 0;
-        Flag_N : integer := 1;
-        Flag_P : integer := 2;
-        Flag_X : integer := 3;
-        Flag_H : integer := 4;
-        Flag_Y : integer := 5;
-        Flag_Z : integer := 6;
-        Flag_S : integer := 7
+        Mode        : integer := 0;
+        Flag_C      : integer := 0;
+        Flag_N      : integer := 1;
+        Flag_P      : integer := 2;
+        Flag_X      : integer := 3;
+        Flag_H      : integer := 4;
+        Flag_Y      : integer := 5;
+        Flag_Z      : integer := 6;
+        Flag_S      : integer := 7
     );
     port(
         Arith16     : in std_logic;

@@ -29,6 +29,9 @@
 -- OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 -- ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
+-- 2018.07.27 modified by KdL
+-- Added optional scancode $61 '\|' to the English keyboard.
+--
 -- 2013.08.12 modified by KdL
 -- Added RWIN and LWIN usable as alternatives to the space-bar.
 --
@@ -76,7 +79,7 @@ constant rom101 : rom_101 := (
         X"7F", X"32", X"42", X"14", X"71", X"54", X"21", X"7F", -- 48
         X"7F", X"52", X"F0", X"7F", X"61", X"A1", X"7F", X"7F", -- 50
         X"36", X"06", X"77", X"12", X"7F", X"41", X"7F", X"7F", -- 58
-        X"7F", X"7F", X"7F", X"7F", X"1B", X"7F", X"57", X"3B", -- 60
+        X"7F", X"41", X"7F", X"7F", X"1B", X"7F", X"57", X"3B", -- 60
         X"7F", X"49", X"41", X"79", X"2A", X"7F", X"7F", X"7F", -- 68
         X"39", X"7A", X"59", X"0A", X"1A", X"3A", X"27", X"6A", -- 70
         X"7F", X"19", X"69", X"5A", X"09", X"4A", X"7F", X"7F", -- 78
@@ -144,7 +147,7 @@ constant rom101 : rom_101 := (
         X"FF", X"B2", X"C2", X"94", X"02", X"D4", X"D2", X"FF", -- 48
         X"FF", X"D2", X"A0", X"FF", X"E1", X"F1", X"FF", X"FF", -- 50
         X"B6", X"86", X"F7", X"92", X"FF", X"C1", X"FF", X"FF", -- 58
-        X"FF", X"FF", X"FF", X"FF", X"9B", X"FF", X"D7", X"BB", -- 60
+        X"FF", X"C1", X"FF", X"FF", X"9B", X"FF", X"D7", X"BB", -- 60
         X"FF", X"C9", X"C1", X"F9", X"AA", X"FF", X"FF", X"FF", -- 68
         X"B9", X"FA", X"D9", X"8A", X"9A", X"BA", X"A7", X"EA", -- 70
         X"FF", X"99", X"E9", X"DA", X"89", X"BA", X"FF", X"FF", -- 78

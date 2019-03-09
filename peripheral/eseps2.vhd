@@ -89,6 +89,7 @@ architecture RTL of eseps2 is
   signal oKeyCol : std_logic_vector(7 downto 0);
   signal MtxIdx  : std_logic_vector(10 downto 0);
   signal MtxPtr  : std_logic_vector(7 downto 0);
+  signal oFkeys  : std_logic_vector(7 downto 0);
 
   component ram is
     port (
@@ -126,7 +127,6 @@ begin
 
     variable Ps2Shif : std_logic;       -- real shift status
     variable Ps2Vshi : std_logic;       -- virtual shift status
-    variable oFkeys  : std_logic_vector(7 downto 0);
 
     variable KeyId   : std_logic_vector(8 downto 0);
 
@@ -136,36 +136,35 @@ begin
 
   begin
 
-    if( reset = '1' )then
+    if rising_edge(clk21m) then
+       if( reset = '1' )then
+   
+         Ps2Seq  := Ps2Idle;
+         Ps2Chg  := '0';
+         Ps2brk  := '0';
+         Ps2xE0  := '0';
+         Ps2xE1  := '0';
+         Ps2Cnt  := (others => '0');
+         Ps2Clk  := (others => '1');
+         Ps2Dat  := (others => '1');
+         timout  := (others => '1');
+         Ps2Vshi := '0';
+         Ps2Skp  := "000";
+   
+         Paus    <= '0';
+         Reso    <= '0';                   -- Sync to ff_Reso
+         Scro    <= '0';                   -- Sync to ff_Scro
+         oFkeys  <= (others => '0');       -- Sync to vFkeys
+   
+         MtxSeq  := MtxIdle;
+   
+         pKeyX   <= (others => '1');
+   
+         KeyWe   <= '0';
+         KeyRow  <= (others => '0');
+         iKeyCol <= (others => '0');
 
-      Ps2Seq  := Ps2Idle;
-      Ps2Chg  := '0';
-      Ps2brk  := '0';
-      Ps2xE0  := '0';
-      Ps2xE1  := '0';
-      Ps2Cnt  := (others => '0');
-      Ps2Clk  := (others => '1');
-      Ps2Dat  := (others => '1');
-      timout  := (others => '1');
-      Ps2Vshi := '0';
-      Ps2Skp  := "000";
-
-      Paus    <= '0';
-      Reso    <= '0';                   -- Sync to ff_Reso
-      Scro    <= '0';                   -- Sync to ff_Scro
-      oFkeys  := (others => '0');       -- Sync to vFkeys
-
-      MtxSeq  := MtxIdle;
-
-      pKeyX   <= (others => '1');
-
-      KeyWe   <= '0';
-      KeyRow  <= (others => '0');
-      iKeyCol <= (others => '0');
-
-    elsif( clk21m'event and clk21m = '1' )then
-
-      if clkena = '1' then
+		elsif clkena = '1' then
         -- "Scan table > MSX key-matrix" conversion
         case MtxSeq is
           when MtxIdle =>
@@ -299,32 +298,32 @@ begin
               Ps2Chg := '1';
             elsif( Ps2Dat = X"7D" and Ps2xE0 = '1' and Ps2xE1 = '0' )then -- PgUp make
               if Ps2brk = '0' then
-                oFkeys(5) := not oFkeys(5);
+                oFkeys(5) <= not oFkeys(5);
               end if;
               Ps2Chg := '1';
             elsif( Ps2Dat = X"7A" and Ps2xE0 = '1' and Ps2xE1 = '0' )then -- PgDn make
               if Ps2brk = '0' then
-                oFkeys(4) := not oFkeys(4);
+                oFkeys(4) <= not oFkeys(4);
               end if;
               Ps2Chg := '1';
             elsif( Ps2Dat = X"01" and Ps2xE0 = '0' and Ps2xE1 = '0' )then -- F9 make
               if Ps2brk = '0' then
-                oFkeys(3) := not oFkeys(3);
+                oFkeys(3) <= not oFkeys(3);
               end if;
               Ps2Chg := '1';
             elsif( Ps2Dat = X"09" and Ps2xE0 = '0' and Ps2xE1 = '0' )then -- F10 make
               if Ps2brk = '0' then
-                oFkeys(2) := not oFkeys(2);
+                oFkeys(2) <= not oFkeys(2);
               end if;
               Ps2Chg := '1';
             elsif( Ps2Dat = X"78" and Ps2xE0 = '0' and Ps2xE1 = '0' )then -- F11 make
               if Ps2brk = '0' then
-                oFkeys(1) := not oFkeys(1);
+                oFkeys(1) <= not oFkeys(1);
               end if;
               Ps2Chg := '1';
             elsif( Ps2Dat = X"07" and Ps2xE0 = '0' and Ps2xE1 = '0' )then -- F12 make
               if Ps2brk = '0' then
-                oFkeys(0) := not oFkeys(0);     --  old toggle OnScreenDisplay enable
+                oFkeys(0) <= not oFkeys(0);     --  old toggle OnScreenDisplay enable
               end if;
               Ps2Chg := '1';
             elsif( Ps2Dat = X"7E" and Ps2xE0 = '0' and Ps2xE1 = '0' )then -- scroll-lock make
@@ -337,7 +336,7 @@ begin
               Ps2Chg := '1';
             elsif( (Ps2Dat = X"12" or Ps2Dat = X"59") and Ps2xE0 = '0' and Ps2xE1 ='0' )then -- shift make
               Ps2Shif:= not Ps2brk;
-              oFkeys(7) := Ps2Shif;
+              oFkeys(7) <= Ps2Shif;
               Ps2Chg := '1';
             elsif( Ps2Dat = X"F0" )then -- break code
               Ps2brk := '1';
@@ -373,10 +372,9 @@ begin
       end if;
 
     end if;
-
-    Fkeys <= oFkeys;
-
   end process;
+
+  Fkeys <= oFkeys;
 
   U1 : ram    port map( KeyRow, clk21m, KeyWe, iKeyCol, oKeyCol );
   U2 : keymap port map( MtxIdx, clk21m, MtxPtr );

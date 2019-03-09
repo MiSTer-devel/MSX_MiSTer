@@ -1,7 +1,7 @@
 --
 -- T80 Registers, technology independent
 --
--- Version : 0244
+-- Version : 0250 (+k02)
 --
 -- Copyright (c) 2002 Daniel Wallner (jesus@opencores.org)
 --
@@ -47,6 +47,10 @@
 --  0242 : Initial release
 --
 --  0244 : Changed to single register file
+--
+--  0250 : Version alignment by KdL 2017.10.23
+--
+--  +k02 : Version alignment by KdL 2018.05.14
 --
 
 library IEEE;

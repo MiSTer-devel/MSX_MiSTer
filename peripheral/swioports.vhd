@@ -90,7 +90,7 @@ entity switched_io_ports is
         ff_Reso         : in    std_logic;
         FKeys           : in    std_logic_vector(  7 downto 0 );
         vFKeys          : in    std_logic_vector(  7 downto 0 );
-        LevCtrl         : inout std_logic_vector(  2 downto 0 );            -- Volume and high-speed level
+        LevCtrl         : out   std_logic_vector(  2 downto 0 );            -- Volume and high-speed level
         GreenLvEna      : out   std_logic;
         -- 'RESET' group
         swioRESET_n     : inout std_logic;                                  -- Reset Pulse
@@ -113,11 +113,11 @@ architecture RTL of switched_io_ports is
     signal  swio_ack    : std_logic;
 
     -- 'OCM-PLD' version number (x \ 10).(y mod 10).(z(0~3))                -- OCM-PLD version 0.0(.0) ~ 25.5(.3)
-    signal  ocm_pld_xy  : std_logic_vector(  7 downto 0 ) := "00100011";    -- 35
-    signal  ocm_pld_z   : std_logic_vector(  1 downto 0 ) :=       "00";    -- 0
+    constant  ocm_pld_xy  : std_logic_vector(  7 downto 0 ) := "00100011";    -- 35
+    constant  ocm_pld_z   : std_logic_vector(  1 downto 0 ) :=       "00";    -- 0
 
     -- 'Switched I/O Ports' revision number (0-31)                          -- Switched I/O ports Revision 0 ~ 31
-    signal  swioRevNr   : std_logic_vector(  4 downto 0 ) :=    "00110";    -- 6
+    constant  swioRevNr   : std_logic_vector(  4 downto 0 ) :=    "00110";    -- 6
 
 begin
     -- out assignment: 'ports $40-$4F'
@@ -169,12 +169,13 @@ begin
         if rising_edge(clk21m)then
           if( reset = '1' )then
 
+			   LevCtrl         <=  "000";
             swioRESET_n     <=  '1';                    -- End of Reset pulse
             io40_n          <=  "11111111";             -- Default Port $40 after any reboot
             vram_slot_ids   <=  "00010000";             -- Default VRAM Slot IDs after any reboot
 --          =============================================================================================================
             DefKmap         <=  '1';                    -- Default Keyboard     0=Japanese Layout   1=Non-Japanese Layout
-            ZemmixNeo       <=  '0';                    -- Machine Type         0=1chipMSX          1=Zemmix Neo
+            ZemmixNeo       <=  '1';                    -- Machine Type         0=1chipMSX          1=Zemmix Neo
 --          =============================================================================================================
             if( warmRESET /= '1' )then
                 -- Cold Reset
@@ -846,8 +847,10 @@ begin
     begin
         if( reset = '1' )then
             swio_ack    <= '0';
-        elsif( clk21m'event and clk21m = '1' and warmRESET /= '1' )then
-            swio_ack    <= req;                                             -- Protected during Warm Reset
+        elsif( clk21m'event and clk21m = '1') then
+			   if(warmRESET /= '1' )then
+               swio_ack    <= req;                                             -- Protected during Warm Reset
+				end if;
         end if;
     end process;
 

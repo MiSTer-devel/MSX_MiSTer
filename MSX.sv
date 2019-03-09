@@ -143,9 +143,10 @@ localparam CONF_STR = {
 	"-;",
 	"O7,Internal Mapper,2048KB RAM,4096KB RAM;",
 	"-;",
-	"TA,Reset;",
+	"RA,Warm Reset;",
+	"R0,Cold Reset;",
 	"J,Fire 1,Fire 2;",
-	"V,v3.50.21.",`BUILD_DATE
+	"V,v",`BUILD_DATE
 };
 
 

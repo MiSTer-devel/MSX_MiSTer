@@ -107,24 +107,26 @@ architecture RTL of emsx_top is
     -- CPU
     component t80a
         port(
-            RESET_n     : in    std_logic;
-            RstKeyLock  : inout std_logic;
-            swioRESET_n : inout std_logic;
-            CLK_n       : in    std_logic;
-            WAIT_n      : in    std_logic;
-            INT_n       : in    std_logic;
-            NMI_n       : in    std_logic;
-            BUSRQ_n     : in    std_logic;
-            M1_n        : out   std_logic;
-            MREQ_n      : out   std_logic;
-            IORQ_n      : out   std_logic;
-            RD_n        : out   std_logic;
-            WR_n        : out   std_logic;
-            RFSH_n      : out   std_logic;
-            HALT_n      : out   std_logic;
-            BUSAK_n     : out   std_logic;
-            A           : out   std_logic_vector( 15 downto 0 );
-            D           : inout std_logic_vector(  7 downto 0 )
+            RESET_n     : in  std_logic;
+            RstKeyLock  : in  std_logic;
+            swioRESET_n : in  std_logic;
+            portF4_mode : in  std_logic;
+            CLK_n       : in  std_logic;
+            WAIT_n      : in  std_logic;
+            INT_n       : in  std_logic;
+            NMI_n       : in  std_logic;
+            BUSRQ_n     : in  std_logic;
+            M1_n        : out std_logic;
+            MREQ_n      : out std_logic;
+            IORQ_n      : out std_logic;
+            RD_n        : out std_logic;
+            WR_n        : out std_logic;
+            RFSH_n      : out std_logic;
+            HALT_n      : out std_logic;
+            BUSAK_n     : out std_logic;
+            A           : out std_logic_vector( 15 downto 0 );
+            DO          : out std_logic_vector(  7 downto 0 );
+            DI          : in  std_logic_vector(  7 downto 0 )
         );
     end component;
 
@@ -529,7 +531,6 @@ architecture RTL of emsx_top is
 
     -- MSX cartridge slot control signals
     signal  BusDir          : std_logic;
-    signal  iSltSltsl_n     : std_logic;
     signal  iSltRfsh_n      : std_logic;
     signal  iSltMerq_n      : std_logic;
     signal  iSltIorq_n      : std_logic;
@@ -538,9 +539,10 @@ architecture RTL of emsx_top is
     signal  iSltAdr         : std_logic_vector( 15 downto 0 );
     signal  iSltDat         : std_logic_vector(  7 downto 0 );
     signal  dlydbi          : std_logic_vector(  7 downto 0 );
-    signal  BusReq_n        : std_logic;
     signal  CpuM1_n         : std_logic;
     signal  CpuRfsh_n       : std_logic;
+    signal  cpu_di          : std_logic_vector(  7 downto 0 );
+    signal  cpu_do          : std_logic_vector(  7 downto 0 );
 
     -- Internal bus signals (common)
     signal  req             : std_logic;
@@ -620,7 +622,6 @@ architecture RTL of emsx_top is
     signal  Scro            : std_logic;
     signal  Reso            : std_logic;
     signal  Reso_v          : std_logic;
-    signal  Kana            : std_logic;
     signal  Fkeys           : std_logic_vector(  7 downto 0 );
 
     -- 1 bit sound port signal
@@ -758,7 +759,6 @@ architecture RTL of emsx_top is
     signal  pSltRd_n        : std_logic;
     signal  pSltWr_n        : std_logic;
     signal  pSltAdr         : std_logic_vector( 15 downto 0 );
-    signal  pSltDat         : std_logic_vector(  7 downto 0 );
 
     signal  pSltRfsh_n      : std_logic;
     signal  pSltWait_n      : std_logic;
@@ -919,8 +919,8 @@ begin
     -- virtual DIP-SW assignment (2/2)
     process( clk21m )
     begin
-        if( clk21m'event and clk21m = '1' and SdPaus = '0' )then
-            if( FirstBoot_n /= '1' or RstEna = '1' )then
+        if( clk21m'event and clk21m = '1') then
+            if(SdPaus = '0' and ( FirstBoot_n /= '1' or RstEna = '1' ))then
                 if( w_10hz = '1' )then
                     CmtScro           <=  swioCmt;
                     DisplayMode(1)    <=  io42_id212(1);
@@ -930,11 +930,13 @@ begin
                     Slot2Mode(0)      <=  io42_id212(5);
                 end if;
             end if;
+				
+            -- keyboard layout assignment
+            if( w_10hz = '1' )then
+               Kmap <=  swioKmap;
+				end if;
         end if;
     end process;
-
-    -- keyboard layout assignment
-    Kmap        <=  swioKmap        when( w_10hz = '1' );
 
     -- cpu clock assignment
     trueClk     <=  '1'             when( SdPaus /= '0' )else
@@ -966,7 +968,7 @@ begin
     end process;
 
     -- hard reset timer
-    process( pSltRst_n, clk21m )
+    process( pSltRst_n, clk21m, HardRst_cnt )
     begin
         if( RstKeyLock = '0' )then
             if( pSltRst_n /= '0' )then
@@ -1112,7 +1114,7 @@ begin
     end process;
 
     -- power LED
-    process( reset, clk21m )
+    process( reset, clk21m, ZemmixNeo )
     begin
         if( reset = '1' )then
             pLedPwr <= clk21m or ZemmixNeo;                 -- lights test holding the hard reset
@@ -1266,8 +1268,7 @@ begin
 
     pSltInt_n   <=  pVdpInt_n;
 
-    pSltDat     <=  (others => 'Z') when pSltRd_n = '1' else
-                    dbi when( pSltIorq_n = '0' and BusDir    = '1' )else
+    cpu_di      <=  dbi when( pSltIorq_n = '0' and BusDir    = '1' )else
                     dbi when( pSltMerq_n = '0' and PriSltNum = "00" )else
                     dbi when( pSltMerq_n = '0' and PriSltNum = "11" )else
                     dbi when( pSltMerq_n = '0' and PriSltNum = "01" and Scc1Type /= "00" )else
@@ -1344,7 +1345,6 @@ begin
 
         if( reset = '1' )then
 
-            iSltSltsl_n     <= '1';
             iSltRfsh_n      <= '1';
             iSltMerq_n      <= '1';
             iSltIorq_n      <= '1';
@@ -1367,9 +1367,9 @@ begin
             xSltRd_n        <= pSltRd_n;
             xSltWr_n        <= pSltWr_n;
             iSltAdr         <= pSltAdr;
-            iSltDat         <= pSltDat;
+            iSltDat         <= cpu_do;
 
-            if (iSltSltsl_n = '1' and iSltMerq_n  = '1' and iSltIorq_n = '1') then
+            if (iSltMerq_n  = '1' and iSltIorq_n = '1') then
                 iack <= '0';
             elsif( ack = '1' )then
                 iack <= '1';
@@ -1494,10 +1494,10 @@ begin
     ----------------------------------------------------------------
     -- port F4
     ----------------------------------------------------------------
-    process( clk21m, reset )
+    process( clk21m, pColdReset )
     begin
-        if( reset = '1' )then
-            portF4_bit7 <= not LastRst_sta;
+        if(pColdReset = '1') then
+            portF4_bit7 <= '0';
         elsif( clk21m'event and clk21m = '1' )then
             if( portF4_req = '1' and wrt = '1' )then
                 portF4_bit7 <= dbo(7);
@@ -1680,7 +1680,7 @@ begin
     VdpReq  <=  req when( mem = '0' and adr(7 downto 2) = "100110"  )else '0';      -- I/O:98-9Bh   / VDP (V9938/V9958)
     PsgReq  <=  req when( mem = '0' and adr(7 downto 2) = "101000"  )else '0';      -- I/O:A0-A3h   / PSG (AY-3-8910)
     PpiReq  <=  req when( mem = '0' and adr(7 downto 2) = "101010"  )else '0';      -- I/O:A8-ABh   / PPI (8255)
-    OpllReq <=  req when( mem = '0' and adr(7 downto 1) = "0111110" )else '0';      -- I/O:7C-7Dh   / OPLL (YM2413)
+    OpllReq <=  req when( mem = '0' and adr(7 downto 1) = "0111110" and Slot0Mode = '1' )else '0';  -- I/O:7C-7Dh   / OPLL (YM2413)
     KanReq  <=  req when( mem = '0' and adr(7 downto 2) = "110110"  )else '0';      -- I/O:D8-DBh   / Kanji-data
     RomReq  <=  req when( (rom_main or rom_opll or rom_extd or rom_xbas or rom_free) = '1')else '0';
     MapReq  <=  req when( mem = '0' and adr(7 downto 2) = "111111"  )else           -- I/O:FC-FFh   / Memory-mapper
@@ -2045,6 +2045,8 @@ begin
 --      end if;
 --  end process;
 
+    SdPaus <= '0';
+
     -- SDRAM controller state
     process( memclk )
     begin
@@ -2074,10 +2076,12 @@ begin
             elsif( VideoDLClk = '0' and VideoDHClk = '1' )then
                 RamAck <= '1';
             end if;
+				
+				if( VideoDLClk = '0' ) then
+					vram_page <= vram_slot_ids;
+				end if;
         end if;
     end process;
-
-    vram_page   <= vram_slot_ids when ( VideoDLClk = '0' );
 
     pMemCke     <= '1';
     pMemCs_n    <= SdrCmd(3);
@@ -2101,11 +2105,12 @@ begin
             RESET_n     => pSltRst_n,
             RstKeyLock  => RstKeyLock,
             swioRESET_n => swioRESET_n,
+            portF4_mode => portF4_mode,
             CLK_n       => trueClk,
             WAIT_n      => pSltWait_n,
             INT_n       => pSltInt_n,
             NMI_n       => '1',
-            BUSRQ_n     => BusReq_n,
+            BUSRQ_n     => '1',
             M1_n        => CpuM1_n,
             MREQ_n      => pSltMerq_n,
             IORQ_n      => pSltIorq_n,
@@ -2115,9 +2120,9 @@ begin
             HALT_n      => open,
             BUSAK_n     => open,
             A           => pSltAdr,
-            D           => pSltDat
+            DI          => cpu_di,
+            DO          => cpu_do
         );
-        BusReq_n    <= '1';
 
     U02 : iplrom
         port map(clk21m, adr, RomDbi);
@@ -2152,7 +2157,7 @@ begin
 
     U30 : psg
         port map(clk21m, reset, clkena, PsgReq, open, wrt, adr, PsgDbi, dbo,
-                        pJoyA, pStrA, pJoyB, pStrB, Kana, '0', w_key_mode, PsgAmp);
+                        pJoyA, pStrA, pJoyB, pStrB, open, '0', w_key_mode, PsgAmp);
 
     U31_1 : megaram
         port map(clk21m, reset, clkena, Scc1Req, Scc1Ack, wrt, adr, Scc1Dbi, dbo,
@@ -2233,7 +2238,7 @@ begin
 
         SdPaus          => SdPaus       ,
         Scro            => Scro         ,
-        ff_Scro         => ff_Scro      ,
+        ff_Scro         => '0'          , --ff_Scro      ,
         Reso            => Reso         ,
         ff_Reso         => ff_Reso      ,
         FKeys           => FKeys        ,

@@ -107,7 +107,7 @@ begin
 		CHANNEL_B => chb,
 		CHANNEL_C => chc,
 		
-		SEL       => '0',
+		SEL       => '1',
 		MODE      => '0',
 		
 		IOA_in    => rega,

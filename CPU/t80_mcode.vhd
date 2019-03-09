@@ -1,7 +1,7 @@
 --
 -- Z80 compatible microprocessor core
 --
--- Version : 0249
+-- Version : 0250 (+k02)
 --
 -- Copyright (c) 2001-2002 Daniel Wallner (jesus@opencores.org)
 --
@@ -38,34 +38,38 @@
 -- you have the latest version of this file.
 --
 -- The latest version of this file can be found at:
---      http://www.opencores.org/cvsweb.shtml/t80/
+--  http://www.opencores.org/cvsweb.shtml/t80/
 --
 -- Limitations :
 --
 -- File history :
 --
---      0208 : First complete release
+--  0208 : First complete release
 --
---      0211 : Fixed IM 1
+--  0211 : Fixed IM 1
 --
---      0214 : Fixed mostly flags, only the block instructions now fail the zex regression test
+--  0214 : Fixed mostly flags, only the block instructions now fail the zex regression test
 --
---      0235 : Added IM 2 fix by Mike Johnson
+--  0235 : Added IM 2 fix by Mike Johnson
 --
---      0238 : Added NoRead signal
+--  0238 : Added NoRead signal
 --
---      0238b: Fixed instruction timing for POP and DJNZ
+--  0238b: Fixed instruction timing for POP and DJNZ
 --
---      0240 : Added (IX/IY+d) states, removed op-codes from mode 2 and added all remaining mode 3 op-codes
+--  0240 : Added (IX/IY+d) states, removed op-codes from mode 2 and added all remaining mode 3 op-codes
 --
---      0242 : Fixed I/O instruction timing, cleanup
+--  0242 : Fixed I/O instruction timing, cleanup
 --
---      0242a: 31st of August, 2003 by Kazuhiro Tsujikawa (tujikawa@hat.hi-ho.ne.jp)
---             Fixed INI, IND, INIR, INDR, OUTI, OUTD, OTIR, OTDR instructions
+--  0242a: 31st of August, 2003 by Kazuhiro Tsujikawa (tujikawa@hat.hi-ho.ne.jp)
+--         Fixed INI, IND, INIR, INDR, OUTI, OUTD, OTIR, OTDR instructions
 --
---      0248 : add undocumented DDCB and FDCB opcodes by TobiFlex 20.04.2010
+--  0248 : Added undocumented DDCB and FDCB opcodes by TobiFlex 2010.04.20
 --
---      0249 : add undocumented XY-Flags for CPI/CPD by TobiFlex 22.07.2012
+--  0249 : Added undocumented XY-Flags for CPI/CPD by TobiFlex 2012.07.22
+--
+--  0250 : Added R800 Multiplier by TobiFlex 2017.10.15
+--
+--  +k02 : Added portF4_mode signal by KdL 2018.05.14
 --
 
 library IEEE;
@@ -74,73 +78,77 @@ use IEEE.numeric_std.all;
 
 entity T80_MCode is
         generic(
-                Mode : integer := 0;
-                Flag_C : integer := 0;
-                Flag_N : integer := 1;
-                Flag_P : integer := 2;
-                Flag_X : integer := 3;
-                Flag_H : integer := 4;
-                Flag_Y : integer := 5;
-                Flag_Z : integer := 6;
-                Flag_S : integer := 7
+                Mode        : integer := 0;
+                R800_MULU   : integer := 1;  -- 0 => no MULU, 1=> R800 MULU
+                Flag_C      : integer := 0;
+                Flag_N      : integer := 1;
+                Flag_P      : integer := 2;
+                Flag_X      : integer := 3;
+                Flag_H      : integer := 4;
+                Flag_Y      : integer := 5;
+                Flag_Z      : integer := 6;
+                Flag_S      : integer := 7
         );
         port(
-                IR                      : in std_logic_vector(7 downto 0);
-                ISet                    : in std_logic_vector(1 downto 0);
-                MCycle                  : in std_logic_vector(2 downto 0);
-                F                       : in std_logic_vector(7 downto 0);
-                NMICycle                : in std_logic;
-                IntCycle                : in std_logic;
-                XY_State                : in std_logic_vector(1 downto 0);
-                MCycles                 : out std_logic_vector(2 downto 0);
-                TStates                 : out std_logic_vector(2 downto 0);
-                Prefix                  : out std_logic_vector(1 downto 0); -- None,CB,ED,DD/FD
-                Inc_PC                  : out std_logic;
-                Inc_WZ                  : out std_logic;
-                IncDec_16               : out std_logic_vector(3 downto 0); -- BC,DE,HL,SP   0 is inc
-                Read_To_Reg             : out std_logic;
-                Read_To_Acc             : out std_logic;
-                Set_BusA_To     : out std_logic_vector(3 downto 0); -- B,C,D,E,H,L,DI/DB,A,SP(L),SP(M),0,F
-                Set_BusB_To     : out std_logic_vector(3 downto 0); -- B,C,D,E,H,L,DI,A,SP(L),SP(M),1,F,PC(L),PC(M),0
-                ALU_Op                  : out std_logic_vector(3 downto 0);
+                IR          : in std_logic_vector(7 downto 0);
+                ISet        : in std_logic_vector(1 downto 0);
+                MCycle      : in std_logic_vector(2 downto 0);
+                F           : in std_logic_vector(7 downto 0);
+                NMICycle    : in std_logic;
+                IntCycle    : in std_logic;
+                XY_State    : in std_logic_vector(1 downto 0);
+                MCycles     : out std_logic_vector(2 downto 0);
+                TStates     : out std_logic_vector(2 downto 0);
+                Prefix      : out std_logic_vector(1 downto 0); -- None,CB,ED,DD/FD
+                Inc_PC      : out std_logic;
+                Inc_WZ      : out std_logic;
+                IncDec_16   : out std_logic_vector(3 downto 0); -- BC,DE,HL,SP   0 is inc
+                Read_To_Reg : out std_logic;
+                Read_To_Acc : out std_logic;
+                Set_BusA_To : out std_logic_vector(3 downto 0); -- B,C,D,E,H,L,DI/DB,A,SP(L),SP(M),0,F
+                Set_BusB_To : out std_logic_vector(3 downto 0); -- B,C,D,E,H,L,DI,A,SP(L),SP(M),1,F,PC(L),PC(M),0
+                ALU_Op      : out std_logic_vector(3 downto 0);
                         -- ADD, ADC, SUB, SBC, AND, XOR, OR, CP, ROT, BIT, SET, RES, DAA, RLD, RRD, None
-                ALU_cpi                 : out std_logic; --for undoc XY-Flags
-                Save_ALU                : out std_logic;
-                PreserveC               : out std_logic;
-                Arith16                 : out std_logic;
-                Set_Addr_To             : out std_logic_vector(2 downto 0); -- aNone,aXY,aIOA,aSP,aBC,aDE,aZI
-                IORQ                    : out std_logic;
-                Jump                    : out std_logic;
-                JumpE                   : out std_logic;
-                JumpXY                  : out std_logic;
-                Call                    : out std_logic;
-                RstP                    : out std_logic;
-                LDZ                             : out std_logic;
-                LDW                             : out std_logic;
-                LDSPHL                  : out std_logic;
-                Special_LD              : out std_logic_vector(2 downto 0); -- A,I;A,R;I,A;R,A;None
-                ExchangeDH              : out std_logic;
-                ExchangeRp              : out std_logic;
-                ExchangeAF              : out std_logic;
-                ExchangeRS              : out std_logic;
-                I_DJNZ                  : out std_logic;
-                I_CPL                   : out std_logic;
-                I_CCF                   : out std_logic;
-                I_SCF                   : out std_logic;
-                I_RETN                  : out std_logic;
-                I_BT                    : out std_logic;
-                I_BC                    : out std_logic;
-                I_BTR                   : out std_logic;
-                I_RLD                   : out std_logic;
-                I_RRD                   : out std_logic;
-                I_INRC                  : out std_logic;
-                SetDI                   : out std_logic;
-                SetEI                   : out std_logic;
-                IMode                   : out std_logic_vector(1 downto 0);
-                Halt                    : out std_logic;
-                NoRead                  : out std_logic;
-                Write                   : out std_logic;
-                XYbit_undoc             : out std_logic
+                ALU_cpi     : out std_logic;    --for undoc XY-Flags       
+                Save_ALU    : out std_logic;
+                PreserveC   : out std_logic;
+                Arith16     : out std_logic;
+                Set_Addr_To : out std_logic_vector(2 downto 0); -- aNone,aXY,aIOA,aSP,aBC,aDE,aZI
+                IORQ        : out std_logic;
+                Jump        : out std_logic;
+                JumpE       : out std_logic;
+                JumpXY      : out std_logic;
+                Call        : out std_logic;
+                RstP        : out std_logic;
+                LDZ         : out std_logic;
+                LDW         : out std_logic;
+                LDSPHL      : out std_logic;
+                Special_LD  : out std_logic_vector(2 downto 0); -- A,I;A,R;I,A;R,A;None
+                ExchangeDH  : out std_logic;
+                ExchangeRp  : out std_logic;
+                ExchangeAF  : out std_logic;
+                ExchangeRS  : out std_logic;
+                I_DJNZ      : out std_logic;
+                I_CPL       : out std_logic;
+                I_CCF       : out std_logic;
+                I_SCF       : out std_logic;
+                I_RETN      : out std_logic;
+                I_BT        : out std_logic;
+                I_BC        : out std_logic;
+                I_BTR       : out std_logic;
+                I_RLD       : out std_logic;
+                I_RRD       : out std_logic;
+                I_INRC      : out std_logic;
+                I_MULUB     : out std_logic;
+                I_MULU      : out std_logic;
+                SetDI       : out std_logic;
+                SetEI       : out std_logic;
+                IMode       : out std_logic_vector(1 downto 0);
+                Halt        : out std_logic;
+                NoRead      : out std_logic;
+                Write       : out std_logic;
+                XYbit_undoc : out std_logic;
+                portF4_mode : in  std_logic
         );
 end T80_MCode;
 
@@ -186,7 +194,7 @@ architecture rtl of T80_MCode is
 
 begin
 
-        process (IR, ISet, MCycle, F, NMICycle, IntCycle, XY_State)
+        process (IR, ISet, MCycle, F, NMICycle, IntCycle, XY_State, portF4_mode)
                 variable DDD : std_logic_vector(2 downto 0);
                 variable SSS : std_logic_vector(2 downto 0);
                 variable DPair : std_logic_vector(1 downto 0);
@@ -242,6 +250,8 @@ begin
                 I_RLD <= '0';
                 I_RRD <= '0';
                 I_INRC <= '0';
+                I_MULUB <= '0';
+                I_MULU <= '0';
                 SetDI <= '0';
                 SetEI <= '0';
                 IMode <= "11";
@@ -1579,13 +1589,13 @@ begin
                                 |                                            "10101100"|"10101101"|"10101110"|"10101111"
                                 |                                            "10110100"|"10110101"|"10110110"|"10110111"
                                 |                                            "10111100"|"10111101"|"10111110"|"10111111"
-                                |"11000000"|"11000001"|"11000010"|"11000011"|"11000100"|"11000101"|"11000110"|"11000111"
-                                |"11001000"|"11001001"|"11001010"|"11001011"|"11001100"|"11001101"|"11001110"|"11001111"
-                                |"11010000"|"11010001"|"11010010"|"11010011"|"11010100"|"11010101"|"11010110"|"11010111"
-                                |"11011000"|"11011001"|"11011010"|"11011011"|"11011100"|"11011101"|"11011110"|"11011111"
+                                |"11000000"|           "11000010"|           "11000100"|"11000101"|"11000110"|"11000111"
+                                |"11001000"|           "11001010"|"11001011"|"11001100"|"11001101"|"11001110"|"11001111"
+                                |"11010000"|           "11010010"|"11010011"|"11010100"|"11010101"|"11010110"|"11010111"
+                                |"11011000"|           "11011010"|"11011011"|"11011100"|"11011101"|"11011110"|"11011111"
                                 |"11100000"|"11100001"|"11100010"|"11100011"|"11100100"|"11100101"|"11100110"|"11100111"
                                 |"11101000"|"11101001"|"11101010"|"11101011"|"11101100"|"11101101"|"11101110"|"11101111"
-                                |"11110000"|"11110001"|"11110010"|"11110011"|"11110100"|"11110101"|"11110110"|"11110111"
+                                |"11110000"|"11110001"|"11110010"|           "11110100"|"11110101"|"11110110"|"11110111"
                                 |"11111000"|"11111001"|"11111010"|"11111011"|"11111100"|"11111101"|"11111110"|"11111111" =>
                                 null; -- NOP, undocumented
                         when "01111110"|"01111111" =>
@@ -1958,6 +1968,46 @@ begin
                                         TStates <= "101";
                                 when others => null;
                                 end case;
+                        when "11000001"|"11001001"|"11010001"|"11011001" =>
+                                --R800 MULUB
+                                if R800_MULU=1 and portF4_mode = '1' then
+                                    MCycles <= "010";
+                                    case to_integer(unsigned(MCycle)) is
+                                    when 1 =>
+                                        NoRead <= '1';
+                                        I_MULUB <= '1';
+                                        Set_BusB_To(2 downto 0) <= IR(5 downto 3);
+                                        Set_BusB_To(3) <= '0';
+                                    when 2 =>
+                                        NoRead <= '1';
+                                        I_MULU <= '1';
+                                        Set_BusA_To(2 downto 0) <= "100";
+                                    when others => null;
+                                    end case;
+                                end if;    
+                        when "11000011"|"11110011" =>
+                                --R800 MULUW
+                                if R800_MULU=1 and portF4_mode = '1' then
+                                    MCycles <= "010";
+                                    case to_integer(unsigned(MCycle)) is
+                                    when 1 =>
+                                        NoRead <= '1';
+                                        if DPAIR = "11" then
+                                            Set_BusB_To(3 downto 0) <= "1000";
+                                        else
+                                            Set_BusB_To(2 downto 1) <= DPAIR;
+                                            Set_BusB_To(0) <= '0';
+                                            Set_BusB_To(3) <= '0';
+                                        end if;
+                                        Set_BusA_To(2 downto 0) <= "100";
+                                    when 2 =>
+                                        TStates <= "101";
+                                        NoRead <= '1';
+                                        I_MULU <= '1';
+                                        Set_BusA_To(2 downto 0) <= "100";
+                                    when others => null;
+                                    end case;
+                                end if;    
                         end case;
 
                 end case;
