@@ -144,6 +144,9 @@ localparam CONF_STR = {
 	"-;",
 	"O7,Internal Mapper,2048KB RAM,4096KB RAM;",
 	"-;",
+	"OD,Joysticks Swap,No,Yes;",
+	"OC,Mouse,Port 1,Port 2;",
+	"-;",
 	"RA,Reset;",
 	"J,Fire 1,Fire 2;",
 	"V,v",`BUILD_DATE
@@ -178,15 +181,13 @@ always @(posedge clk_sys) begin
 end
 
 //////////////////   HPS I/O   ///////////////////
-wire        ps2_kbd_clk_out;
-wire        ps2_kbd_data_out;
-wire        ps2_mouse_clk_out;
-wire        ps2_mouse_data_out;
+wire [10:0] ps2_key;
+wire [24:0] ps2_mouse;
 wire        ps2_caps_led;
 wire        forced_scandoubler;
 wire        scandoubler = forced_scandoubler || status[3:2];
-wire [15:0] joy_0;
-wire [15:0] joy_1;
+wire [15:0] joy_A;
+wire [15:0] joy_B;
 wire  [1:0] buttons;
 wire [31:0] status;
 wire [64:0] rtc;
@@ -204,6 +205,10 @@ wire        img_readonly;
 wire [63:0] img_size;
 wire        sd_ack_conf;
 
+wire [15:0] joy_0 = status[13] ? joy_B : joy_A;
+wire [15:0] joy_1 = status[13] ? joy_A : joy_B;
+
+
 hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 (
 	.clk_sys(clk_sys),
@@ -211,18 +216,17 @@ hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 
 	.conf_str(CONF_STR),
 
-	.joystick_0(joy_0),
-	.joystick_1(joy_1),
+	.joystick_0(joy_A),
+	.joystick_1(joy_B),
 
 	.buttons(buttons),
 	.status(status),
 	.forced_scandoubler(forced_scandoubler),
 
 	.RTC(rtc),
-	.ps2_kbd_clk_out(ps2_kbd_clk_out),
-	.ps2_kbd_data_out(ps2_kbd_data_out),
-	.ps2_mouse_clk_out(ps2_mouse_clk_out),
-	.ps2_mouse_data_out(ps2_mouse_data_out),
+
+	.ps2_key(ps2_key),
+	.ps2_mouse(ps2_mouse),
 
 	.ps2_kbd_led_use(3'b001),
 	.ps2_kbd_led_status({2'b00, ps2_caps_led}),
@@ -303,17 +307,16 @@ emsx_top emsx
 	.pMemAdr(SDRAM_A),
 	.pMemDat(SDRAM_DQ),
 
-	.pPs2Clk(ps2_kbd_clk_out),
-	.pPs2Dat(ps2_kbd_data_out),
+	.ps2_key(ps2_key),
 	.pCaps(ps2_caps_led),
 
 	.rtc_setup(cold_reset),
 	.rtc_time(rtc),
 
-	.pJoyA(use_mouse ? mdata : ~{joy_0[5:4], joy_0[0], joy_0[1], joy_0[2], joy_0[3]}),
-	.pStrA(mstrobe),
-	.pJoyB(~{joy_1[5:4], joy_1[0], joy_1[1], joy_1[2], joy_1[3]}),
-	.pStrB(),
+	.pJoyA((use_mouse & ~status[12]) ? mdata : ~{joy_0[5:4], joy_0[0], joy_0[1], joy_0[2], joy_0[3]}),
+	.pStrA(mstrobeA),
+	.pJoyB((use_mouse &  status[12]) ? mdata : ~{joy_1[5:4], joy_1[0], joy_1[1], joy_1[2], joy_1[3]}),
+	.pStrB(mstrobeB),
 
 	.mmc_sck(sdclk),
 	.mmc_mosi(sdmosi),
@@ -339,24 +342,25 @@ emsx_top emsx
 );
 
 wire [5:0] mdata;
-wire       mstrobe;
+wire       mstrobeA,mstrobeB;
 
 ps2mouse mouse
 (
 	.clk(clk_sys),
 	.reset(reset),
-	.strobe(mstrobe),
+	.strobe(status[12] ? mstrobeB : mstrobeA),
 	.data(mdata),
-	.ps2_mouse_data(ps2_mouse_data_out),
-	.ps2_mouse_clk(ps2_mouse_clk_out)
+	.ps2_mouse(ps2_mouse)
 );
 
 reg use_mouse = 0;
 always @(posedge clk_sys) begin
-	if(reset) use_mouse <= 0;
+	reg old_stb = 0;
 	
-	if(~ps2_mouse_clk_out) use_mouse <= 1;
-	if(joy_0[5:0]) use_mouse <= 0;
+	old_stb <= ps2_mouse[24];
+	if(reset) use_mouse <= 0;
+	if(old_stb ^ ps2_mouse[24]) use_mouse <= 1;
+	if(status[12] ? joy_1[5:0] : joy_0[5:0]) use_mouse <= 0;
 end
 
 

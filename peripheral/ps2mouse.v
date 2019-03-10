@@ -7,13 +7,11 @@ module ps2mouse
 	input            strobe,
 	output reg [5:0] data,
 
-	input            ps2_mouse_clk,
-	input            ps2_mouse_data
+	input     [24:0] ps2_mouse
 );
 
-reg  [32:0] q;
-wire [11:0] mdx = {{4{q[5]}},q[19:12]};
-wire [11:0] mdy = {{4{q[6]}},q[30:23]};
+wire [11:0] mdx = {{4{ps2_mouse[4]}},ps2_mouse[15:8]};
+wire [11:0] mdy = {{4{ps2_mouse[5]}},ps2_mouse[23:16]};
 
 always @(posedge clk) begin
 	reg  [5:0] count;
@@ -23,37 +21,29 @@ always @(posedge clk) begin
 	reg [14:0] timer = 0; //MSX mouse timer
 	reg  [7:0] mx;
 	reg  [7:0] my;
-   reg  [2:0] button;
-   reg [11:0] dx;
-   reg [11:0] dy;
+	reg  [2:0] button;
+	reg [11:0] dx;
+	reg [11:0] dy;
+	reg        old_stb;
 
 	if(~&timer) timer <= timer + 1'b1;
 	old_strobe <= strobe;
+	
+	old_stb <= ps2_mouse[24];
 
 	if(reset) begin
 		dx     <= 0;
 		dy     <= 0;
-		count  <= 0;
 		data   <= 'b110000;
 		state  <= 0;
-	end else begin
-		old_clk <= ps2_mouse_clk;
-		if(old_clk & ~ps2_mouse_clk) begin
-			q[count]  <= ps2_mouse_data;
-		end else if(~old_clk & ps2_mouse_clk) begin
-			count <= count + 1'b1;
-			if(count == 32) begin
-				count <= 0;
-				if((~q[0] & q[10] & ~q[11] & q[21] & ~q[22] & q[32])
-					& (q[9] == ~^q[8:1]) & (q[20] == ~^q[19:12]) & (q[31] == ~^q[30:23]))
-				begin
-					data[5:4] <= ~q[2:1];
-					dx <= dx - mdx;
-					dy <= dy + mdy;
-				end
-			end
+	end
+	else begin
+		if(old_stb ^ ps2_mouse[24]) begin
+			data[5:4] <= ~ps2_mouse[1:0];
+			dx <= dx - mdx;
+			dy <= dy + mdy;
 		end
-		
+
 		case(state)
 			0: if(~old_strobe && strobe && &timer) begin
 					state <= state + 1'd1;

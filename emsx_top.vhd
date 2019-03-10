@@ -62,8 +62,7 @@ entity emsx_top is
         pMemDat         : inout std_logic_vector( 15 downto 0 );    -- SD-RAM Data
 
         -- PS/2 keyboard ports
-        pPs2Clk         : in    std_logic;
-        pPs2Dat         : in    std_logic;
+        ps2_key         : in    std_logic_vector( 10 downto 0);
         pCaps           : out   std_logic;
 
         rtc_setup       : in    std_logic;
@@ -194,28 +193,6 @@ architecture RTL of emsx_top is
             ramadr      : out   std_logic_vector( 21 downto 0 );
             ramdbi      : in    std_logic_vector(  7 downto 0 );
             ramdbo      : out   std_logic_vector(  7 downto 0 )
-        );
-    end component;
-
-    component eseps2 is
-        port (
-            clk21m      : in    std_logic;
-            reset       : in    std_logic;
-            clkena      : in    std_logic;
-
-            Kmap        : in    std_logic;
-
-            Paus        : inout std_logic;
-            Scro        : inout std_logic;
-            Reso        : inout std_logic;
-
-            FKeys       : out   std_logic_vector(  7 downto 0 );
-
-            pPs2Clk_in  : in std_logic;
-            pPs2Dat_in  : in std_logic;
-
-            PpiPortC    : inout std_logic_vector(  7 downto 0 );
-            pKeyX       : inout std_logic_vector(  7 downto 0 )
         );
     end component;
 
@@ -2113,9 +2090,9 @@ begin
         port map(clk21m, reset, clkena, MapReq, open, mem, wrt, adr, MapDbi, dbo,
                         MapRam, MapWrt, MapAdr, RamDbi, open);
 
-    U06 : eseps2
+    U06 : work.eseps2
         port map(clk21m, reset, clkena, Kmap, Paus, Scro, Reso, Fkeys,
-                        pPs2Clk, pPs2Dat, PpiPortC, PpiPortB);
+                        ps2_key, PpiPortC, PpiPortB);
 
     U07 : rtc
         port map(clk21m, reset, rtc_setup, rtc_time, w_10Hz, RtcReq, open, wrt, adr, RtcDbi, dbo);

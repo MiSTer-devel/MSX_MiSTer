@@ -73,8 +73,7 @@ entity eseps2 is
     -- | SHI | --   | PgUp | PgDn | F9  | F10 | F11 | F12 |
     Fkeys    : out std_logic_vector(7 downto 0);
 
-    pPs2Clk_in  : in std_logic;
-    pPs2Dat_in  : in std_logic;
+    ps2_key  : in  std_logic_vector(10 downto 0);
 
     PpiPortC : in  std_logic_vector(7 downto 0);
     pKeyX    : out std_logic_vector(7 downto 0)
@@ -90,40 +89,16 @@ architecture RTL of eseps2 is
   signal MtxIdx  : std_logic_vector(10 downto 0);
   signal MtxPtr  : std_logic_vector(7 downto 0);
   signal oFkeys  : std_logic_vector(7 downto 0);
-
-  component ram is
-    port (
-      adr : in  std_logic_vector(7 downto 0);
-      clk : in  std_logic;
-      we  : in  std_logic;
-      dbo : in  std_logic_vector(7 downto 0);
-      dbi : out std_logic_vector(7 downto 0)
-    );
-  end component;
-
-  component keymap is
-    port (
-      adr : in std_logic_vector(10 downto 0);
-      clk : in std_logic;
-      dbi : out std_logic_vector(7 downto 0)
-    );
-  end component;
+  signal stb     : std_logic;
 
 begin
 
   process(clk21m, reset, Kmap)
 
-    type typPs2Seq is (Ps2Idle, Ps2Rxd, Ps2Stop);
-    variable Ps2Seq : typPs2Seq;
     variable Ps2Chg : std_logic;
     variable Ps2brk : std_logic;
     variable Ps2xE0 : std_logic;
-    variable Ps2xE1 : std_logic;
-    variable Ps2Cnt : std_logic_vector(3 downto 0);
-    variable Ps2Clk : std_logic_vector(2 downto 0);
     variable Ps2Dat : std_logic_vector(7 downto 0);
-    variable Ps2Skp : std_logic_vector(2 downto 0);
-    variable timout : std_logic_vector(15 downto 0);
 
     variable Ps2Shif : std_logic;       -- real shift status
     variable Ps2Vshi : std_logic;       -- virtual shift status
@@ -137,19 +112,16 @@ begin
   begin
 
     if rising_edge(clk21m) then
+		 
+       stb <= ps2_key(10);
+		 
        if( reset = '1' )then
    
-         Ps2Seq  := Ps2Idle;
          Ps2Chg  := '0';
          Ps2brk  := '0';
          Ps2xE0  := '0';
-         Ps2xE1  := '0';
-         Ps2Cnt  := (others => '0');
-         Ps2Clk  := (others => '1');
          Ps2Dat  := (others => '1');
-         timout  := (others => '1');
          Ps2Vshi := '0';
-         Ps2Skp  := "000";
    
          Paus    <= '0';
          Reso    <= '0';                   -- Sync to ff_Reso
@@ -241,7 +213,6 @@ begin
             Ps2Chg := '0';
             Ps2brk := '0';
             Ps2xE0 := '0';
-            Ps2xE1 := '0';
 
           when MtxReset =>
             if MtxTmp = "1011" then
@@ -262,121 +233,70 @@ begin
       end if;
 
       -- "PS/2 interface > Scan table" conversion
-      if( clkena = '1' )then
+      if( stb /= ps2_key(10) )then
+		
+         Ps2Dat := ps2_key(7 downto 0);
+         Ps2xE0 := ps2_key(8);
+         Ps2brk := not ps2_key(9);
 
-        if( Ps2Clk = "100" )then        -- clk inactive
-          Ps2Clk(2) := '0';
-          timout := X"01FF";            -- countdown timeout (143us = 279ns x 512clk, exceed 100us)
-
-          if( Ps2Seq = Ps2Idle )then
-            Ps2Seq := Ps2Rxd;
-            Ps2Cnt := (others => '0');
-          elsif( Ps2Seq = Ps2Rxd )then
-            if( Ps2Cnt = "0111" )then
-              Ps2Seq := Ps2Stop;
-            end if;
-            Ps2Dat := pPs2Dat_in & Ps2Dat(7 downto 1);
-            Ps2Cnt := Ps2Cnt + 1;
-
-          elsif( Ps2Seq = Ps2Stop )then
-            Ps2Seq := Ps2Idle;
-            if Ps2Skp /= "000" then  -- Skip some sequences
-              Ps2Skp := Ps2Skp - 1;
-            elsif( Ps2Dat = X"14" and Ps2xE0 = '0' and Ps2xE1 = '1' )then -- pause/break make
-              if Ps2brk = '0' then
-                Paus <= not Paus;       -- CPU pause
-                Ps2Skp := "110";        -- Skip the next 6 sequences
-
-                Ps2Dat := X"12";        -- shift + pause bug fixed
-                Ps2xE0 := '0';
-                Ps2xE1 := '0';
-              end if;
-            elsif( Ps2Dat = X"7C" and Ps2xE0 = '1' and Ps2xE1 = '0' )then -- printscreen make
-              if Ps2brk = '0' then
-                Reso <= not Reso;       -- toggle display mode
-              end if;
-              Ps2Chg := '1';
-            elsif( Ps2Dat = X"7D" and Ps2xE0 = '1' and Ps2xE1 = '0' )then -- PgUp make
-              if Ps2brk = '0' then
-                oFkeys(5) <= not oFkeys(5);
-              end if;
-              Ps2Chg := '1';
-            elsif( Ps2Dat = X"7A" and Ps2xE0 = '1' and Ps2xE1 = '0' )then -- PgDn make
-              if Ps2brk = '0' then
-                oFkeys(4) <= not oFkeys(4);
-              end if;
-              Ps2Chg := '1';
-            elsif( Ps2Dat = X"01" and Ps2xE0 = '0' and Ps2xE1 = '0' )then -- F9 make
-              if Ps2brk = '0' then
-                oFkeys(3) <= not oFkeys(3);
-              end if;
-              Ps2Chg := '1';
-            elsif( Ps2Dat = X"09" and Ps2xE0 = '0' and Ps2xE1 = '0' )then -- F10 make
-              if Ps2brk = '0' then
-                oFkeys(2) <= not oFkeys(2);
-              end if;
-              Ps2Chg := '1';
-            elsif( Ps2Dat = X"78" and Ps2xE0 = '0' and Ps2xE1 = '0' )then -- F11 make
-              if Ps2brk = '0' then
-                oFkeys(1) <= not oFkeys(1);
-              end if;
-              Ps2Chg := '1';
-            elsif( Ps2Dat = X"07" and Ps2xE0 = '0' and Ps2xE1 = '0' )then -- F12 make
-              if Ps2brk = '0' then
-                oFkeys(0) <= not oFkeys(0);     --  old toggle OnScreenDisplay enable
-              end if;
-              Ps2Chg := '1';
-            elsif( Ps2Dat = X"7E" and Ps2xE0 = '0' and Ps2xE1 = '0' )then -- scroll-lock make
-              if Ps2brk = '0' then
-                Scro <= not Scro;  -- toggle scroll lock (currently used for CMT switch)
-            --    Scro <= not Scro;  -- toggle scroll lock (currently used for 101/106 keyboard switch)
-            --    MtxTmp := "0000";
-            --    MtxSeq := MtxReset;
-              end if;
-              Ps2Chg := '1';
-            elsif( (Ps2Dat = X"12" or Ps2Dat = X"59") and Ps2xE0 = '0' and Ps2xE1 ='0' )then -- shift make
-              Ps2Shif:= not Ps2brk;
-              oFkeys(7) <= Ps2Shif;
-              Ps2Chg := '1';
-            elsif( Ps2Dat = X"F0" )then -- break code
-              Ps2brk := '1';
-            elsif( Ps2Dat = X"E0" )then -- extnd code E0
-              Ps2xE0 := '1';
-            elsif( Ps2Dat = X"E1" )then -- extnd code E1 (ignore)
-              Ps2xE1 := '1';
-            elsif( Ps2Dat = X"FA" )then -- Ack of "EDh" command
-              Ps2Seq := Ps2Idle;
-            else
-              Ps2Chg := '1';
-            end if;
-
-          end if;
-
-        elsif( Ps2Clk = "011" )then     -- clk active
-          Ps2Clk(2) := '1';
-          timout := X"01FF";            -- countdown timeout (143us = 279ns x 512clk, exceed 100us)
-
-        elsif( timout = X"0000" )then   -- timeout
-
-          Ps2Seq := Ps2Idle;            -- to Idle state
-
-        else
-          timout := timout - 1;         -- countdown timeout
-
-        end if;
-
-        Ps2Clk(1) := Ps2Clk(0);
-        Ps2Clk(0) := pPs2Clk_in;
-
-
+         if( Ps2Dat = X"77" and Ps2xE0 = '1')then -- pause/break make
+           if Ps2brk = '0' then
+             Paus <= not Paus;       -- CPU pause
+           end if;
+         elsif( Ps2Dat = X"7C" and Ps2xE0 = '1' )then -- printscreen make
+           if Ps2brk = '0' then
+             Reso <= not Reso;       -- toggle display mode
+           end if;
+           Ps2Chg := '1';
+         elsif( Ps2Dat = X"7D" and Ps2xE0 = '1' )then -- PgUp make
+           if Ps2brk = '0' then
+             oFkeys(5) <= not oFkeys(5);
+           end if;
+           Ps2Chg := '1';
+         elsif( Ps2Dat = X"7A" and Ps2xE0 = '1' )then -- PgDn make
+           if Ps2brk = '0' then
+             oFkeys(4) <= not oFkeys(4);
+           end if;
+           Ps2Chg := '1';
+         elsif( Ps2Dat = X"01" and Ps2xE0 = '0' )then -- F9 make
+           if Ps2brk = '0' then
+             oFkeys(3) <= not oFkeys(3);
+           end if;
+           Ps2Chg := '1';
+         elsif( Ps2Dat = X"09" and Ps2xE0 = '0' )then -- F10 make
+           if Ps2brk = '0' then
+             oFkeys(2) <= not oFkeys(2);
+           end if;
+           Ps2Chg := '1';
+         elsif( Ps2Dat = X"78" and Ps2xE0 = '0' )then -- F11 make
+           if Ps2brk = '0' then
+             oFkeys(1) <= not oFkeys(1);
+           end if;
+           Ps2Chg := '1';
+         elsif( Ps2Dat = X"07" and Ps2xE0 = '0' )then -- F12 make
+           if Ps2brk = '0' then
+             oFkeys(0) <= not oFkeys(0);     --  old toggle OnScreenDisplay enable
+           end if;
+           Ps2Chg := '1';
+         elsif( Ps2Dat = X"7E" and Ps2xE0 = '0' )then -- scroll-lock make
+           if Ps2brk = '0' then
+             Scro <= not Scro;  -- toggle scroll lock (currently used for CMT switch)
+           end if;
+           Ps2Chg := '1';
+         elsif( (Ps2Dat = X"12" or Ps2Dat = X"59") and Ps2xE0 = '0' )then -- shift make
+           Ps2Shif:= not Ps2brk;
+           oFkeys(7) <= Ps2Shif;
+           Ps2Chg := '1';
+         else
+           Ps2Chg := '1';
+         end if;
       end if;
-
     end if;
   end process;
 
   Fkeys <= oFkeys;
 
-  U1 : ram    port map( KeyRow, clk21m, KeyWe, iKeyCol, oKeyCol );
-  U2 : keymap port map( MtxIdx, clk21m, MtxPtr );
+  U1 : work.ram    port map( KeyRow, clk21m, KeyWe, iKeyCol, oKeyCol );
+  U2 : work.keymap port map( MtxIdx, clk21m, MtxPtr );
 
 end RTL;
