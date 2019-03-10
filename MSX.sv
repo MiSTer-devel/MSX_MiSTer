@@ -137,14 +137,14 @@ localparam CONF_STR = {
 	"O23,Scanlines,No,25%,50%,75%;",
 	"-;",
 	"O1,CPU speed,Normal,Turbo(+F11);",
+	"OB,CPU type,Z80,R800;",
 	"-;",
 	"O4,Slot1,Empty,MegaSCC+ 1MB;",
 	"O56,Slot2,Empty,MegaSCC+ 2MB,MegaRAM ASCII-8K 1MB,MegaRAM ASCII-16K 2MB;",
 	"-;",
 	"O7,Internal Mapper,2048KB RAM,4096KB RAM;",
 	"-;",
-	"RA,Warm Reset;",
-	"R0,Cold Reset;",
+	"RA,Reset;",
 	"J,Fire 1,Fire 2;",
 	"V,v",`BUILD_DATE
 };
@@ -323,6 +323,7 @@ emsx_top emsx
 	.pDip({1'b0,~status[7],~status[6:5],~status[4],2'b00,~status[1]}),
 	.pLed(),
 	.pLedPwr(),
+	.pR800(status[11]),
 
 	.pDac_VR(r),
 	.pDac_VG(g),

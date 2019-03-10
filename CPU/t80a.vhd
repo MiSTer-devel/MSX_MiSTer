@@ -65,7 +65,7 @@
 --
 --  0250 : Added R800 Multiplier by TobiFlex 2017.10.15
 --
---  +k02 : Added portF4_mode signal by KdL 2018.05.14
+--  +k02 : Added R800_mode signal by KdL 2018.05.14
 --
 
 library IEEE;
@@ -83,7 +83,7 @@ entity T80a is
         RESET_n     : in std_logic;
         RstKeyLock  : in std_logic;
         swioRESET_n : in std_logic;
-        portF4_mode : in std_logic;
+        R800_mode   : in std_logic;
         CLK_n       : in std_logic;
         WAIT_n      : in std_logic;
         INT_n       : in std_logic;
@@ -181,7 +181,7 @@ begin
             MC => MCycle,
             TS => TState,
             IntCycle_n => IntCycle_n,
-            portF4_mode => portF4_mode);
+            R800_mode => R800_mode);
 
     process (CLK_n)
     begin

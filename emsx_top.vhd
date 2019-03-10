@@ -85,6 +85,7 @@ entity emsx_top is
         pDip            : in    std_logic_vector(  7 downto 0);     -- 0=On,    1=Off (default on shipment)
         pLed            : out   std_logic_vector(  7 downto 0);     -- 0=Off,   1=On  (green)
         pLedPwr         : out   std_logic;                          -- 0=Off,   1=On  (red)
+		  pR800           : in    std_logic;
 
         -- Video, Audio/CMT ports
         pDac_VR         : out   std_logic_vector(  5 downto 0);     -- RGB_Red
@@ -110,7 +111,7 @@ architecture RTL of emsx_top is
             RESET_n     : in  std_logic;
             RstKeyLock  : in  std_logic;
             swioRESET_n : in  std_logic;
-            portF4_mode : in  std_logic;
+            R800_mode   : in  std_logic;
             CLK_n       : in  std_logic;
             WAIT_n      : in  std_logic;
             INT_n       : in  std_logic;
@@ -740,8 +741,6 @@ architecture RTL of emsx_top is
 
     -- Sound output, Toggle keys
     signal  vFKeys          : std_logic_vector(  7 downto 0 );
-    signal  ff_Scro         : std_logic;
-    signal  ff_Reso         : std_logic;
 
     -- DRAM arbiter
     signal  w_wrt_req       : std_logic;
@@ -930,13 +929,11 @@ begin
                     Slot2Mode(0)      <=  io42_id212(5);
                 end if;
             end if;
-				
-            -- keyboard layout assignment
-            if( w_10hz = '1' )then
-               Kmap <=  swioKmap;
-				end if;
         end if;
     end process;
+	 
+    -- keyboard layout assignment
+	 Kmap <=  swioKmap when rising_edge(clk21m);
 
     -- cpu clock assignment
     trueClk     <=  '1'             when( SdPaus /= '0' )else
@@ -1156,16 +1153,7 @@ begin
     end process;
 
     -- DIP SW latch
-    process( clk21m )
-    begin
-        if( clk21m'event and clk21m = '1' )then
-            if( w_10hz = '1' and SdPaus = '0' )then         -- chattering protect
-                ff_dip_req <= not pDip;                     -- convert negative logic to positive logic, and latch
-            else
-                --  hold
-            end if;
-        end if;
-    end process;
+	 ff_dip_req <= not pDip when rising_edge(clk21m);
 
     -- LEDs luminance
     process( clk21m )
@@ -1727,18 +1715,6 @@ begin
         end if;
     end process;
 
-    -- PRNSCR key
-    process( reset, clk21m )
-    begin
-        if( reset = '1' )then
-            ff_Reso <= '0';
-        elsif( clk21m'event and clk21m = '1' )then
-          if( FirstBoot_n /= '1' or RstEna = '1' )then
-            ff_Reso <= Reso;
-          end if;
-        end if;
-    end process;
-
     ----------------------------------------------------------------
     -- Sound output
     ----------------------------------------------------------------
@@ -2105,7 +2081,7 @@ begin
             RESET_n     => pSltRst_n,
             RstKeyLock  => RstKeyLock,
             swioRESET_n => swioRESET_n,
-            portF4_mode => portF4_mode,
+            R800_mode   => pR800,
             CLK_n       => trueClk,
             WAIT_n      => pSltWait_n,
             INT_n       => pSltInt_n,
@@ -2237,10 +2213,10 @@ begin
         ff_dip_ack      => ff_dip_ack   ,   -- here to reduce LEs
 
         SdPaus          => SdPaus       ,
-        Scro            => Scro         ,
-        ff_Scro         => '0'          , --ff_Scro      ,
-        Reso            => Reso         ,
-        ff_Reso         => ff_Reso      ,
+        Scro            => '0'          ,
+        ff_Scro         => '0'          ,
+        Reso            => '0'          ,
+        ff_Reso         => '0'          ,
         FKeys           => FKeys        ,
         vFKeys          => vFKeys       ,
         LevCtrl         => LevCtrl      ,

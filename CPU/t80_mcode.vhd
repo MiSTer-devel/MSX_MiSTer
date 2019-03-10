@@ -148,7 +148,7 @@ entity T80_MCode is
                 NoRead      : out std_logic;
                 Write       : out std_logic;
                 XYbit_undoc : out std_logic;
-                portF4_mode : in  std_logic
+                R800_mode   : in  std_logic
         );
 end T80_MCode;
 
@@ -194,7 +194,7 @@ architecture rtl of T80_MCode is
 
 begin
 
-        process (IR, ISet, MCycle, F, NMICycle, IntCycle, XY_State, portF4_mode)
+        process (IR, ISet, MCycle, F, NMICycle, IntCycle, XY_State, R800_mode)
                 variable DDD : std_logic_vector(2 downto 0);
                 variable SSS : std_logic_vector(2 downto 0);
                 variable DPair : std_logic_vector(1 downto 0);
@@ -1970,7 +1970,7 @@ begin
                                 end case;
                         when "11000001"|"11001001"|"11010001"|"11011001" =>
                                 --R800 MULUB
-                                if R800_MULU=1 and portF4_mode = '1' then
+                                if R800_MULU=1 and R800_mode = '1' then
                                     MCycles <= "010";
                                     case to_integer(unsigned(MCycle)) is
                                     when 1 =>
@@ -1987,7 +1987,7 @@ begin
                                 end if;    
                         when "11000011"|"11110011" =>
                                 --R800 MULUW
-                                if R800_MULU=1 and portF4_mode = '1' then
+                                if R800_MULU=1 and R800_mode = '1' then
                                     MCycles <= "010";
                                     case to_integer(unsigned(MCycle)) is
                                     when 1 =>

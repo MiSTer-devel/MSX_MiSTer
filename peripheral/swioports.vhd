@@ -294,26 +294,6 @@ begin
                 end if;
                 -- in assignment: 'Toggle Keys' (keyboard)
                 if( SdPaus = '0' )then
-                    if( io43_id212(2) = '0' )then                           -- BIT[2]=0     of  Lock Mask
---                        if( Fkeys(5 downto 4) /= vFKeys(5 downto 4) )then
---                            GreenLvEna  <=  '1';
---                            LevCtrl <= "111";
---                        end if;
---                        if( Fkeys(4) /= vFkeys(4) )then                     -- PGDOWN       is  Master Volume Down
---                            if( MstrVol /= "111" )then
---                                LevCtrl <= not (MstrVol + 1);
---                                MstrVol <= MstrVol + 1;
---                            else
---                                LevCtrl <= "000";
---                            end if;
---                        end if;
---                        if( Fkeys(5) /= vFkeys(5) )then                     -- PGUP         is  Master Volume Up
---                            if( MstrVol /= "000" )then
---                                LevCtrl <= not (MstrVol - 1);
---                                MstrVol <= MstrVol - 1;
---                            end if;
---                        end if;
-                    end if;
                     if( Fkeys(7) = '0' )then                                -- SHIFT key    is  Off
                         if( io43_id212(0) = '0' )then                       -- BIT[0]=0     of  Lock Mask
                             if( Fkeys(1) /= vFKeys(1) )then                 -- F11          is  TURBO selector
@@ -330,97 +310,6 @@ begin
                                     io42_id212(0)   <=  '0';                -- Custom Turbo >>  3.58MHz
                                 end if;
                             end if;
-                        end if;
-                        if( io43_id212(1) = '0' )then                       -- BIT[1]=0     of  Lock Mask
-                            if( ff_Reso /= Reso )then                       -- PRNSCR       is  DISPLAY selector (next)
-                                case io42_id212(2 downto 1) is
-                                when "00"   =>  io42_id212(2)           <=  '1';    --  Y/C     to  RGB
-                                when "10"   =>  io42_id212(2 downto 1)  <=  "01";   --  RGB     to  VGA
-                                when "01"   =>  io42_id212(2)           <=  '1';    --  VGA     to  VGA+
-                                when "11"   =>  io42_id212(2 downto 1)  <=  "00";   --  VGA+    to  Y/C
-                                end case;
-                            end if;
-                        end if;
-                        if( io43_id212(2) = '0' )then                       -- BIT[2]=0     of  Lock Mask
-								
---                            if( Fkeys(3 downto 1) /= vFKeys(3 downto 1) )then
---                                GreenLvEna  <=  '1';
---                                LevCtrl     <=  "111";
---                            end if;
---                            if( Fkeys(1) /= vFKeys(1) )then                 -- F11          is  OPLL Volume Up
---                                if( OpllVol /= "111" )then
---                                    LevCtrl <= OpllVol + 1;
---                                    OpllVol <= OpllVol + 1;
---                                end if;
---                            end if;
---                            if( Fkeys(2) /= vFKeys(2) )then                 -- F10          is  SCC-I Volume Up
---                                if( SccVol /= "111" )then
---                                    LevCtrl <= SccVol + 1;
---                                    SccVol  <= SccVol + 1;
---                                end if;
---                            end if;
---                            if( Fkeys(3) /= vFKeys(3) )then                 -- F9           is  PSG Volume Up
---                                if( PsgVol /= "111" )then
---                                    LevCtrl <= PsgVol + 1;
---                                    PsgVol  <= PsgVol + 1;
---                                end if;
---                            end if;
-									 
-                            if( ff_Scro /= Scro and portF4_mode = '0' )then -- SCRLK        is  CMT selector
-                                swioCmt     <=  not swioCmt;
-                            end if;
-                        end if;
-                    else                                                    -- SHIFT key    is  On
-                        if( io43_id212(1) = '0' )then                       -- BIT[1]=0     of  Lock Mask
-                            if( ff_Reso /= Reso )then                       -- SHIFT+PRNSCR is  DISPLAY selector (previous)
-                                case io42_id212(2 downto 1) is
-                                when "11"   =>  io42_id212(2)           <=  '0';    --  VGA+    to  VGA
-                                when "01"   =>  io42_id212(2 downto 1)  <=  "10";   --  VGA     to  RGB
-                                when "10"   =>  io42_id212(2)           <=  '0';    --  RGB     to  Y/C
-                                when "00"   =>  io42_id212(2 downto 1)  <=  "11";   --  Y/C     to  VGA+
-                                end case;
-                            end if;
-                        end if;
-                        if( io43_id212(2) = '0' )then                       -- BIT[2]=0     of  Lock Mask
-								
---                            if( Fkeys(3 downto 1) /= vFKeys(3 downto 1) )then
---                                GreenLvEna  <=  '1';
---                                LevCtrl     <=  "000";
---                            end if;
---                            if( Fkeys(1) /= vFKeys(1) )then                 -- SHIFT+F11    is  OPLL Volume Down
---                                if( OpllVol /= "000" )then
---                                    LevCtrl <= OpllVol - 1;
---                                    OpllVol <= OpllVol - 1;
---                                end if;
---                            end if;
---                            if( Fkeys(2) /= vFKeys(2) )then                 -- SHIFT+F10    is  SCC-I Volume Down
---                                if( SccVol /= "000" )then
---                                    LevCtrl <= SccVol - 1;
---                                    SccVol  <= SccVol - 1;
---                                end if;
---                            end if;
---                            if( Fkeys(3) /= vFKeys(3) )then                 -- SHIFT+F9     is  PSG Volume Down
---                                if( PsgVol /= "000" )then
---                                    LevCtrl <= PsgVol - 1;
---                                    PsgVol  <= PsgVol - 1;
---                                end if;
---                            end if;
-									 
-                        end if;
---                        if( io43_id212(3) = '0' )then                       -- BIT[3]=0     of  Lock Mask
---                            if( Fkeys(0) /= vFKeys(0) )then                 -- SHIFT+F12    is  SLOT1 selector
---                                io42_id212(3)   <=  not io42_id212(3);
---                            end if;                                         -- EXTERNAL SLOT1   >> <<   INTERNAL SCC-I(A)
---                        end if;
-                        if( io43_id212(4) = '0' )then                       -- BIT[4]=0     of  Lock Mask
-                            if( ff_Scro /= Scro )then                       -- SHIFT+SCRLK  is  SLOT2 selector
-                                case io42_id212(5 downto 4) is
-                                when "00"   =>  io42_id212(5)           <=  '1';    --  EXTERNAL SLOT2      to  INTERNAL ASCII 8K
-                                when "10"   =>  io42_id212(5 downto 4)  <=  "01";   --  INTERNAL ASCII 8K   to  INTERNAL SCC-I(B)
-                                when "01"   =>  io42_id212(5)           <=  '1';    --  INTERNAL SCC-I(B)   to  INTERNAL ASCII 16K
-                                when "11"   =>  io42_id212(5 downto 4)  <=  "00";   --  INTERNAL ASCII 16K  to  EXTERNAL SLOT2
-                                end case;
-                            end if;                                         -- Hint! You can get SCC-I(B) quickly with a SHIFT+'double'SCRLK
                         end if;
                     end if;
                 end if;
