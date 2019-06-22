@@ -1,7 +1,7 @@
 --
 -- Z80 compatible microprocessor core, asynchronous top level
 --
--- Version : 0250 (+k02)
+-- Version : 0250 (+k03)
 --
 -- Copyright (c) 2001-2002 Daniel Wallner (jesus@opencores.org)
 --
@@ -67,6 +67,8 @@
 --
 --  +k02 : Added R800_mode signal by KdL 2018.05.14
 --
+--  +k03 : RstKeyLock and swioRESET_n were put back outside of T80 by KdL 2019.05.20
+--
 
 library IEEE;
 use IEEE.std_logic_1164.all;
@@ -81,8 +83,6 @@ entity T80a is
     );
     port(
         RESET_n     : in std_logic;
-        RstKeyLock  : in std_logic;
-        swioRESET_n : in std_logic;
         R800_mode   : in std_logic;
         CLK_n       : in std_logic;
         WAIT_n      : in std_logic;
@@ -98,8 +98,7 @@ entity T80a is
         HALT_n      : out std_logic;
         BUSAK_n     : out std_logic;
         A           : out std_logic_vector(15 downto 0);
-        DI          : in  std_logic_vector(7 downto 0);
-        DO          : out std_logic_vector(7 downto 0)
+        D           : inout std_logic_vector(7 downto 0)
     );
 end T80a;
 
@@ -124,6 +123,7 @@ architecture rtl of T80a is
     signal RFSH_n_i     : std_logic;
     signal BUSAK_n_i    : std_logic;
     signal A_i          : std_logic_vector(15 downto 0);
+    signal DO           : std_logic_vector(7 downto 0);
     signal DI_Reg       : std_logic_vector (7 downto 0);    -- Input synchroniser
     signal Wait_s       : std_logic;
     signal MCycle       : std_logic_vector(2 downto 0);
@@ -138,16 +138,17 @@ begin
     RD_n_i <= not RD or Req_Inhibit;
     WR_n_j <= WR_n_i;                                                   -- 0247a
 
-    MREQ_n <= MREQ_n_i when BUSAK_n_i = '1' else '1';
-    IORQ_n <= IORQ_n_i or IReq_Inhibit when BUSAK_n_i = '1' else '1';   -- 0247a
-    RD_n <= RD_n_i when BUSAK_n_i = '1' else '1';
-    WR_n <= WR_n_j when BUSAK_n_i = '1' else '1';                       -- 0247a
-    RFSH_n <= RFSH_n_i when BUSAK_n_i = '1' else '1';
-    A <= A_i when BUSAK_n_i = '1' else (others => '1');
+    MREQ_n <= MREQ_n_i when BUSAK_n_i = '1' else 'Z';
+    IORQ_n <= IORQ_n_i or IReq_Inhibit when BUSAK_n_i = '1' else 'Z';   -- 0247a
+    RD_n <= RD_n_i when BUSAK_n_i = '1' else 'Z';
+    WR_n <= WR_n_j when BUSAK_n_i = '1' else 'Z';                       -- 0247a
+    RFSH_n <= RFSH_n_i when BUSAK_n_i = '1' else 'Z';
+    A <= A_i when BUSAK_n_i = '1' else (others => 'Z');
+    D <= DO when Write = '1' and BUSAK_n_i = '1' else (others => 'Z');
 
-    process (RESET_n, CLK_n, RstKeyLock, swioRESET_n)
+    process (RESET_n, CLK_n)
     begin
-        if( (RESET_n = '0' and RstKeyLock = '0') or swioRESET_n = '0' )then
+        if RESET_n = '0' then
             Reset_s <= '0';
         elsif CLK_n'event and CLK_n = '1' then
             Reset_s <= '1';
@@ -175,7 +176,7 @@ begin
             BUSAK_n => BUSAK_n_i,
             CLK_n => CLK_n,
             A => A_i,
-            DInst => DI,
+            DInst => D,
             DI => DI_Reg,
             DO => DO,
             MC => MCycle,
@@ -188,7 +189,7 @@ begin
         if CLK_n'event and CLK_n = '0' then
             Wait_s <= WAIT_n;
             if TState = "011" and BUSAK_n_i = '1' then
-                DI_Reg <= to_x01(DI);
+                DI_Reg <= to_x01(D);
             end if;
         end if;
     end process;
