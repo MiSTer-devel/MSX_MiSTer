@@ -1,7 +1,7 @@
 --
 -- Z80 compatible microprocessor core
 --
--- Version : 0250 (+k02)
+-- Version : 0250 (+k03)
 --
 -- Copyright (c) 2001-2002 Daniel Wallner (jesus@opencores.org)
 --
@@ -59,6 +59,8 @@
 --  0250 : Version alignment by KdL 2017.10.23
 --
 --  +k02 : Version alignment by KdL 2018.05.14
+--
+--  +k03 : Version alignment by KdL 2019.05.20
 --
 
 library IEEE;
