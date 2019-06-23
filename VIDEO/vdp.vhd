@@ -77,19 +77,22 @@
 -------------------------------------------------------------------------------
 -- Revision History
 --
+-- 3rd,June,2018 modified by KdL
+--  - Improved the VGA up-scan converter
+--
 -- 15th,March,2017 modified by KdL
 --  - Improved ENAHSYNC, thanks to Grauw
 --
 -- 27th,July,2014 modified by KdL
 --  - Fixed H-SYNC interrupt reset control
 --
--- 23th,January,2013 modified by KdL
+-- 23rd,January,2013 modified by KdL
 --  - Fixed V-SYNC and H-SYNC interrupt
 --  - Added an extra signal to force NTSC/PAL modes
 --
 -- 29th,October,2006 modified by Kunihiko Ohnaka
---  - Added the license text.
---  - Added the document part below.
+--  - Added the license text
+--  - Added the document part below
 --
 -- 3rd,Sep,2006 modified by Kunihiko Ohnaka
 --  - Fix several UNKNOWN REALITY problems
@@ -267,7 +270,9 @@ ENTITY VDP IS
         PRAMDBI             : IN    STD_LOGIC_VECTOR( 15 DOWNTO 0 );
         PRAMDBO             : OUT   STD_LOGIC_VECTOR(  7 DOWNTO 0 );
 
-        HISPEED_MODE        : IN    STD_LOGIC;
+        VDPSPEEDMODE        : IN    STD_LOGIC;
+        RATIOMODE           : IN    STD_LOGIC_VECTOR(  2 DOWNTO 0 );
+        CENTERYJK_R25_N     : IN    STD_LOGIC;
 
         -- VIDEO OUTPUT
         PVIDEOR             : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );
@@ -287,7 +292,7 @@ ENTITY VDP IS
 
         NTSC_PAL_TYPE       : IN    STD_LOGIC;
         FORCED_V_MODE       : IN    STD_LOGIC;
-        VALLOW_N            : IN    STD_LOGIC
+        LEGACY_VGA          : IN    STD_LOGIC
 
         -- DEBUG OUTPUT
     --  DEBUG_OUTPUT        : OUT   STD_LOGIC_VECTOR( 15 DOWNTO 0 ) -- ��
@@ -309,7 +314,6 @@ ARCHITECTURE RTL OF VDP IS
             PREDOTCOUNTER_YP        : OUT   STD_LOGIC_VECTOR(  8 DOWNTO 0 );
             PREWINDOW_Y             : OUT   STD_LOGIC;
             PREWINDOW_Y_SP          : OUT   STD_LOGIC;
-            PREWINDOW_Y_HS          : OUT   STD_LOGIC;
             FIELD                   : OUT   STD_LOGIC;
             WINDOW_X                : OUT   STD_LOGIC;
             PVIDEODHCLK             : OUT   STD_LOGIC;
@@ -319,6 +323,7 @@ ARCHITECTURE RTL OF VDP IS
             HD                      : OUT   STD_LOGIC;
             VD                      : OUT   STD_LOGIC;
             HSYNC                   : OUT   STD_LOGIC;
+            ENAHSYNC                : OUT   STD_LOGIC;
             V_BLANKING_START        : OUT   STD_LOGIC;
 
             VDPR9PALMODE            : IN    STD_LOGIC;
@@ -327,7 +332,9 @@ ARCHITECTURE RTL OF VDP IS
             REG_R18_ADJ             : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
             REG_R23_VSTART_LINE     : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
             REG_R25_MSK             : IN    STD_LOGIC;
-            REG_R27_H_SCROLL        : IN    STD_LOGIC_VECTOR(  2 DOWNTO 0 )
+            REG_R27_H_SCROLL        : IN    STD_LOGIC_VECTOR(  2 DOWNTO 0 );
+            REG_R25_YJK             : IN    STD_LOGIC;
+            CENTERYJK_R25_N         : IN    STD_LOGIC
         );
     END COMPONENT;
 
@@ -443,13 +450,16 @@ ARCHITECTURE RTL OF VDP IS
             -- MODE
             PALMODE             : IN    STD_LOGIC;
             INTERLACEMODE       : IN    STD_LOGIC;
+            LEGACY_VGA          : IN    STD_LOGIC;
             -- VIDEO OUTPUT
             VIDEOROUT           : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );
             VIDEOGOUT           : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );
             VIDEOBOUT           : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );
             VIDEODEOUT          : OUT   STD_LOGIC;
             VIDEOHSOUT_N        : OUT   STD_LOGIC;
-            VIDEOVSOUT_N        : OUT   STD_LOGIC
+            VIDEOVSOUT_N        : OUT   STD_LOGIC;
+            -- SWITCHED I/O SIGNALS
+            RATIOMODE           : IN    STD_LOGIC_VECTOR(  2 DOWNTO 0 )
             );
     END COMPONENT;
 
@@ -589,7 +599,7 @@ ARCHITECTURE RTL OF VDP IS
             CLK21M                      : IN    STD_LOGIC;      --  21.477MHZ
             RESET                       : IN    STD_LOGIC;
 
-            -- CONTROLL SIGNALS
+            -- CONTROL SIGNALS
             DOTSTATE                    : IN    STD_LOGIC_VECTOR(  1 DOWNTO 0 );
             EIGHTDOTSTATE               : IN    STD_LOGIC_VECTOR(  2 DOWNTO 0 );
             DOTCOUNTERX                 : IN    STD_LOGIC_VECTOR(  8 DOWNTO 0 );
@@ -778,7 +788,6 @@ ARCHITECTURE RTL OF VDP IS
     SIGNAL FIELD                        : STD_LOGIC;
     SIGNAL HD                           : STD_LOGIC;
     SIGNAL VD                           : STD_LOGIC;
-    SIGNAL ENAHSYNC                     : STD_LOGIC;
     SIGNAL ACTIVE_LINE                  : STD_LOGIC;
     SIGNAL V_BLANKING_START             : STD_LOGIC;
 
@@ -800,7 +809,6 @@ ARCHITECTURE RTL OF VDP IS
     SIGNAL PREWINDOW_X                  : STD_LOGIC;
     SIGNAL PREWINDOW_Y                  : STD_LOGIC;
     SIGNAL PREWINDOW_Y_SP               : STD_LOGIC;
-    SIGNAL PREWINDOW_Y_HS               : STD_LOGIC;
     SIGNAL PREWINDOW                    : STD_LOGIC;
     SIGNAL PREWINDOW_SP                 : STD_LOGIC;
     -- FOR FRAME ZONE
@@ -968,6 +976,7 @@ ARCHITECTURE RTL OF VDP IS
     SIGNAL PRAMDATPAIR                  : STD_LOGIC_VECTOR(  7 DOWNTO 0 );
 
     SIGNAL HSYNC                        : STD_LOGIC;
+    SIGNAL ENAHSYNC                     : STD_LOGIC;
     SIGNAL FF_BWINDOW_Y_DL              : STD_LOGIC;
 
     CONSTANT VRAM_ACCESS_IDLE           : INTEGER := 0;
@@ -992,8 +1001,8 @@ BEGIN
     ----------------------------------------------------------------
     DISPMODEVGA     <=  DISPRESO;   -- DISPLAY RESOLUTION (0=15KHZ, 1=31KHZ)
 
-    VDPR9PALMODE    <=  FORCED_V_MODE WHEN( VALLOW_N = '1' )ELSE
-                        REG_R9_PAL_MODE WHEN( NTSC_PAL_TYPE = '1' )ELSE
+--  VDPR9PALMODE    <=  REG_R9_PAL_MODE     WHEN( NTSC_PAL_TYPE = '1' AND LEGACY_VGA = '0' )ELSE
+    VDPR9PALMODE    <=  REG_R9_PAL_MODE     WHEN( NTSC_PAL_TYPE = '1' )ELSE
                         FORCED_V_MODE;
 
     IVIDEOR <=  (OTHERS => '0') WHEN( BWINDOW = '0' )ELSE
@@ -1026,20 +1035,22 @@ BEGIN
     PORT MAP(
         CLK21M              => CLK21M,
         RESET               => RESET,
-        PALMODE             => VDPR9PALMODE,
-        INTERLACEMODE       => REG_R9_INTERLACE_MODE,
         VIDEORIN            => IVIDEOR,
         VIDEOGIN            => IVIDEOG,
         VIDEOBIN            => IVIDEOB,
         VIDEOVSIN_N         => IVIDEOVS_N,
         HCOUNTERIN          => H_CNT,
         VCOUNTERIN          => V_CNT,
+        PALMODE             => VDPR9PALMODE,
+        INTERLACEMODE       => REG_R9_INTERLACE_MODE,
+        LEGACY_VGA          => LEGACY_VGA,
         VIDEOROUT           => IVIDEOR_VGA,
         VIDEOGOUT           => IVIDEOG_VGA,
         VIDEOBOUT           => IVIDEOB_VGA,
         VIDEODEOUT          => BWINDOW_VGA,
         VIDEOHSOUT_N        => IVIDEOHS_N_VGA,
-        VIDEOVSOUT_N        => IVIDEOVS_N_VGA
+        VIDEOVSOUT_N        => IVIDEOVS_N_VGA,
+        RATIOMODE           => RATIOMODE
     );
 
     -- CHANGE DISPLAY MODE BY EXTERNAL INPUT PORT.
@@ -1050,8 +1061,8 @@ BEGIN
     PVIDEOB     <=  IVIDEOB_NTSC_PAL WHEN( DISPMODEVGA = '0' )ELSE
                     IVIDEOB_VGA;
 
-	 PVIDEODE    <=  BWINDOW WHEN( DISPMODEVGA = '0' )ELSE
-	                 BWINDOW_VGA;
+    PVIDEODE    <=  BWINDOW WHEN( DISPMODEVGA = '0' ) ELSE
+                    BWINDOW_VGA;
 
     -- H SYNC SIGNAL
     PVIDEOHS_N  <=  IVIDEOHS_N_NTSC_PAL WHEN( DISPMODEVGA = '0' )ELSE
@@ -1097,17 +1108,6 @@ BEGIN
     PROCESS( CLK21M )
     BEGIN
         IF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( PREDOTCOUNTER_YP = "000000000" )THEN
-                ENAHSYNC <= '1';
-            ELSIF( PREWINDOW_Y_HS = '0' )THEN
-                ENAHSYNC <= '0';
-            END IF;
-        END IF;
-    END PROCESS;
-
-    PROCESS( CLK21M )
-    BEGIN
-        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
             IF( PREDOTCOUNTER_X = 255 )THEN
                 ACTIVE_LINE <= '1';
             ELSE
@@ -1133,7 +1133,6 @@ BEGIN
         PREDOTCOUNTER_YP        => PREDOTCOUNTER_YP         ,
         PREWINDOW_Y             => PREWINDOW_Y              ,
         PREWINDOW_Y_SP          => PREWINDOW_Y_SP           ,
-        PREWINDOW_Y_HS          => PREWINDOW_Y_HS           ,
         FIELD                   => FIELD                    ,
         WINDOW_X                => WINDOW_X                 ,
         PVIDEODHCLK             => PVIDEODHCLK              ,
@@ -1143,6 +1142,7 @@ BEGIN
         HD                      => HD                       ,
         VD                      => VD                       ,
         HSYNC                   => HSYNC                    ,
+        ENAHSYNC                => ENAHSYNC                 ,
         V_BLANKING_START        => V_BLANKING_START         ,
 
         VDPR9PALMODE            => VDPR9PALMODE             ,
@@ -1151,7 +1151,9 @@ BEGIN
         REG_R18_ADJ             => REG_R18_ADJ              ,
         REG_R23_VSTART_LINE     => REG_R23_VSTART_LINE      ,
         REG_R25_MSK             => REG_R25_MSK              ,
-        REG_R27_H_SCROLL        => REG_R27_H_SCROLL
+        REG_R27_H_SCROLL        => REG_R27_H_SCROLL         ,
+        REG_R25_YJK             => REG_R25_YJK              ,
+        CENTERYJK_R25_N         => CENTERYJK_R25_N
     );
 
     -- GENERATE BWINDOW
@@ -1223,7 +1225,11 @@ BEGIN
         IF( RESET = '1' )THEN
             PREWINDOW_X <= '0';
         ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( H_CNT = ("00" & OFFSET_X & "10" ) ) THEN
+            IF( (H_CNT = ("00" & (OFFSET_X + LED_TV_X_NTSC - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00") + 4) & "10") AND REG_R25_YJK = '1' AND CENTERYJK_R25_N = '1' AND VDPR9PALMODE = '0') OR
+                (H_CNT = ("00" & (OFFSET_X + LED_TV_X_NTSC - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00")    ) & "10") AND (REG_R25_YJK = '0' OR CENTERYJK_R25_N = '0') AND VDPR9PALMODE = '0') OR
+                (H_CNT = ("00" & (OFFSET_X + LED_TV_X_PAL - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00") + 4) & "10") AND REG_R25_YJK = '1' AND CENTERYJK_R25_N = '1' AND VDPR9PALMODE = '1') OR
+                (H_CNT = ("00" & (OFFSET_X + LED_TV_X_PAL - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00")    ) & "10") AND (REG_R25_YJK = '0' OR CENTERYJK_R25_N = '0') AND VDPR9PALMODE = '1') )THEN
+                -- HOLD
             ELSIF( H_CNT(1 DOWNTO 0) = "10") THEN
                 IF( PREDOTCOUNTER_X = "111111111" ) THEN
                     -- JP: PREDOTCOUNTER_X �� -1����0�ɃJ�E���g�A�b�v���鎞��WINDOW��1�ɂ���
@@ -1790,7 +1796,8 @@ BEGIN
         REG_R1_DISP_ON      => REG_R1_DISP_ON       ,
         REG_R8_SP_OFF       => REG_R8_SP_OFF        ,
         REG_R9_Y_DOTS       => REG_R9_Y_DOTS        ,
-        VDPSPEEDMODE        => HISPEED_MODE         ,
+
+        VDPSPEEDMODE        => VDPSPEEDMODE         ,
         DRIVE               => VDP_COMMAND_DRIVE    ,
 
         ACTIVE              => VDP_COMMAND_ACTIVE

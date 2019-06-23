@@ -248,7 +248,9 @@ architecture RTL of emsx_top is
             pRamDbi         : in    std_logic_vector( 15 downto 0 );
             pRamDbo         : out   std_logic_vector(  7 downto 0 );
 
-            HiSpeed_Mode    : in    std_logic;                          -- (for V9958 MSX2+/tR VDP)
+            VdpSpeedMode    : in    std_logic;                          -- (for V9958 MSX2+/tR VDP)
+            RatioMode       : in    std_logic_vector(  2 downto 0 );    -- (for V9958 MSX2+/tR VDP)
+            centerYJK_R25_n : in    std_logic;                          -- (for V9958 MSX2+/tR VDP)
 
             -- Video Output
             pVideoR         : out   std_logic_vector(  5 downto 0 );
@@ -267,7 +269,7 @@ architecture RTL of emsx_top is
             DispReso        : in    std_logic;
             ntsc_pal_type   : in    std_logic;
             forced_v_mode   : in    std_logic;
-            vAllow_n        : in    std_logic
+            legacy_vga      : in    std_logic
         );
     end component;
 
@@ -373,7 +375,7 @@ architecture RTL of emsx_top is
             CustomSpeed     : inout std_logic_vector(  3 downto 0 );        -- Counter limiter of CPU wait control
             tMegaSD         : inout std_logic;                              -- Turbo on MegaSD access   :   3.58MHz to 5.37MHz autoselection
             tPanaRedir      : inout std_logic;                              -- tPana Redirection switch
-            VdpMode         : inout std_logic;                              -- VDP High Speed Mode
+            VdpSpeedMode    : inout std_logic;                              -- VDP High Speed Mode
             V9938_n         : inout std_logic;                              -- V9938 Status             :   0=V9938, 1=V9958
             Mapper_req      : inout std_logic;                              -- Mapper req               :   Warm or Cold Reset are necessary to complete the request
             Mapper_ack      : out   std_logic;                              -- Current Mapper state
@@ -420,7 +422,10 @@ architecture RTL of emsx_top is
             ff_ldbios_n     : in    std_logic;                              -- MSX-BIOS loading status
             -- 'SPECIAL' group
             Slot0_req       : inout std_logic;                              -- Slot-0 Primary Mode req  :   Warm Reset is necessary to complete the request
-            Slot0Mode       : inout std_logic                               -- Current Slot-0 state     :   0=Primary, 1=Expanded
+            Slot0Mode       : inout std_logic;                               -- Current Slot-0 state     :   0=Primary, 1=Expanded
+	         RatioMode       : inout std_logic_vector(  2 downto 0);         -- Pixel Ratio 1:1 for LED Display (default is 0) (range 0-7) (60Hz only)
+	         centerYJK_R25_n : inout std_logic;                              -- Centering YJK Modes/R25 Mask (0=centered, 1=shifted to the right)
+	         legacy_sel      : inout std_logic                               -- Legacy Output selector   :   0=Assigned to VGA, 1=Assigned to VGA+
         );
     end component;
 
@@ -437,7 +442,7 @@ architecture RTL of emsx_top is
     signal  CustomSpeed     : std_logic_vector(  3 downto 0 );
     signal  tMegaSD         : std_logic;
     signal  tPanaRedir      : std_logic;                                    -- here to reduce LEs
-    signal  VdpMode         : std_logic;
+    signal  VdpSpeedMode         : std_logic;
     signal  V9938_n         : std_logic;
     signal  Mapper_req      : std_logic;                                    -- here to reduce LEs
     signal  Mapper_ack      : std_logic;
@@ -468,6 +473,9 @@ architecture RTL of emsx_top is
     signal  ZemmixNeo       : std_logic;
     signal  JIS2_ena        : std_logic;
     signal  portF4_mode     : std_logic;
+    signal  RatioMode       : std_logic_vector(  2 downto 0 );
+    signal  centerYJK_R25_n : std_logic;
+    signal  legacy_sel      : std_logic;
     signal  Slot0_req       : std_logic;                                    -- here to reduce LEs
     signal  Slot0Mode       : std_logic;
 
@@ -614,12 +622,10 @@ architecture RTL of emsx_top is
 
     -- VDP signals
     signal  VdpReq          : std_logic;
-    signal  VdpAck          : std_logic;
     signal  VdpDbi          : std_logic_vector(  7 downto 0 );
     signal  VideoSC         : std_logic;
     signal  VideoDLClk      : std_logic;
     signal  VideoDHClk      : std_logic;
-    signal  OeVdp_n         : std_logic;
     signal  WeVdp_n         : std_logic;
     signal  VdpAdr          : std_logic_vector( 16 downto 0 );
     signal  VrmDbo          : std_logic_vector(  7 downto 0 );
@@ -627,7 +633,7 @@ architecture RTL of emsx_top is
     signal  pVdpInt_n       : std_logic;
     signal  ntsc_pal_type   : std_logic;
     signal  forced_v_mode   : std_logic;
-    signal  vAllow_n        : std_logic;
+    signal  legacy_vga      : std_logic;
 
     -- Video signals
     signal  VideoR          : std_logic_vector( 5 downto 0 );               -- RGB_Red
@@ -1683,7 +1689,7 @@ begin
             pDac_VG   <= VideoG;
             pDac_VB   <= VideoB;
             Reso_v    <= pScandoubler;       -- 15kHz/31kHz
-            vAllow_n  <= '1';
+            legacy_vga <= '1';
             pVideoHS  <= not VideoHS_n;
             pVideoVS  <= not VideoVS_n;
         end if;
@@ -2098,9 +2104,9 @@ begin
     -- V9958 MSX2+/tR VDP
     U20 : vdp
         port map(clk21m, reset, VdpReq, open, wrt, adr, VdpDbi, dbo, pVdpInt_n,
-                        open, WeVdp_n, VdpAdr, VrmDbi, VrmDbo, VdpMode,
+                        open, WeVdp_n, VdpAdr, VrmDbi, VrmDbo, VdpSpeedMode, RatioMode, centerYJK_R25_n,
                         VideoR, VideoG, VideoB, pVideoDE, VideoHS_n, VideoVS_n, open,
-                        VideoDHClk, VideoDLClk, Reso_v, ntsc_pal_type, forced_v_mode, vAllow_n);
+                        VideoDHClk, VideoDLClk, Reso_v, ntsc_pal_type, forced_v_mode, legacy_vga);
 
     U30 : psg
         port map(clk21m, reset, clkena, PsgReq, open, wrt, adr, PsgDbi, dbo,
@@ -2157,7 +2163,7 @@ begin
         CustomSpeed     => CustomSpeed  ,
         tMegaSD         => tMegaSD      ,
         tPanaRedir      => tPanaRedir   ,   -- here to reduce LEs
-        VdpMode         => VdpMode      ,
+        VdpSpeedMode    => VdpSpeedMode ,
         V9938_n         => V9938_n      ,
         Mapper_req      => Mapper_req   ,   -- here to reduce LEs
         Mapper_ack      => Mapper_ack   ,
@@ -2203,7 +2209,10 @@ begin
         portF4_mode     => portF4_mode  ,
         ff_ldbios_n     => ff_ldbios_n  ,
 
-        Slot0_req       => Slot0_req    ,   -- here to reduce LEs
+        RatioMode       => RatioMode       ,
+        centerYJK_R25_n => centerYJK_R25_n ,
+        legacy_sel      => legacy_sel      ,
+        Slot0_req       => Slot0_req       ,   -- here to reduce LEs
         Slot0Mode       => Slot0Mode
     );
 

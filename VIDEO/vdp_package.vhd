@@ -96,7 +96,7 @@ PACKAGE VDP_PACKAGE IS
     --   * Left Blanking       102 clks  - e
     --   * Left Border          56 clks  - f
     -- OFFSET_X is the position when preDotCounter_x is -8. So,
-    --    => (d+e+f-8*4-8*4)/4 => (100+102+56)/4 - 16 => 49
+    --    => (d+e+f-8*4-8*4)/4 => (100+102+56)/4 - 16 => 48 + 1 = 49
     --
     -- Vertical Display Parameters (NTSC)
     --                            [192 Lines]  [212 Lines]
@@ -107,45 +107,50 @@ PACKAGE VDP_PACKAGE IS
     --   * Display Time              192  192     212  212 lines - j
     --   * Bottom Border            25.5   25    15.5   15 lines - k
     --   * Bottom Blanking             3    3       3    3 lines - l
-    -- OFFSET_Y is the start line of Top Border (192 LInes Mode)
+    -- OFFSET_Y is the start line of Top Border (192 Lines Mode)
     --    => l+g+h => 3 + 3 + 13 = 19
     --
 
     CONSTANT CLOCKS_PER_LINE                    : INTEGER := 1368;                              -- 342*4
 
     -- LEFT-TOP POSITION OF VISIBLE AREA
-    CONSTANT OFFSET_X                           : STD_LOGIC_VECTOR( 6 DOWNTO 0) := "0110000";   -- 48 is slightly better versus 49
-    CONSTANT OFFSET_Y                           : STD_LOGIC_VECTOR( 6 DOWNTO 0) := "0010011";   -- 19
+    CONSTANT OFFSET_X                           : STD_LOGIC_VECTOR(  6 DOWNTO 0 ) := "0110001"; -- 49
+    SHARED VARIABLE OFFSET_Y                    : STD_LOGIC_VECTOR(  6 DOWNTO 0 );              -- 19 => managed by Switched I/O Ports
 
-    CONSTANT DISPLAY_OFFSET_NTSC                : INTEGER := 0;
-    CONSTANT DISPLAY_OFFSET_PAL                 : INTEGER := 27;
+    CONSTANT LED_TV_X_NTSC                      : INTEGER := -3;
+    CONSTANT LED_TV_Y_NTSC                      : INTEGER := 1;
+    CONSTANT LED_TV_X_PAL                       : INTEGER := -2;
+    CONSTANT LED_TV_Y_PAL                       : INTEGER := 3;
 
-    CONSTANT SCAN_LINE_OFFSET_192               : INTEGER := 24;
-    CONSTANT SCAN_LINE_OFFSET_212               : INTEGER := 14;
+--  CONSTANT DISPLAY_OFFSET_NTSC                : INTEGER := 0;
+--  CONSTANT DISPLAY_OFFSET_PAL                 : INTEGER := 27;
 
-    CONSTANT LAST_LINE_NTSC                     : INTEGER := 262;
-    CONSTANT LAST_LINE_PAL                      : INTEGER := 313;
+--  CONSTANT SCAN_LINE_OFFSET_192               : INTEGER := 24;
+--  CONSTANT SCAN_LINE_OFFSET_212               : INTEGER := 14;
 
-    CONSTANT FIRST_LINE_192_NTSC                : INTEGER := DISPLAY_OFFSET_NTSC + SCAN_LINE_OFFSET_192;
-    CONSTANT FIRST_LINE_212_NTSC                : INTEGER := DISPLAY_OFFSET_NTSC + SCAN_LINE_OFFSET_212;
-    CONSTANT FIRST_LINE_192_PAL                 : INTEGER := DISPLAY_OFFSET_PAL  + SCAN_LINE_OFFSET_192;
-    CONSTANT FIRST_LINE_212_PAL                 : INTEGER := DISPLAY_OFFSET_PAL  + SCAN_LINE_OFFSET_212;
+--  CONSTANT LAST_LINE_NTSC                     : INTEGER := 262;                               -- 262 & 262.5 => 3 + 13 + 26 + 192 + 25 + 3
+--  CONSTANT LAST_LINE_PAL                      : INTEGER := 313;                               -- 312.5 & 313 => 3 + 13 + 53 + 192 + 49 + 3
 
-    CONSTANT INTERNAL_X_INIT                    : INTEGER := 102;
-    CONSTANT PRE_DOTCOUNTER_X_START             : INTEGER := -30;
-    CONSTANT PRE_DOTCOUNTER_Y_START             : INTEGER := -2;
-    CONSTANT PRE_DOTCOUNTER_Y_START_192_NTSC    : INTEGER := PRE_DOTCOUNTER_Y_START - DISPLAY_OFFSET_NTSC - SCAN_LINE_OFFSET_192;
-    CONSTANT PRE_DOTCOUNTER_Y_START_212_NTSC    : INTEGER := PRE_DOTCOUNTER_Y_START - DISPLAY_OFFSET_NTSC - SCAN_LINE_OFFSET_212;
-    CONSTANT PRE_DOTCOUNTER_Y_START_192_PAL     : INTEGER := PRE_DOTCOUNTER_Y_START - DISPLAY_OFFSET_PAL  - SCAN_LINE_OFFSET_192;
-    CONSTANT PRE_DOTCOUNTER_Y_START_212_PAL     : INTEGER := PRE_DOTCOUNTER_Y_START - DISPLAY_OFFSET_PAL  - SCAN_LINE_OFFSET_212;
+--  CONSTANT FIRST_LINE_192_NTSC                : INTEGER := DISPLAY_OFFSET_NTSC + SCAN_LINE_OFFSET_192;
+--  CONSTANT FIRST_LINE_212_NTSC                : INTEGER := DISPLAY_OFFSET_NTSC + SCAN_LINE_OFFSET_212;
+--  CONSTANT FIRST_LINE_192_PAL                 : INTEGER := DISPLAY_OFFSET_PAL + SCAN_LINE_OFFSET_192;
+--  CONSTANT FIRST_LINE_212_PAL                 : INTEGER := DISPLAY_OFFSET_PAL + SCAN_LINE_OFFSET_212;
+
+--  CONSTANT INTERNAL_X_INIT                    : INTEGER := 102;
+--  CONSTANT PRE_DOTCOUNTER_X_START             : INTEGER := -30;
+--  CONSTANT PRE_DOTCOUNTER_Y_START             : INTEGER := -2;
+--  CONSTANT PRE_DOTCOUNTER_Y_START_192_NTSC    : INTEGER := PRE_DOTCOUNTER_Y_START - DISPLAY_OFFSET_NTSC - SCAN_LINE_OFFSET_192;
+--  CONSTANT PRE_DOTCOUNTER_Y_START_212_NTSC    : INTEGER := PRE_DOTCOUNTER_Y_START - DISPLAY_OFFSET_NTSC - SCAN_LINE_OFFSET_212;
+--  CONSTANT PRE_DOTCOUNTER_Y_START_192_PAL     : INTEGER := PRE_DOTCOUNTER_Y_START - DISPLAY_OFFSET_PAL - SCAN_LINE_OFFSET_192;
+--  CONSTANT PRE_DOTCOUNTER_Y_START_212_PAL     : INTEGER := PRE_DOTCOUNTER_Y_START - DISPLAY_OFFSET_PAL - SCAN_LINE_OFFSET_212;
 
     CONSTANT LEFT_BORDER                        : INTEGER := 235;
-    CONSTANT DISPLAY_AREA                       : INTEGER := 1024;
+--  CONSTANT DISPLAY_AREA                       : INTEGER := 1024;
 
-    CONSTANT VISIBLE_AREA_SX                    : INTEGER := LEFT_BORDER;
-    CONSTANT VISIBLE_AREA_EX                    : INTEGER := CLOCKS_PER_LINE;
+--  CONSTANT VISIBLE_AREA_SX                    : INTEGER := LEFT_BORDER;
+--  CONSTANT VISIBLE_AREA_EX                    : INTEGER := CLOCKS_PER_LINE;
 
-    CONSTANT H_BLANKING_START                   : INTEGER := CLOCKS_PER_LINE - 59 - 27 + 1;
+--  CONSTANT H_BLANKING_START                   : INTEGER := CLOCKS_PER_LINE - 59 - 27 + 1;
 
     CONSTANT V_BLANKING_START_192_NTSC          : INTEGER := 240;
     CONSTANT V_BLANKING_START_212_NTSC          : INTEGER := 250;

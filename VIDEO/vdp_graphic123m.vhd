@@ -88,7 +88,7 @@ ENTITY VDP_GRAPHIC123M IS
         CLK21M                      : IN    STD_LOGIC;      --  21.477MHZ
         RESET                       : IN    STD_LOGIC;
 
-        -- CONTROLL SIGNALS
+        -- CONTROL SIGNALS
         DOTSTATE                    : IN    STD_LOGIC_VECTOR(  1 DOWNTO 0 );
         EIGHTDOTSTATE               : IN    STD_LOGIC_VECTOR(  2 DOWNTO 0 );
         DOTCOUNTERX                 : IN    STD_LOGIC_VECTOR(  8 DOWNTO 0 );
