@@ -112,13 +112,16 @@ ENTITY VDP_VGA IS
         -- MODE
         PALMODE         : IN    STD_LOGIC;  -- caro
         INTERLACEMODE   : IN    STD_LOGIC;
+        LEGACY_VGA      : IN    STD_LOGIC;
         -- VIDEO OUTPUT
         VIDEOROUT       : OUT   STD_LOGIC_VECTOR( 5 DOWNTO 0);
         VIDEOGOUT       : OUT   STD_LOGIC_VECTOR( 5 DOWNTO 0);
         VIDEOBOUT       : OUT   STD_LOGIC_VECTOR( 5 DOWNTO 0);
         VIDEODEOUT      : OUT   STD_LOGIC;
         VIDEOHSOUT_N    : OUT   STD_LOGIC;
-        VIDEOVSOUT_N    : OUT   STD_LOGIC
+        VIDEOVSOUT_N    : OUT   STD_LOGIC;
+        -- SWITCHED I/O SIGNALS
+        RATIOMODE       : IN    STD_LOGIC_VECTOR( 2 DOWNTO 0)
     );
 END VDP_VGA;
 
@@ -143,7 +146,6 @@ ARCHITECTURE RTL OF VDP_VGA IS
 
     -- VIDEO OUTPUT ENABLE
     SIGNAL VIDEOOUTX        : STD_LOGIC;
-    SIGNAL VIDEOOUTY        : STD_LOGIC;
 
     -- DOUBLE BUFFER SIGNAL
     SIGNAL XPOSITIONW       : STD_LOGIC_VECTOR(  9 DOWNTO 0 );
@@ -156,8 +158,8 @@ ARCHITECTURE RTL OF VDP_VGA IS
     SIGNAL DATADEOUT        : STD_LOGIC;
 
     -- DISP_START_X + DISP_WIDTH < CLOCKS_PER_LINE/2 = 684
-    CONSTANT DISP_WIDTH     : INTEGER := 562;    -- 30 + 512 + 20
-    CONSTANT DISP_START_X   : INTEGER := 120;
+    CONSTANT DISP_WIDTH             : INTEGER := 576;
+    SHARED VARIABLE DISP_START_X    : INTEGER := 684 - DISP_WIDTH - 2;          -- 106
 BEGIN
 
     VIDEOROUT <= DATAROUT  WHEN VIDEOOUTX = '1' ELSE (OTHERS => '0');
@@ -182,6 +184,42 @@ BEGIN
     XPOSITIONW  <=  HCOUNTERIN(10 DOWNTO 1) - (CLOCKS_PER_LINE/2 - DISP_WIDTH - 10);
     EVENODD     <=  VCOUNTERIN(1);
     WE_BUF      <=  '1';
+
+    -- PIXEL RATIO 1:1 FOR LED DISPLAY
+    PROCESS( CLK21M )
+        CONSTANT DISP_START_Y   : INTEGER := 3;
+        CONSTANT PRB_HEIGHT     : INTEGER := 25;
+        CONSTANT RIGHT_X        : INTEGER := 684 - DISP_WIDTH - 2;              -- 106
+        CONSTANT PAL_RIGHT_X    : INTEGER := 87;                                -- 87
+        CONSTANT CENTER_X       : INTEGER := RIGHT_X - 32 - 2;                  -- 72
+        CONSTANT BASE_LEFT_X    : INTEGER := CENTER_X - 32 - 2 - 3;             -- 35
+    BEGIN
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( (RATIOMODE = "000" OR INTERLACEMODE = '1' OR PALMODE = '1') AND LEGACY_VGA = '1' )THEN
+                -- LEGACY OUTPUT
+                DISP_START_X := RIGHT_X;                                        -- 106
+            ELSIF( PALMODE = '1' )THEN
+                -- 50HZ
+                DISP_START_X := PAL_RIGHT_X;                                    -- 87
+            ELSIF( RATIOMODE = "000" OR INTERLACEMODE = '1' )THEN
+                -- 60HZ
+                DISP_START_X := CENTER_X;                                       -- 72
+            ELSIF( (VCOUNTERIN < 38 + DISP_START_Y + PRB_HEIGHT) OR
+                   (VCOUNTERIN > 526 - PRB_HEIGHT AND VCOUNTERIN < 526 ) OR
+                   (VCOUNTERIN > 524 + 38 + DISP_START_Y AND VCOUNTERIN < 524 + 38 + DISP_START_Y + PRB_HEIGHT) OR
+                   (VCOUNTERIN > 524 + 526 - PRB_HEIGHT) )THEN
+                -- PIXEL RATIO 1:1 (VGA MODE, 60HZ, NOT INTERLACED)
+--              IF( EVENODD = '0' )THEN                                         -- PLOT FROM TOP-RIGHT
+                IF( EVENODD = '1' )THEN                                         -- PLOT FROM TOP-LEFT
+                    DISP_START_X := BASE_LEFT_X + CONV_INTEGER(NOT RATIOMODE);  -- 35 TO 41
+                ELSE
+                    DISP_START_X := RIGHT_X;                                    -- 106
+                END IF;
+            ELSE
+                DISP_START_X := CENTER_X;                                       -- 72
+            END IF;
+        END IF;
+    END PROCESS;
 
     -- GENERATE H-SYNC SIGNAL
     PROCESS( RESET, CLK21M )
@@ -256,47 +294,17 @@ BEGIN
     BEGIN
         IF( RESET = '1' )THEN
             VIDEOOUTX <= '0';
-            VIDEOOUTY <= '0';
         ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
             IF( (HCOUNTERIN = DISP_START_X) OR
                     ((HCOUNTERIN = DISP_START_X + (CLOCKS_PER_LINE/2)) AND INTERLACEMODE = '0') ) THEN
-                VIDEOOUTX <= VIDEOOUTY;
+                VIDEOOUTX <= '1';
             ELSIF( (HCOUNTERIN = DISP_START_X + DISP_WIDTH) OR
                        (HCOUNTERIN = DISP_START_X + DISP_WIDTH + (CLOCKS_PER_LINE/2)) ) THEN
                 VIDEOOUTX <= '0';
             END IF;
-
-            IF( INTERLACEMODE='0' ) THEN
-                -- NON-INTERLACE
-                -- 3+3+16 = 19
-                IF( (VCOUNTERIN = 20*2) OR
-                        ((VCOUNTERIN = 524+20*2) AND (PALMODE = '0')) OR
-                        ((VCOUNTERIN = 626+20*2) AND (PALMODE = '1')) ) THEN
-                    VIDEOOUTY <= '1';
-                ELSIF(  ((VCOUNTERIN = 524) AND (PALMODE = '0')) OR
-                        ((VCOUNTERIN = 626) AND (PALMODE = '1')) OR
-                         (VCOUNTERIN = 0) ) THEN
-                    VIDEOOUTY <= '0';
-                END IF;
-            ELSE
-                -- INTERLACE
-                IF( (VCOUNTERIN = 20*2) OR
-                        -- +1 SHOULD BE NEEDED.
-                        -- BECAUSE ODD FIELD'S START IS DELAYED HALF LINE.
-                        -- SO THE START POSITION OF DISPLAY TIME SHOULD BE
-                        -- DELAYED MORE HALF LINE.
-                        ((VCOUNTERIN = 525+20*2 + 1) AND (PALMODE = '0')) OR
-                        ((VCOUNTERIN = 625+20*2 + 1) AND (PALMODE = '1')) ) THEN
-                    VIDEOOUTY <= '1';
-                ELSIF(  ((VCOUNTERIN = 525) AND (PALMODE = '0')) OR
-                        ((VCOUNTERIN = 625) AND (PALMODE = '1')) OR
-                         (VCOUNTERIN = 0) ) THEN
-                    VIDEOOUTY <= '0';
-                END IF;
-            END IF;
         END IF;
     END PROCESS;
 
-	 VIDEODEOUT <= VIDEOOUTX;
+        VIDEODEOUT <= VIDEOOUTX;
     VIDEOHSOUT_N <= FF_HSYNC_N;
 END RTL;

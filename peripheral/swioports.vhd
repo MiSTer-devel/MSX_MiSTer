@@ -1,9 +1,9 @@
 --
 -- swioports.vhd
 --   Switched I/O ports ($40-$4F)
---   Revision 6
+--   Revision 9
 --
--- Copyright (c) 2011-2017 KdL
+-- Copyright (c) 2011-2019 KdL
 -- All rights reserved.
 --
 -- Redistribution and use of this source code or any derivative works, are
@@ -33,6 +33,7 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.std_logic_unsigned.all;
+    use work.vdp_package.all;
 
 entity switched_io_ports is
     port(
@@ -57,7 +58,7 @@ entity switched_io_ports is
         CustomSpeed     : inout std_logic_vector(  3 downto 0 );            -- Counter limiter of CPU wait control
         tMegaSD         : inout std_logic;                                  -- Turbo on MegaSD access   :   3.58MHz to 5.37MHz autoselection
         tPanaRedir      : inout std_logic;                                  -- tPana Redirection switch
-        VdpMode         : inout std_logic;                                  -- VDP High Speed Mode
+        VdpSpeedMode    : inout std_logic;                                  -- VDP Speed Mode           :   0=Normal, 1=Fast
         V9938_n         : inout std_logic;                                  -- V9938 Status             :   0=V9938, 1=V9958
         Mapper_req      : inout std_logic;                                  -- Mapper req               :   Warm or Cold Reset are necessary to complete the request
         Mapper_ack      : out   std_logic;                                  -- Current Mapper state
@@ -101,10 +102,13 @@ entity switched_io_ports is
         -- 'IPL-ROM' group
         JIS2_ena        : inout std_logic;                                  -- JIS2 enabler             :   0=JIS1 only (BIOS 384 kB), 1=JIS1+JIS2 (BIOS 512 kB)
         portF4_mode     : inout std_logic;                                  -- Port F4 mode             :   0=F4 Device Inverted (MSX2+), 1=F4 Device Normal (MSXtR)
-        ff_ldbios_n     : in    std_logic;                                  -- MSX-BIOS loading status
+        ff_ldbios_n     : in    std_logic;                                  -- OCM-BIOS loading status
         -- 'SPECIAL' group
-        Slot0_req       : inout std_logic;                                  -- Slot-0 Primary Mode req  :   Warm Reset is necessary to complete the request
-        Slot0Mode       : inout std_logic                                   -- Current Slot-0 state     :   0=Primary, 1=Expanded
+        RatioMode       : inout std_logic_vector(  2 downto 0 );            -- Pixel Ratio 1:1 for LED Display (default is 0) (range 0-7) (60Hz only)
+        centerYJK_R25_n : inout std_logic;                                  -- Centering YJK Modes/R25 Mask (0=centered, 1=shifted to the right)
+        legacy_sel      : inout std_logic;                                  -- Legacy Output selector   :   0=Assigned to VGA, 1=Assigned to VGA+
+        Slot0_req       : inout std_logic;                                  -- Slot0 Primary Mode req   :   Warm Reset is necessary to complete the request
+        Slot0Mode       : inout std_logic                                   -- Current Slot0 state      :   0=Primary, 1=Expanded
     );
 end switched_io_ports;
 
@@ -112,12 +116,12 @@ architecture RTL of switched_io_ports is
 
     signal  swio_ack    : std_logic;
 
-    -- 'OCM-PLD' version number (x \ 10).(y mod 10).(z(0~3))                -- OCM-PLD version 0.0(.0) ~ 25.5(.3)
-    constant  ocm_pld_xy  : std_logic_vector(  7 downto 0 ) := "00100011";    -- 35
-    constant  ocm_pld_z   : std_logic_vector(  1 downto 0 ) :=       "00";    -- 0
+    -- 'OCM-PLD' version number (x \ 10).(y mod 10).(z[0~3])                -- OCM-PLD version 0.0(.0) ~ 25.5(.3)
+    constant ocm_pld_xy : std_logic_vector(  7 downto 0 ) := "00100101";    -- 37
+    constant ocm_pld_z  : std_logic_vector(  1 downto 0 ) :=       "01";    -- 1
 
     -- 'Switched I/O Ports' revision number (0-31)                          -- Switched I/O ports Revision 0 ~ 31
-    constant  swioRevNr   : std_logic_vector(  4 downto 0 ) :=    "00110";    -- 6
+    constant swioRevNr  : std_logic_vector(  4 downto 0 ) :=    "01001";    -- 9
 
 begin
     -- out assignment: 'ports $40-$4F'
@@ -138,8 +142,8 @@ begin
             (MstrVol(2) and MstrVol(1) and MstrVol(0)) & not MstrVol & (not (PsgVol(2) or PsgVol(1) or PsgVol(0))) & PsgVol when( (adr(3 downto 0) = "0101") and (io40_n = "00101011") )else
                 -- $46 ID212 [MSB] any scc-i status & volume / opll status & volume [LSB] => read/write_n
             (not (SccVol(2) or SccVol(1) or SccVol(0))) & SccVol & (not (OpllVol(2) or OpllVol(1) or OpllVol(0))) & OpllVol when( (adr(3 downto 0) = "0110") and (io40_n = "00101011") )else
-                -- $47 ID212 [MSB] megasd_req/mapper_req/vdpmode/tpana_redir/turbo_megasd/custom_speed_lev(1-7) [LSB] => read only
-            MegaSD_req & Mapper_req & VdpMode & tPanaRedir & tMegaSD & ("001" - CustomSpeed(2 downto 0))
+                -- $47 ID212 [MSB] megasd_req/mapper_req/vdpspeedmode/tpana_redir/turbo_megasd/custom_speed_lev(1-7) [LSB] => read only
+            MegaSD_req & Mapper_req & VdpSpeedMode & tPanaRedir & tMegaSD & ("001" - CustomSpeed(2 downto 0))
                                                 when( (adr(3 downto 0) = "0111") and (io40_n = "00101011") )else
                 -- $48 ID212 states as below => read only
             Blink_ena & RstReq_sta & LastRst_sta & Red_sta & LightsMode & CmtScro & swioKmap & not io41_id008_n
@@ -177,8 +181,10 @@ begin
             DefKmap         <=  '1';                    -- Default Keyboard     0=Japanese Layout   1=Non-Japanese Layout
             ZemmixNeo       <=  '1';                    -- Machine Type         0=1chipMSX          1=Zemmix Neo
 --          =============================================================================================================
+                RatioMode       <=  "000";                  -- Restore Pixel Ratio 1:1 for LED Display after any reboot
             if( warmRESET /= '1' )then
                 -- Cold Reset
+                    OFFSET_Y        :=  "0010011";          -- Default Vertical Offset
 --              io41_id212_n    <=  "00000000";         -- Smart Commands will be zero at 1st boot
                 io42_id212      <=  ff_dip_req;         -- Virtual DIP-SW are DIP-SW
                 ff_dip_ack      <=  ff_dip_req;         -- Sync to its req
@@ -191,7 +197,7 @@ begin
                 CustomSpeed     <=  "0010";             -- Custom Turbo (old 10.74MHz)
                 tMegaSD         <=  '1';                -- Turbo MegaSD
                 tPanaRedir      <=  '0';                -- tPana Redirection is Off
-                VdpMode         <=  '0';                -- VDP High Speed is On
+                VdpSpeedMode    <=  '0';                -- VDP Speed Mode is Normal
                 Mapper_req      <=  ff_dip_req(6);      -- Set Mapper state to DIP-SW7 state
                 Mapper_ack      <=  ff_dip_req(6);      -- Prevent system crash using DIP-SW7
                 MegaSD_req      <=  ff_dip_req(7);      -- Set MegaSD state to DIP-SW8 state
@@ -208,7 +214,9 @@ begin
                 ntsc_pal_type   <=  '1';                -- NTSC/PAL Type is Auto
                 forced_v_mode   <=  '0';                -- Manual NTSC/PAL is NTSC
                 right_inverse   <=  '0';                -- Right Inverse Audio is Off
-                Slot0_req       <=  '1';                -- Set Slot-0 Expanded Mode
+                centerYJK_R25_n <=  '1';                -- Centering YJK Modes/R25 Mask is Off
+                legacy_sel      <=  '1';                -- Legacy Output is assigned to VGA+
+                Slot0_req       <=  '1';                -- Set Slot0 Expanded Mode
                 Slot0Mode       <=  '1';                -- Prevent system crash using Reset Key
             else
                 -- Warm Reset
@@ -407,15 +415,15 @@ begin
                             io42_id212(2 downto 1)  <=  "00";
                         when "00011000" =>                                  -- Display Mode 15KHz RGB + Audio (Mono)
                             io42_id212(2 downto 1)  <=  "10";
-                        when "00011001" =>                                  -- Display Mode 31Khz VGA  (60Hz only)
+                        when "00011001" =>                                  -- Display Mode 31Khz VGA for LED TV or LED Display (50Hz+60Hz)
                             io42_id212(2 downto 1)  <=  "01";
-                        when "00011010" =>                                  -- Display Mode 31Khz VGA+ (50Hz+60Hz)
+                        when "00011010" =>                                  -- Display Mode 31Khz VGA+ for CRT Monitor (legacy output) (50Hz+60Hz)
                             io42_id212(2 downto 1)  <=  "11";
                         -- SMART CODES  #027, #028
-                        when "00011011" =>                                  -- VDP High Speed Mode is Off (Default)
-                            VdpMode         <=  '0';
-                        when "00011100" =>                                  -- VDP High Speed Mode is On (V9958 only)
-                            VdpMode         <=  '1' and V9938_n;
+                        when "00011011" =>                                  -- VDP Speed Mode is Normal (default)
+                            VdpSpeedMode    <=  '0';
+                        when "00011100" =>                                  -- VDP Speed Mode is Fast (V9958 only)
+                            VdpSpeedMode    <=  '1' and V9938_n;
                         -- SMART CODES  #029, #030
                         when "00011101" =>                                  -- MegaSD Off       (warm reset is required)
                             MegaSD_req      <=  '0';
@@ -527,20 +535,64 @@ begin
                                 io41_id008_n    <=  '0';
                                 io42_id212(0)   <=  '0';
                             end if;
-                        -- SMART CODES  #065
+                        -- SMART CODE   #065
                         when "01000001" =>                                  -- Turbo Pana 5.37MHz (alternative mode)
                             io41_id008_n    <=  '0';
                             io42_id212(0)   <=  '0';
                         -- SMART CODES  #066, #067
-                        when "01000010" =>                                  -- Right Inverse Audio Off (Default)
+                        when "01000010" =>                                  -- Right Inverse Audio Off (default)
                             right_inverse   <=  '0';
                         when "01000011" =>                                  -- Right Inverse Audio On
                             right_inverse   <=  '1';
-                        -- SMART CODES  #068, #..., #127                    -- Free Group
+                        -- SMART CODES  #068, #069, #070
+                            when "01000100" =>                                  -- Internal Audio Preset #4 "Emphasis PSG Sound"
+                                OpllVol         <=  "011";
+                                SccVol          <=  "011";
+                                PsgVol          <=  "101";
+                                MstrVol         <=  "000";
+                            when "01000101" =>                                  -- Internal Audio Preset #5 "Emphasis SCC-I Sound"
+                                OpllVol         <=  "011";
+                                SccVol          <=  "101";
+                                PsgVol          <=  "011";
+                                MstrVol         <=  "000";
+                            when "01000110" =>                                  -- Internal Audio Preset #6 "Emphasis OPLL Sound"
+                                OpllVol         <=  "101";
+                                SccVol          <=  "011";
+                                PsgVol          <=  "011";
+                                MstrVol         <=  "000";
+                            -- SMART CODES  #071, #072, #073, #074, #075, #076, #077, #078, #079
+                            when "01000111" =>                                  -- Vertical Offset 16 (useful for Ark-A-Noah)
+                                OFFSET_Y := "0010000";
+                            when "01001000" =>                                  -- Vertical Offset 17
+                                OFFSET_Y := "0010001";
+                            when "01001001" =>                                  -- Vertical Offset 18
+                                OFFSET_Y := "0010010";
+                            when "01001010" =>                                  -- Vertical Offset 19 (default)
+                                OFFSET_Y := "0010011";
+                            when "01001011" =>                                  -- Vertical Offset 20
+                                OFFSET_Y := "0010100";
+                            when "01001100" =>                                  -- Vertical Offset 21
+                                OFFSET_Y := "0010101";
+                            when "01001101" =>                                  -- Vertical Offset 22
+                                OFFSET_Y := "0010110";
+                            when "01001110" =>                                  -- Vertical Offset 23
+                                OFFSET_Y := "0010111";
+                            when "01001111" =>                                  -- Vertical Offset 24 (useful for Space Manbow)
+                                OFFSET_Y := "0011000";
+                            -- SMART CODES  #080, #..., #126                    -- Free Group
+                            -- SMART CODE   #127
+                            when "01111111" =>                                  -- Pixel Ratio 1:1 for LED Display
+                                RatioMode       <=  RatioMode - 1;
                         -- SMART CODE   #128
                         when "10000000" =>                                  -- Null Command (useful for programming)
                             null;
-                        -- SMART CODES  #129, #..., #175                    -- Free Group
+                            -- SMART CODES   #129, #130
+                            when "10000001" =>                                  -- Legacy Output is assigned to VGA
+                                legacy_sel <=  '0';
+                            when "10000010" =>                                  -- Legacy Output is assigned to VGA+ (default)
+                                legacy_sel <=  '1';
+                            -- SMART CODES   #131, #132, #133, #134
+                            -- SMART CODES  #135, #..., #175                    -- Free Group
                         -- SMART CODES  #176, #177, #178, #179, #180, #181, #182, #183
                         when "10110000" =>                                  -- Master Volume 0 (mute)
                             MstrVol         <=  "111";
@@ -613,7 +665,7 @@ begin
                         when "11010000" =>                                  -- Force 60Hz           A:\>SETSMART -D0
                             ntsc_pal_type   <=  '0';
                             forced_v_mode   <=  '0';
-                        when "11010001" =>                                  -- NTSC/PAL Auto        is bound by R9 (Default for 15KHz modes and VGA+ only. No effect with VGA mode!)
+                        when "11010001" =>                                  -- NTSC/PAL Auto    is bound by Control Register 9 (default)
                             ntsc_pal_type   <=  '1';
                         when "11010010" =>                                  -- Force 50Hz           A:\>SETSMART -D2
                             ntsc_pal_type   <=  '0';
@@ -634,11 +686,16 @@ begin
                             io41_id008_n    <=  '1';
                             Red_sta         <=  not io41_id008_n;
                             extclk3m        <=  '0';
-                        -- SMART CODES  #214, #..., #248                    -- Free Group
-                        -- SMART CODES  #249
-                        when "11111001" =>                                  -- Slot-0 Primary Mode (warm reset is required)
+                            -- SMART CODES   #214, #215
+                            when "11010110" =>                                  -- Centering YJK Modes/R25 Mask Off (default)
+                                centerYJK_R25_n <=  '1';
+                            when "11010111" =>                                  -- Centering YJK Modes/R25 Mask On
+                                centerYJK_R25_n <=  '0';
+                            -- SMART CODES  #216, #..., #248                    -- Free Group
+                            -- SMART CODE   #249
+                            when "11111001" =>                                  -- Slot0 Primary Mode (warm reset is required) (internal OPLL disabled)
                             Slot0_req       <=  '0';
-                        -- SMART CODES  #250
+                            -- SMART CODE   #250
                         when "11111010" =>                                  -- MSX logo will be On after a Warm Reset
                             WarmMSXlogo     <=  not portF4_mode;
                         -- SMART CODES  #251, #252, #253, #254
@@ -657,6 +714,7 @@ begin
                             swioRESET_n     <=  '0';
                         -- SMART CODE   #255
                         when "11111111" =>                                  -- System Restore
+                            OFFSET_Y        :=  "0010011";
                             io42_id212(5 downto 0)  <=  ff_dip_req(5 downto 0);
                             ff_dip_ack(5 downto 0)  <=  ff_dip_req(5 downto 0);
                             io43_id212      <=  "00000000";
@@ -668,7 +726,7 @@ begin
                             CustomSpeed     <=  "0010";
                             tMegaSD         <=  '1';
                             tPanaRedir      <=  '0';
-                            VdpMode         <=  '0';
+                            VdpSpeedMode    <=  '0';
                             Mapper_req      <=  ff_dip_req(6);
                             MegaSD_req      <=  ff_dip_req(7);
                             io41_id008_n    <=  '1';
@@ -682,6 +740,8 @@ begin
                             ntsc_pal_type   <=  '1';
                             forced_v_mode   <=  '0';
                             right_inverse   <=  '0';
+                            centerYJK_R25_n <=  '1';
+                            legacy_sel      <=  '1';
                             Slot0_req       <=  '1';
                         -- NULL CODES
                         when others     =>

@@ -228,7 +228,7 @@ BEGIN
         FF_PIX3         WHEN "11",
         (OTHERS => 'X') WHEN OTHERS;
 
-    -- TWO SCREEN H-SCROLL MODE (R#25 SP2 = '1')
+    -- TWO SCREEN H-SCROLL MODE (R25 SP2 = '1')
     W_SP2_H_SCROLL      <=  LOCALDOTCOUNTERX(8) WHEN( (REG_R25_SP2 AND LATCHEDPTNNAMETBLBASEADDR(5)) = '1' )ELSE
                             LATCHEDPTNNAMETBLBASEADDR(5);
 
@@ -361,8 +361,8 @@ BEGIN
 
     -- YJK COLOR CONVERT
     W_Y     <=  W_PIX( 7 DOWNTO 3 );                                                --  Y ( 0...31)
-    W_K     <=  FF_PIX1( 2 DOWNTO 0 ) & FF_PIX0( 2 DOWNTO 0 );                      --  K (-32...31)
     W_J     <=  FF_PIX3( 2 DOWNTO 0 ) & FF_PIX2( 2 DOWNTO 0 );                      --  J (-32...31)
+    W_K     <=  FF_PIX1( 2 DOWNTO 0 ) & FF_PIX0( 2 DOWNTO 0 );                      --  K (-32...31)
 
     W_R_YJK <=  ("00" & W_Y) + (W_J(5) & W_J);                                      --  R (-32...62)
     W_G_YJK <=  ("00" & W_Y) + (W_K(5) & W_K);                                      --  B (-32...62)

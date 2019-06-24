@@ -157,8 +157,8 @@ BEGIN
                 ELSIF( VDPMODEGRAPHIC7 = '0' OR REG_R25_YJK = '1' )THEN
                     --  PALETTE COLOR (NOT GRAPHIC7, SPRITE ON YJK MODE, YAE COLOR ON YJK MODE)
                     FF_VIDEO_R <= PALETTEDATARB_OUT( 6 DOWNTO 4 ) & "000";
-                    FF_VIDEO_B <= PALETTEDATARB_OUT( 2 DOWNTO 0 ) & "000";
                     FF_VIDEO_G <= PALETTEDATAG_OUT(  2 DOWNTO 0 ) & "000";
+                    FF_VIDEO_B <= PALETTEDATARB_OUT( 2 DOWNTO 0 ) & "000";
                 ELSE
                     --  GRAPHIC7
                     FF_VIDEO_R <= FF_GRP7_COLOR_CODE( 4 DOWNTO 2 ) & "000";
@@ -261,12 +261,14 @@ BEGIN
             FF_YJK_EN           <= '0';
         ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
             IF( W_EVEN_DOTSTATE = '1' )THEN
-                FF_SPRITECOLOROUT <= SPRITECOLOROUT AND WINDOW;
+                FF_SPRITECOLOROUT   <= SPRITECOLOROUT AND WINDOW AND REG_R1_DISP_ON;
                 IF( WINDOW = '1' AND REG_R1_DISP_ON = '1' )THEN
                     FF_YJK_R            <= P_YJK_R;
                     FF_YJK_G            <= P_YJK_G;
                     FF_YJK_B            <= P_YJK_B;
                     FF_YJK_EN           <= P_YJK_EN;
+                ELSIF( (WINDOW = '0' OR REG_R1_DISP_ON = '0') AND REG_R25_YJK = '1' )THEN
+                    FF_YJK_EN           <= '0';
                 ELSE
                     FF_YJK_R            <= REG_R7_FRAME_COL( 4 DOWNTO 2 ) & "000";
                     FF_YJK_G            <= REG_R7_FRAME_COL( 7 DOWNTO 5 ) & "000";
