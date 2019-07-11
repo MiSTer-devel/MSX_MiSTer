@@ -29,7 +29,7 @@ module emu
 	input         RESET,
 
 	//Must be passed to hps_io module
-	inout  [44:0] HPS_BUS,
+	inout  [45:0] HPS_BUS,
 
 	//Base video clock. Usually equals to CLK_SYS.
 	output        CLK_VIDEO,
@@ -63,7 +63,9 @@ module emu
 	output [15:0] AUDIO_R,
 	output        AUDIO_S,   // 1 - signed audio samples, 0 - unsigned
 	output  [1:0] AUDIO_MIX, // 0 - no mix, 1 - 25%, 2 - 50%, 3 - 100% (mono)
-	input         TAPE_IN,
+
+	//ADC
+	inout   [3:0] ADC_BUS,
 
 	// SD-SPI
 	output        SD_SCK,
@@ -116,6 +118,7 @@ module emu
 	input         OSD_STATUS
 );
 
+assign ADC_BUS  = 'Z;
 assign USER_OUT = '1;
 assign {UART_RTS, UART_TXD, UART_DTR} = 0;
 assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = 0;
@@ -288,6 +291,11 @@ always @(posedge clk_sys) begin
 	end
 end
 
+wire [12:0] sdram_a;
+assign SDRAM_A[12:11] = (~SDRAM_nCS & ~SDRAM_nRAS & ~(SDRAM_nCAS ^ SDRAM_nWE)) ? sdram_a[12:11] : {SDRAM_DQMH,SDRAM_DQML};
+assign SDRAM_A[10:0]  = sdram_a;
+assign SDRAM_CKE      = 1;
+
 emsx_top emsx
 (
 	.clk21m(clk_sys),
@@ -295,7 +303,6 @@ emsx_top emsx
 	.pReset(reset),
 	.pColdReset(cold_reset),
 
-	.pMemCke(SDRAM_CKE),
 	.pMemCs_n(SDRAM_nCS),
 	.pMemRas_n(SDRAM_nRAS),
 	.pMemCas_n(SDRAM_nCAS),
@@ -304,7 +311,7 @@ emsx_top emsx
 	.pMemLdq(SDRAM_DQML),
 	.pMemBa1(SDRAM_BA[1]),
 	.pMemBa0(SDRAM_BA[0]),
-	.pMemAdr(SDRAM_A),
+	.pMemAdr(sdram_a),
 	.pMemDat(SDRAM_DQ),
 
 	.ps2_key(ps2_key),
