@@ -796,13 +796,19 @@ begin
         end if;
     end process;
 
-    -- Prescaler : 21.48MHz / 4
+    -- Turbo CPU clocks
+    -- Pin 0 : 21.48MHz / 2
+    -- Pin 1 : 21.48MHz / 4
     process( reset, clk21m )
+    variable div : std_logic_vector(1 downto 0) := "00";
     begin
         if( reset = '1' )then
             clkdiv  <= "10";                                                            -- 5.37 MHz sync
+	    div     := "00";
         elsif( clk21m'event and clk21m = '1' )then
-            clkdiv  <=  clkdiv - 1;
+	    div     := div + 1;
+            clkdiv(0) <= not div(0);
+            clkdiv(1) <= not div(1) and not div(0);
         end if;
     end process;
 
