@@ -107,23 +107,26 @@ architecture RTL of emsx_top is
     -- CPU
     component t80a
         port(
-            RESET_n     : in    std_logic;
-            R800_mode   : in    std_logic;
-            CLK_n       : in    std_logic;
-            WAIT_n      : in    std_logic;
-            INT_n       : in    std_logic;
-            NMI_n       : in    std_logic;
-            BUSRQ_n     : in    std_logic;
-            M1_n        : out   std_logic;
-            MREQ_n      : out   std_logic;
-            IORQ_n      : out   std_logic;
-            RD_n        : out   std_logic;
-            WR_n        : out   std_logic;
-            RFSH_n      : out   std_logic;
-            HALT_n      : out   std_logic;
-            BUSAK_n     : out   std_logic;
-            A           : out   std_logic_vector( 15 downto 0 );
-            D           : inout std_logic_vector(  7 downto 0 )
+            RESET_n     : in  std_logic;
+            RstKeyLock  : in  std_logic;
+            swioRESET_n : in  std_logic;
+            R800_mode   : in  std_logic;
+            CLK_n       : in  std_logic;
+            WAIT_n      : in  std_logic;
+            INT_n       : in  std_logic;
+            NMI_n       : in  std_logic;
+            BUSRQ_n     : in  std_logic;
+            M1_n        : out std_logic;
+            MREQ_n      : out std_logic;
+            IORQ_n      : out std_logic;
+            RD_n        : out std_logic;
+            WR_n        : out std_logic;
+            RFSH_n      : out std_logic;
+            HALT_n      : out std_logic;
+            BUSAK_n     : out std_logic;
+            A           : out std_logic_vector( 15 downto 0 );
+            DO          : out std_logic_vector(  7 downto 0 );
+            DI          : in  std_logic_vector(  7 downto 0 )
         );
     end component;
 
@@ -524,7 +527,8 @@ architecture RTL of emsx_top is
     signal  dlydbi          : std_logic_vector(  7 downto 0 );
     signal  CpuM1_n         : std_logic;
     signal  CpuRfsh_n       : std_logic;
-    signal  pSltDat         : std_logic_vector(  7 downto 0 );
+    signal  cpu_di          : std_logic_vector(  7 downto 0 );
+    signal  cpu_do          : std_logic_vector(  7 downto 0 );
 
     -- Internal bus signals (common)
     signal  req             : std_logic;
@@ -944,7 +948,7 @@ begin
     end process;
 
     -- hard reset timer
-    process( pSltRst_n, clk21m, RstKeyLock, HardRst_cnt )
+    process( pSltRst_n, clk21m, HardRst_cnt )
     begin
         if( RstKeyLock = '0' )then
             if( pSltRst_n /= '0' )then
@@ -1235,13 +1239,12 @@ begin
 
     pSltInt_n   <=  pVdpInt_n;
 
-    pSltDat     <=  (others => 'Z') when pSltRd_n = '1' else
-                    dbi when( pSltIorq_n = '0' and BusDir    = '1'  )else
+    cpu_di      <=  dbi when( pSltIorq_n = '0' and BusDir    = '1'  )else
                     dbi when( pSltMerq_n = '0' and PriSltNum = "00" )else
                     dbi when( pSltMerq_n = '0' and PriSltNum = "11" )else
                     dbi when( pSltMerq_n = '0' and PriSltNum = "01" and Scc1Type /= "00" )else
                     dbi when( pSltMerq_n = '0' and PriSltNum = "10" and Slot2Mode  /= "00" )else
-                    (others => 'Z');
+                    (others => '1');
 
     ----------------------------------------------------------------
     -- Z80 CPU wait control
@@ -1335,7 +1338,7 @@ begin
             xSltRd_n        <= pSltRd_n;
             xSltWr_n        <= pSltWr_n;
             iSltAdr         <= pSltAdr;
-            iSltDat         <= pSltDat;
+            iSltDat         <= cpu_do;
 
             if (iSltMerq_n  = '1' and iSltIorq_n = '1') then
                 iack <= '0';
@@ -2058,7 +2061,9 @@ begin
     ----------------------------------------------------------------
     U01 : t80a
         port map(
-            RESET_n     => ((pSltRst_n or RstKeyLock) and swioRESET_n),
+            RESET_n     => pSltRst_n,
+            RstKeyLock  => RstKeyLock,
+            swioRESET_n => swioRESET_n,
             R800_mode   => pR800,
             CLK_n       => trueClk,
             WAIT_n      => pSltWait_n,
@@ -2074,7 +2079,8 @@ begin
             HALT_n      => open,
             BUSAK_n     => open,
             A           => pSltAdr,
-            D           => pSltDat
+            DI          => cpu_di,
+            DO          => cpu_do
         );
 
     U02 : iplrom
