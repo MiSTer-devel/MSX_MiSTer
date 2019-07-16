@@ -1,8 +1,5 @@
 derive_pll_clocks
 
-create_generated_clock -name clk10 -source [get_pins {emu|pll|pll_inst|altera_pll_i|*[2].*|divclk}] -divide_by 2 -duty_cycle 50 -phase 0 [get_nets {emu:emu|emsx_top:emsx|clkdiv[0]}]
-create_generated_clock -name clk5  -source [get_pins {emu|pll|pll_inst|altera_pll_i|*[2].*|divclk}] -divide_by 4 -duty_cycle 50 -phase 0 [get_nets {emu:emu|emsx_top:emsx|clkdiv[1]}]
-
 create_generated_clock -name SDRAM_CLK -source [get_pins -compatibility_mode {*|pll|pll_inst|altera_pll_i|*[1].*|divclk}] [get_ports {SDRAM_CLK}]
 
 derive_clock_uncertainty
