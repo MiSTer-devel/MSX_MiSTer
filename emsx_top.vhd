@@ -496,8 +496,8 @@ architecture RTL of emsx_top is
     alias   MmcMode         : std_logic is MegaSD_ack;                      -- '0': disable SD/MMC  '1': enable SD/MMC
 
     -- Clock, Reset control signals
-    signal  cpuclk          : std_logic;
-    signal  cpuclk_n        : std_logic;
+    signal  cpucen          : std_logic;
+    signal  cpucen_n        : std_logic;
     signal  clkdiv          : std_logic_vector(  1 downto 0 );
     signal  ff_clksel       : std_logic;
     signal  ff_clksel5m_n   : std_logic;
@@ -515,14 +515,14 @@ architecture RTL of emsx_top is
     signal  logo_timeout    : std_logic_vector(  1 downto 0 );
 
     -- Turbo CPU clock enablers
-    signal  cpuclk_5m          : std_logic;
-    signal  cpuclk_5m_n        : std_logic;
-    signal  cpuclk_10m          : std_logic;
-    signal  cpuclk_10m_n        : std_logic;
+    signal  cpucen_5m          : std_logic;
+    signal  cpucen_5m_n        : std_logic;
+    signal  cpucen_10m          : std_logic;
+    signal  cpucen_10m_n        : std_logic;
 
     -- CPU clock enablers to use
-    signal  trueClk          : std_logic;
-    signal  trueClk_n        : std_logic;
+    signal  trueCen          : std_logic;
+    signal  trueCen_n        : std_logic;
 
     -- MSX cartridge slot control signals
     signal  BusDir          : std_logic;
@@ -768,58 +768,58 @@ begin
 	    variable div : std_logic := '0';
     begin
         if( reset = '1' )then
-            cpuclk    <= '0';
-            cpuclk_n  <= '0';
+            cpucen    <= '0';
+            cpucen_n  <= '0';
             div       := '0';
         elsif( rising_edge(clk21m) )then
             if( clkdiv3 = "10" )then
 	        if( div = '1' )then
-                    cpuclk   <= '1';
-                    cpuclk_n <= '0';
+                    cpucen   <= '1';
+                    cpucen_n <= '0';
 		else
-                    cpuclk   <= '0';
-                    cpuclk_n <= '1';
+                    cpucen   <= '0';
+                    cpucen_n <= '1';
 		end if;
 		div := not div;
             else
-                cpuclk   <= '0';
-                cpuclk_n <= '0';
+                cpucen   <= '0';
+                cpucen_n <= '0';
             end if;
         end if;
     end process;
 
-    -- Turbo CPUCLK Enabler : 5.24MHz = 21.48MHz / 4
+    -- Turbo CPUCLK Enabler : 5.39MHz = 21.48MHz / 4
     process( reset, clk21m )
 	    variable div : std_logic_vector(1 downto 0);
     begin
         if( reset = '1' )then
-            cpuclk_5m    <= '0';
-            cpuclk_5m_n  <= '0';
+            cpucen_5m    <= '0';
+            cpucen_5m_n  <= '0';
 	    div := "01";
         elsif( rising_edge(clk21m) )then
             if( div = "11" )then
-                cpuclk_5m   <= '1';
-                cpuclk_5m_n <= '0';
+                cpucen_5m   <= '1';
+                cpucen_5m_n <= '0';
             elsif( div = "01" )then
-                cpuclk_5m   <= '0';
-                cpuclk_5m_n <= '1';
+                cpucen_5m   <= '0';
+                cpucen_5m_n <= '1';
             else
-                cpuclk_5m   <= '0';
-                cpuclk_5m_n <= '0';
+                cpucen_5m   <= '0';
+                cpucen_5m_n <= '0';
             end if;
 	    div := div + 1;
         end if;
     end process;
 
-    -- Turbo CPUCLK Enabler : 10.49MHz = 21.48MHz / 2
+    -- Turbo CPUCLK Enabler : 10.79MHz = 21.48MHz / 2
     process( reset, clk21m )
     begin
         if( reset = '1' )then
-            cpuclk_10m    <= '1';
-            cpuclk_10m_n  <= '0';
+            cpucen_10m    <= '1';
+            cpucen_10m_n  <= '0';
         elsif( rising_edge(clk21m) )then
-            cpuclk_10m   <= not cpuclk_10m;
-            cpuclk_10m_n <= not cpuclk_10m_n;
+            cpucen_10m   <= not cpucen_10m;
+            cpucen_10m_n <= not cpucen_10m_n;
         end if;
     end process;
 
@@ -908,7 +908,7 @@ begin
     begin
         if( memclk'event and memclk = '0' )then
             if( FirstBoot_n /= '1' or RstEna = '1' )then
-                if( trueClk = '0' and pSltWait_n = '0' )then
+                if( trueCen = '0' and pSltWait_n = '0' )then
                     if( ff_ldbios_n = '0' or logo_timeout = "00" )then                  -- ultra-fast bootstrap technology
                         ff_clksel5m_n   <=  '1';
                         ff_clksel       <=  '1';
@@ -950,12 +950,12 @@ begin
 	 Kmap <=  swioKmap when rising_edge(clk21m);
 
     -- cpu clock assignment
-    trueClk     <=  cpuclk_10m      when( ff_clksel = '1' and reset /= '1' )else                            -- 10.74 MHz
-                    cpuclk_5m       when( ff_clksel5m_n = '0' and reset /= '1' )else                        --  5.37 MHz
-                    cpuclk;                                                                                 --  3.58 MHz
-    trueClk_n   <=  cpuclk_10m_n    when( ff_clksel = '1' and reset /= '1' )else                            -- 10.74 MHz
-                    cpuclk_5m_n     when( ff_clksel5m_n = '0' and reset /= '1' )else                        --  5.37 MHz
-                    cpuclk_n;                                                                                 --  3.58 MHz
+    trueCen     <=  cpucen_10m      when( ff_clksel = '1' and reset /= '1' )else                            -- 10.74 MHz
+                    cpucen_5m       when( ff_clksel5m_n = '0' and reset /= '1' )else                        --  5.37 MHz
+                    cpucen;                                                                                 --  3.58 MHz
+    trueCen_n   <=  cpucen_10m_n    when( ff_clksel = '1' and reset /= '1' )else                            -- 10.74 MHz
+                    cpucen_5m_n     when( ff_clksel5m_n = '0' and reset /= '1' )else                        --  5.37 MHz
+                    cpucen_n;                                                                                 --  3.58 MHz
 
     ----------------------------------------------------------------
     -- Reset control
@@ -1282,7 +1282,7 @@ begin
     ----------------------------------------------------------------
     -- Z80 CPU wait control
     ----------------------------------------------------------------
-    process( clk21m, trueClk, reset )
+    process( clk21m, trueCen, reset )
 
         variable iCpuM1_n   : std_logic;                                -- slack 1.759ns
         variable jSltMerq_n : std_logic;
@@ -1298,7 +1298,7 @@ begin
             count       := "0000";
             pSltWait_n  <= '1';
 
-        elsif( rising_edge(clk21m) and trueClk = '1' )then
+        elsif( rising_edge(clk21m) and trueCen = '1' )then
 
             if( pSltMerq_n = '0' and jSltMerq_n = '1' )then
                 if( ff_clksel = '1' )then
@@ -2097,8 +2097,8 @@ begin
             RESET_n     => ((pSltRst_n or RstKeyLock) and swioRESET_n),
             R800_mode   => pR800,
             CLK         => clk21m,
-            CEN_p       => trueClk,
-            CEN_n       => trueClk_n,
+            CEN_p       => trueCen,
+            CEN_n       => trueCen_n,
             WAIT_n      => pSltWait_n,
             INT_n       => pSltInt_n,
             NMI_n       => '1',
@@ -2120,24 +2120,24 @@ begin
         port map(clk21m, adr, RomDbi);
 
     U03 : megasd
-        port map(clk21m, reset, cpuclk, ErmReq, open, wrt, adr, open, dbo,
+        port map(clk21m, reset, cpucen, ErmReq, open, wrt, adr, open, dbo,
                         ErmRam, ErmWrt, ErmAdr, RamDbi, open,
                         MmcDbi, MmcEna, MmcAct, mmc_sck, mmc_cs, mmc_mosi, mmc_miso,
                         open, open, open, open, '0');
 
     U05 : mapper
-        port map(clk21m, reset, cpuclk, MapReq, open, mem, wrt, adr, MapDbi, dbo,
+        port map(clk21m, reset, cpucen, MapReq, open, mem, wrt, adr, MapDbi, dbo,
                         MapRam, MapWrt, MapAdr, RamDbi, open);
 
     U06 : work.eseps2
-        port map(clk21m, reset, cpuclk, Kmap, Paus, Scro, Reso, Fkeys,
+        port map(clk21m, reset, cpucen, Kmap, Paus, Scro, Reso, Fkeys,
                         ps2_key, PpiPortC, PpiPortB);
 
     U07 : rtc
         port map(clk21m, reset, rtc_setup, rtc_time, w_10Hz, RtcReq, open, wrt, adr, RtcDbi, dbo);
 
     U08 : kanji
-        port map(clk21m, reset, cpuclk, KanReq, open, wrt, adr, KanDbi, dbo,
+        port map(clk21m, reset, cpucen, KanReq, open, wrt, adr, KanDbi, dbo,
                         KanRom, KanAdr, RamDbi, open);
 
     -- V9958 MSX2+/tR VDP
@@ -2148,22 +2148,22 @@ begin
                         VideoDHClk, VideoDLClk, Reso_v, ntsc_pal_type, forced_v_mode, legacy_vga);
 
     U30 : psg
-        port map(clk21m, reset, cpuclk, PsgReq, open, wrt, adr, PsgDbi, dbo,
+        port map(clk21m, reset, cpucen, PsgReq, open, wrt, adr, PsgDbi, dbo,
                         pJoyA, pStrA, pJoyB, pStrB, open, '0', w_key_mode, PsgAmp);
 
     U31_1 : megaram
-        port map(clk21m, reset, cpuclk, Scc1Req, Scc1Ack, wrt, adr, Scc1Dbi, dbo,
+        port map(clk21m, reset, cpucen, Scc1Req, Scc1Ack, wrt, adr, Scc1Dbi, dbo,
                         Scc1Ram, Scc1Wrt, Scc1Adr, RamDbi, open, Scc1Type, Scc1AmpL, open);
 
     Scc1Type <= "00"    when( Slot1Mode = '0' )else
                 "10";
 
     U31_2 : megaram
-        port map(clk21m, reset, cpuclk, Scc2Req, Scc2Ack, wrt, adr, Scc2Dbi, dbo,
+        port map(clk21m, reset, cpucen, Scc2Req, Scc2Ack, wrt, adr, Scc2Dbi, dbo,
                         Scc2Ram, Scc2Wrt, Scc2Adr, RamDbi, open, Slot2Mode, Scc2AmpL, open);
 
     U32 : eseopll
-        port map(clk21m, reset, cpuclk, OpllEnaWait, OpllReq, OpllAck, wrt, adr, dbo, pAudioOPLL);
+        port map(clk21m, reset, cpucen, OpllEnaWait, OpllReq, OpllAck, wrt, adr, dbo, pAudioOPLL);
 
     OpllEnaWait     <=  '1' when( ff_clksel = '1' or ff_clksel5m_n = '0' )else
                         '0';
