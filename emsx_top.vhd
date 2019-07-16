@@ -498,7 +498,6 @@ architecture RTL of emsx_top is
     -- Clock, Reset control signals
     signal  cpuclk          : std_logic;
     signal  cpuclk_n        : std_logic;
-    signal  clkena          : std_logic;
     signal  clkdiv          : std_logic_vector(  1 downto 0 );
     signal  ff_clksel       : std_logic;
     signal  ff_clksel5m_n   : std_logic;
@@ -764,48 +763,51 @@ begin
     -- pCpuClk should be independent from reset
     ----------------------------------------------------------------
 
-     -- Peripheral Clock enabler : 3.58MHz = 21.48MHz / 6
-    process( reset, clk21m )
-    begin
-        if( reset = '1' )then
-            clkena  <= '0';
-        elsif( rising_edge(clk21m) )then
-            if( clkdiv3 = "00" )then
-                clkena <= cpuclk;
-            else
-                clkena <= '0';
-            end if;
-        end if;
-    end process;
-
     -- CPUCLK Enabler : 3.58MHz = 21.48MHz / 6
     process( reset, clk21m )
+	    variable div : std_logic := '0';
     begin
         if( reset = '1' )then
-            cpuclk    <= '1';
+            cpuclk    <= '0';
             cpuclk_n  <= '0';
+            div       := '0';
         elsif( rising_edge(clk21m) )then
             if( clkdiv3 = "10" )then
-                cpuclk <= not cpuclk;
-                cpuclk_n <= not cpuclk_n;
+	        if( div = '1' )then
+                    cpuclk   <= '1';
+                    cpuclk_n <= '0';
+		else
+                    cpuclk   <= '0';
+                    cpuclk_n <= '1';
+		end if;
+		div := not div;
+            else
+                cpuclk   <= '0';
+                cpuclk_n <= '0';
             end if;
         end if;
     end process;
 
     -- Turbo CPUCLK Enabler : 5.24MHz = 21.48MHz / 4
     process( reset, clk21m )
-	    variable div : std_logic := '0';
+	    variable div : std_logic_vector(1 downto 0);
     begin
         if( reset = '1' )then
-            cpuclk_5m    <= '1';
+            cpuclk_5m    <= '0';
             cpuclk_5m_n  <= '0';
-	    div := '0';
+	    div := "01";
         elsif( rising_edge(clk21m) )then
-            if( div = '1' )then
-                cpuclk_5m <= not cpuclk_5m;
-                cpuclk_5m_n <= not cpuclk_5m_n;
+            if( div = "11" )then
+                cpuclk_5m   <= '1';
+                cpuclk_5m_n <= '0';
+            elsif( div = "01" )then
+                cpuclk_5m   <= '0';
+                cpuclk_5m_n <= '1';
+            else
+                cpuclk_5m   <= '0';
+                cpuclk_5m_n <= '0';
             end if;
-	    div := not div;
+	    div := div + 1;
         end if;
     end process;
 
@@ -2118,24 +2120,24 @@ begin
         port map(clk21m, adr, RomDbi);
 
     U03 : megasd
-        port map(clk21m, reset, clkena, ErmReq, open, wrt, adr, open, dbo,
+        port map(clk21m, reset, cpuclk, ErmReq, open, wrt, adr, open, dbo,
                         ErmRam, ErmWrt, ErmAdr, RamDbi, open,
                         MmcDbi, MmcEna, MmcAct, mmc_sck, mmc_cs, mmc_mosi, mmc_miso,
                         open, open, open, open, '0');
 
     U05 : mapper
-        port map(clk21m, reset, clkena, MapReq, open, mem, wrt, adr, MapDbi, dbo,
+        port map(clk21m, reset, cpuclk, MapReq, open, mem, wrt, adr, MapDbi, dbo,
                         MapRam, MapWrt, MapAdr, RamDbi, open);
 
     U06 : work.eseps2
-        port map(clk21m, reset, clkena, Kmap, Paus, Scro, Reso, Fkeys,
+        port map(clk21m, reset, cpuclk, Kmap, Paus, Scro, Reso, Fkeys,
                         ps2_key, PpiPortC, PpiPortB);
 
     U07 : rtc
         port map(clk21m, reset, rtc_setup, rtc_time, w_10Hz, RtcReq, open, wrt, adr, RtcDbi, dbo);
 
     U08 : kanji
-        port map(clk21m, reset, clkena, KanReq, open, wrt, adr, KanDbi, dbo,
+        port map(clk21m, reset, cpuclk, KanReq, open, wrt, adr, KanDbi, dbo,
                         KanRom, KanAdr, RamDbi, open);
 
     -- V9958 MSX2+/tR VDP
@@ -2146,22 +2148,22 @@ begin
                         VideoDHClk, VideoDLClk, Reso_v, ntsc_pal_type, forced_v_mode, legacy_vga);
 
     U30 : psg
-        port map(clk21m, reset, clkena, PsgReq, open, wrt, adr, PsgDbi, dbo,
+        port map(clk21m, reset, cpuclk, PsgReq, open, wrt, adr, PsgDbi, dbo,
                         pJoyA, pStrA, pJoyB, pStrB, open, '0', w_key_mode, PsgAmp);
 
     U31_1 : megaram
-        port map(clk21m, reset, clkena, Scc1Req, Scc1Ack, wrt, adr, Scc1Dbi, dbo,
+        port map(clk21m, reset, cpuclk, Scc1Req, Scc1Ack, wrt, adr, Scc1Dbi, dbo,
                         Scc1Ram, Scc1Wrt, Scc1Adr, RamDbi, open, Scc1Type, Scc1AmpL, open);
 
     Scc1Type <= "00"    when( Slot1Mode = '0' )else
                 "10";
 
     U31_2 : megaram
-        port map(clk21m, reset, clkena, Scc2Req, Scc2Ack, wrt, adr, Scc2Dbi, dbo,
+        port map(clk21m, reset, cpuclk, Scc2Req, Scc2Ack, wrt, adr, Scc2Dbi, dbo,
                         Scc2Ram, Scc2Wrt, Scc2Adr, RamDbi, open, Slot2Mode, Scc2AmpL, open);
 
     U32 : eseopll
-        port map(clk21m, reset, clkena, OpllEnaWait, OpllReq, OpllAck, wrt, adr, dbo, pAudioOPLL);
+        port map(clk21m, reset, cpuclk, OpllEnaWait, OpllReq, OpllAck, wrt, adr, dbo, pAudioOPLL);
 
     OpllEnaWait     <=  '1' when( ff_clksel = '1' or ff_clksel5m_n = '0' )else
                         '0';
