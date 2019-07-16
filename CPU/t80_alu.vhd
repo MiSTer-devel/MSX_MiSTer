@@ -1,10 +1,26 @@
+--------------------------------------------------------------------------------
+-- ****
+-- T80(c) core. Attempt to finish all undocumented features and provide
+--              accurate timings.
+-- Version 350.
+-- Copyright (c) 2018 Sorgelig
+--  Test passed: ZEXDOC, ZEXALL, Z80Full(*), Z80memptr
+--  (*) Currently only SCF and CCF instructions aren't passed X/Y flags check as
+--      correct implementation is still unclear.
 --
+-- ****
+-- T80(b) core. In an effort to merge and maintain bug fixes ....
+--
+-- Ver 301 parity flag is just parity for 8080, also overflow for Z80, by Sean Riddle
+-- Ver 300 started tidyup
+-- MikeJ March 2005
+-- Latest version from www.fpgaarcade.com (original www.opencores.org)
+--
+-- ****
 -- Z80 compatible microprocessor core
 --
--- Version : 0250 (+k03)
---
+-- Version : 0247
 -- Copyright (c) 2001-2002 Daniel Wallner (jesus@opencores.org)
---
 -- All rights reserved
 --
 -- Redistribution and use in source and synthezised forms, with or without
@@ -45,22 +61,10 @@
 -- File history :
 --
 --  0214 : Fixed mostly flags, only the block instructions now fail the zex regression test
---
 --  0238 : Fixed zero flag for 16 bit SBC and ADC
---
 --  0240 : Added GB operations
---
 --  0242 : Cleanup
---
 --  0247 : Cleanup
---
---  0249 : Added undocumented XY-Flags for CPI/CPD by TobiFlex 2012.07.22
---
---  0250 : Version alignment by KdL 2017.10.23
---
---  +k02 : Version alignment by KdL 2018.05.14
---
---  +k03 : Version alignment by KdL 2019.05.20
 --
 
 library IEEE;
@@ -82,7 +86,8 @@ entity T80_ALU is
     port(
         Arith16     : in std_logic;
         Z16         : in std_logic;
-        ALU_cpi     : in std_logic;
+		WZ              : in  std_logic_vector(15 downto 0);
+		XY_State		    : in  std_logic_vector(1 downto 0);
         ALU_Op      : in std_logic_vector(3 downto 0);
         IR          : in std_logic_vector(5 downto 0);
         ISet        : in std_logic_vector(1 downto 0);
@@ -122,7 +127,6 @@ architecture rtl of T80_ALU is
     signal  HalfCarry_v     : std_logic;
     signal  Carry_v         : std_logic;
     signal  Q_v             : std_logic_vector(7 downto 0);
-    signal  Q_cpi           : std_logic_vector(4 downto 0);
 
     signal  BitMask         : std_logic_vector(7 downto 0);
 
@@ -141,11 +145,18 @@ begin
     AddSub(BusA(3 downto 0), BusB(3 downto 0), ALU_Op(1), ALU_Op(1) xor (UseCarry and F_In(Flag_C)), Q_v(3 downto 0), HalfCarry_v);
     AddSub(BusA(6 downto 4), BusB(6 downto 4), ALU_Op(1), HalfCarry_v, Q_v(6 downto 4), Carry7_v);
     AddSub(BusA(7 downto 7), BusB(7 downto 7), ALU_Op(1), Carry7_v, Q_v(7 downto 7), Carry_v);
-    OverFlow_v <= Carry_v xor Carry7_v;
 
-    AddSub(BusA(3 downto 0), BusB(3 downto 0), '1', HalfCarry_v, Q_cpi(3 downto 0), Q_cpi(4));
+	-- bug fix - parity flag is just parity for 8080, also overflow for Z80
+	process (Carry_v, Carry7_v, Q_v)
+	begin
+		if(Mode=2) then
+			OverFlow_v <= not (Q_v(0) xor Q_v(1) xor Q_v(2) xor Q_v(3) xor
+					   Q_v(4) xor Q_v(5) xor Q_v(6) xor Q_v(7));  else
+			OverFlow_v <= Carry_v xor Carry7_v;
+		end if;
+	end process;
 
-    process (Arith16, ALU_OP, ALU_cpi, F_In, BusA, BusB, IR, Q_v, Q_cpi, Carry_v, HalfCarry_v, OverFlow_v, BitMask, ISet, Z16)
+	process (Arith16, ALU_OP, F_In, BusA, BusB, IR, Q_v, Carry_v, HalfCarry_v, OverFlow_v, BitMask, ISet, Z16, WZ, XY_State)
         variable Q_t : std_logic_vector(7 downto 0);
         variable DAA_Q : unsigned(8 downto 0);
     begin
@@ -179,13 +190,8 @@ begin
                 F_Out(Flag_H) <= '0';
             end case;
             if ALU_Op(2 downto 0) = "111" then -- CP
-                if ALU_cpi='1' then --CPI
-                    F_Out(Flag_X) <= Q_cpi(3);
-                    F_Out(Flag_Y) <= Q_cpi(1);
-                else
                     F_Out(Flag_X) <= BusB(3);
                     F_Out(Flag_Y) <= BusB(5);
-                end if;
             else
                 F_Out(Flag_X) <= Q_t(3);
                 F_Out(Flag_Y) <= Q_t(5);
@@ -288,9 +294,10 @@ begin
             end if;
             F_Out(Flag_H) <= '1';
             F_Out(Flag_N) <= '0';
-            F_Out(Flag_X) <= '0';
-            F_Out(Flag_Y) <= '0';
-            if IR(2 downto 0) /= "110" then
+			if IR(2 downto 0) = "110" or XY_State /= "00" then
+				F_Out(Flag_X) <= WZ(11);
+				F_Out(Flag_Y) <= WZ(13);
+			else
                 F_Out(Flag_X) <= BusB(3);
                 F_Out(Flag_Y) <= BusB(5);
             end if;

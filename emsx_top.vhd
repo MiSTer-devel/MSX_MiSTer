@@ -105,25 +105,28 @@ end emsx_top;
 architecture RTL of emsx_top is
 
     -- CPU
-    component t80a
+    component T80pa
         port(
-            RESET_n     : in    std_logic;
-            R800_mode   : in    std_logic;
-            CLK_n       : in    std_logic;
-            WAIT_n      : in    std_logic;
-            INT_n       : in    std_logic;
-            NMI_n       : in    std_logic;
-            BUSRQ_n     : in    std_logic;
-            M1_n        : out   std_logic;
-            MREQ_n      : out   std_logic;
-            IORQ_n      : out   std_logic;
-            RD_n        : out   std_logic;
-            WR_n        : out   std_logic;
-            RFSH_n      : out   std_logic;
-            HALT_n      : out   std_logic;
-            BUSAK_n     : out   std_logic;
-            A           : out   std_logic_vector( 15 downto 0 );
-            D           : inout std_logic_vector(  7 downto 0 )
+            RESET_n     : in  std_logic;
+            R800_mode   : in  std_logic;
+            CLK         : in  std_logic;
+            CEN_p       : in  std_logic;
+            CEN_n       : in  std_logic;
+            WAIT_n      : in  std_logic;
+            INT_n       : in  std_logic;
+            NMI_n       : in  std_logic;
+            BUSRQ_n     : in  std_logic;
+            M1_n        : out std_logic;
+            MREQ_n      : out std_logic;
+            IORQ_n      : out std_logic;
+            RD_n        : out std_logic;
+            WR_n        : out std_logic;
+            RFSH_n      : out std_logic;
+            HALT_n      : out std_logic;
+            BUSAK_n     : out std_logic;
+            A           : out std_logic_vector( 15 downto 0 );
+            DO          : out std_logic_vector(  7 downto 0 );
+            DI          : in  std_logic_vector(  7 downto 0 )
         );
     end component;
 
@@ -494,6 +497,7 @@ architecture RTL of emsx_top is
 
     -- Clock, Reset control signals
     signal  cpuclk          : std_logic;
+    signal  cpuclk_n        : std_logic;
     signal  clkena          : std_logic;
     signal  clkdiv          : std_logic_vector(  1 downto 0 );
     signal  ff_clksel       : std_logic;
@@ -510,7 +514,16 @@ architecture RTL of emsx_top is
     signal  HardRst_cnt     : std_logic_vector(  3 downto 0 ) := (others => '0');
     signal  LogoRstCnt      : std_logic_vector(  4 downto 0 ) := (others => '0');
     signal  logo_timeout    : std_logic_vector(  1 downto 0 );
-    signal  trueClk         : std_logic;
+
+    -- Turbo CPU clock enablers
+    signal  cpuclk_5m          : std_logic;
+    signal  cpuclk_5m_n        : std_logic;
+    signal  cpuclk_10m          : std_logic;
+    signal  cpuclk_10m_n        : std_logic;
+
+    -- CPU clock enablers to use
+    signal  trueClk          : std_logic;
+    signal  trueClk_n        : std_logic;
 
     -- MSX cartridge slot control signals
     signal  BusDir          : std_logic;
@@ -524,7 +537,8 @@ architecture RTL of emsx_top is
     signal  dlydbi          : std_logic_vector(  7 downto 0 );
     signal  CpuM1_n         : std_logic;
     signal  CpuRfsh_n       : std_logic;
-    signal  pSltDat         : std_logic_vector(  7 downto 0 );
+    signal  cpu_di          : std_logic_vector(  7 downto 0 );
+    signal  cpu_do          : std_logic_vector(  7 downto 0 );
 
     -- Internal bus signals (common)
     signal  req             : std_logic;
@@ -750,12 +764,12 @@ begin
     -- pCpuClk should be independent from reset
     ----------------------------------------------------------------
 
-     -- Clock enabler : 3.58MHz = 21.48MHz / 6
+     -- Peripheral Clock enabler : 3.58MHz = 21.48MHz / 6
     process( reset, clk21m )
     begin
         if( reset = '1' )then
             clkena  <= '0';
-        elsif( clk21m'event and clk21m = '1' )then
+        elsif( rising_edge(clk21m) )then
             if( clkdiv3 = "00" )then
                 clkena <= cpuclk;
             else
@@ -764,17 +778,46 @@ begin
         end if;
     end process;
 
-    -- CPUCLK : 3.58MHz = 21.48MHz / 6
+    -- CPUCLK Enabler : 3.58MHz = 21.48MHz / 6
     process( reset, clk21m )
     begin
         if( reset = '1' )then
-            cpuclk  <= '1';
-        elsif( clk21m'event and clk21m = '1' )then
+            cpuclk    <= '1';
+            cpuclk_n  <= '0';
+        elsif( rising_edge(clk21m) )then
             if( clkdiv3 = "10" )then
                 cpuclk <= not cpuclk;
-            else
-                -- hold
+                cpuclk_n <= not cpuclk_n;
             end if;
+        end if;
+    end process;
+
+    -- Turbo CPUCLK Enabler : 5.24MHz = 21.48MHz / 4
+    process( reset, clk21m )
+	    variable div : std_logic := '0';
+    begin
+        if( reset = '1' )then
+            cpuclk_5m    <= '1';
+            cpuclk_5m_n  <= '0';
+	    div := '0';
+        elsif( rising_edge(clk21m) )then
+            if( div = '1' )then
+                cpuclk_5m <= not cpuclk_5m;
+                cpuclk_5m_n <= not cpuclk_5m_n;
+            end if;
+	    div := not div;
+        end if;
+    end process;
+
+    -- Turbo CPUCLK Enabler : 10.49MHz = 21.48MHz / 2
+    process( reset, clk21m )
+    begin
+        if( reset = '1' )then
+            cpuclk_10m    <= '1';
+            cpuclk_10m_n  <= '0';
+        elsif( rising_edge(clk21m) )then
+            cpuclk_10m   <= not cpuclk_10m;
+            cpuclk_10m_n <= not cpuclk_10m_n;
         end if;
     end process;
 
@@ -783,22 +826,12 @@ begin
     begin
         if( reset = '1' )then
             clkdiv3 <= "10";
-        elsif( clk21m'event and clk21m = '1' )then
+        elsif( rising_edge(clk21m) )then
             if( clkdiv3 = "00" )then
                 clkdiv3 <= "10";
             else
                 clkdiv3 <=  clkdiv3 - 1;
             end if;
-        end if;
-    end process;
-
-    -- Prescaler : 21.48MHz / 4
-    process( reset, clk21m )
-    begin
-        if( reset = '1' )then
-            clkdiv  <= "10";                                                            -- 5.37 MHz sync
-        elsif( clk21m'event and clk21m = '1' )then
-            clkdiv  <=  clkdiv - 1;
         end if;
     end process;
 
@@ -873,7 +906,7 @@ begin
     begin
         if( memclk'event and memclk = '0' )then
             if( FirstBoot_n /= '1' or RstEna = '1' )then
-                if( cpuclk = '0' and clkdiv = "00" and pSltWait_n = '0' )then
+                if( trueClk = '0' and pSltWait_n = '0' )then
                     if( ff_ldbios_n = '0' or logo_timeout = "00" )then                  -- ultra-fast bootstrap technology
                         ff_clksel5m_n   <=  '1';
                         ff_clksel       <=  '1';
@@ -915,10 +948,12 @@ begin
 	 Kmap <=  swioKmap when rising_edge(clk21m);
 
     -- cpu clock assignment
-    trueClk     <=  '1'             when( SdPaus /= '0' )else
-                    clkdiv(0)       when( ff_clksel = '1' and reset /= '1' )else                            -- 10.74 MHz
-                    clkdiv(1)       when( ff_clksel5m_n = '0' and reset /= '1' )else                        --  5.37 MHz
+    trueClk     <=  cpuclk_10m      when( ff_clksel = '1' and reset /= '1' )else                            -- 10.74 MHz
+                    cpuclk_5m       when( ff_clksel5m_n = '0' and reset /= '1' )else                        --  5.37 MHz
                     cpuclk;                                                                                 --  3.58 MHz
+    trueClk_n   <=  cpuclk_10m_n    when( ff_clksel = '1' and reset /= '1' )else                            -- 10.74 MHz
+                    cpuclk_5m_n     when( ff_clksel5m_n = '0' and reset /= '1' )else                        --  5.37 MHz
+                    cpuclk_n;                                                                                 --  3.58 MHz
 
     ----------------------------------------------------------------
     -- Reset control
@@ -944,7 +979,7 @@ begin
     end process;
 
     -- hard reset timer
-    process( pSltRst_n, clk21m, RstKeyLock, HardRst_cnt )
+    process( pSltRst_n, clk21m, HardRst_cnt )
     begin
         if( RstKeyLock = '0' )then
             if( pSltRst_n /= '0' )then
@@ -1235,18 +1270,17 @@ begin
 
     pSltInt_n   <=  pVdpInt_n;
 
-    pSltDat     <=  (others => 'Z') when pSltRd_n = '1' else
-                    dbi when( pSltIorq_n = '0' and BusDir    = '1'  )else
+    cpu_di      <=  dbi when( pSltIorq_n = '0' and BusDir    = '1'  )else
                     dbi when( pSltMerq_n = '0' and PriSltNum = "00" )else
                     dbi when( pSltMerq_n = '0' and PriSltNum = "11" )else
                     dbi when( pSltMerq_n = '0' and PriSltNum = "01" and Scc1Type /= "00" )else
                     dbi when( pSltMerq_n = '0' and PriSltNum = "10" and Slot2Mode  /= "00" )else
-                    (others => 'Z');
+                    (others => '1');
 
     ----------------------------------------------------------------
     -- Z80 CPU wait control
     ----------------------------------------------------------------
-    process( trueClk, reset )
+    process( clk21m, trueClk, reset )
 
         variable iCpuM1_n   : std_logic;                                -- slack 1.759ns
         variable jSltMerq_n : std_logic;
@@ -1262,7 +1296,7 @@ begin
             count       := "0000";
             pSltWait_n  <= '1';
 
-        elsif( trueClk'event and trueClk = '1' )then
+        elsif( rising_edge(clk21m) and trueClk = '1' )then
 
             if( pSltMerq_n = '0' and jSltMerq_n = '1' )then
                 if( ff_clksel = '1' )then
@@ -1335,7 +1369,7 @@ begin
             xSltRd_n        <= pSltRd_n;
             xSltWr_n        <= pSltWr_n;
             iSltAdr         <= pSltAdr;
-            iSltDat         <= pSltDat;
+            iSltDat         <= cpu_do;
 
             if (iSltMerq_n  = '1' and iSltIorq_n = '1') then
                 iack <= '0';
@@ -2056,11 +2090,13 @@ begin
     ----------------------------------------------------------------
     -- Connect components
     ----------------------------------------------------------------
-    U01 : t80a
+    U01 : T80pa
         port map(
             RESET_n     => ((pSltRst_n or RstKeyLock) and swioRESET_n),
             R800_mode   => pR800,
-            CLK_n       => trueClk,
+            CLK         => clk21m,
+            CEN_p       => trueClk,
+            CEN_n       => trueClk_n,
             WAIT_n      => pSltWait_n,
             INT_n       => pSltInt_n,
             NMI_n       => '1',
@@ -2074,7 +2110,8 @@ begin
             HALT_n      => open,
             BUSAK_n     => open,
             A           => pSltAdr,
-            D           => pSltDat
+            DI          => cpu_di,
+            DO          => cpu_do
         );
 
     U02 : iplrom
