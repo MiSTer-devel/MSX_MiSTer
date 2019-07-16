@@ -92,7 +92,7 @@ architecture RTL of OutputGenerator is
         variable vL, vR : std_logic_vector(LI_TYPE'high + 2 downto 0);
     begin
 
-        --  •„†{â‘Î’l ¨ ‚Q‚Ì•â”
+        --  ï¿½ï¿½ï¿½ï¿½ï¿½{ï¿½ï¿½Î’l ï¿½ï¿½ ï¿½Qï¿½Ì•â”
         if( L.sign = '0' )then
             vL := "00" & L.value;
         else
@@ -106,7 +106,7 @@ architecture RTL of OutputGenerator is
 
         vL := vL + vR;
 
-        --  ‚Q‚Ì•â” ¨ •„†{â‘Î’lA‚Â‚¢‚Å‚É 1/2 ”{B‚±‚±‚Å‚PƒrƒbƒgÁŽ¸B
+        --  ï¿½Qï¿½Ì•â” ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½{ï¿½ï¿½Î’lï¿½Aï¿½Â‚ï¿½ï¿½Å‚ï¿½ 1/2 ï¿½{ï¿½Bï¿½ï¿½ï¿½ï¿½ï¿½Å‚Pï¿½rï¿½bï¿½gï¿½ï¿½ï¿½ï¿½ï¿½B
         if vL(vL'high) = '0' then -- positive
             return ( sign => '0', value => vL(vL'high-1 downto 1) );
         else -- negative
@@ -146,38 +146,40 @@ begin
     Ltbl : LinearTable port map (
         clk     => clk,
         reset   => reset,
-        addr    => opout,           --  0`127 (opout ‚Í FF ‚Ìo—Í‚¾‚©‚çƒ_ƒCƒŒƒNƒg‚É“ü‚ê‚Ä‚à–â‘è‚È‚¢j
-        data    => li_data          --  0`511
+        addr    => opout,           --  0ï¿½`127 (opout ï¿½ï¿½ FF ï¿½Ìoï¿½Í‚ï¿½ï¿½ï¿½ï¿½ï¿½_ï¿½Cï¿½ï¿½ï¿½Nï¿½gï¿½É“ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ï¿½ï¿½È‚ï¿½ï¿½j
+        data    => li_data          --  0ï¿½`511
     );
 
     process( reset, clk )
     begin
-        if( reset = '1' )then
-            mo_wr <= '0';
-            fb_wr <= '0';
-        elsif( clk'event and clk = '1' )then
-            if( clkena = '1' )then
-                mo_addr <= slot;
+        if( rising_edge(clk) )then
+            if( reset = '1' )then
+                mo_wr <= '0';
+                fb_wr <= '0';
+            else
+                if( clkena = '1' )then
+                    mo_addr <= slot;
 
-                if( stage = 0 )then
-                    mo_wr   <= '0';
-                    fb_wr   <= '0';
+                    if( stage = 0 )then
+                        mo_wr   <= '0';
+                        fb_wr   <= '0';
 
-                elsif( stage = 1 )then
-                    --  opout ‚ÉŠ–]‚Ì’l‚ª“ü‚Á‚Ä‚­‚éƒXƒe[ƒW
-                elsif( stage = 2 )then
-                    --  ‘Ò‚¿
-                elsif( stage = 3 )then
-                    --  LinerTable ‚©‚ç opout ‚ÅŽw’è‚³‚ê‚½ƒAƒhƒŒƒX‚É‘Î‰ž‚·‚é’l‚ªo‚Ä‚­‚éƒXƒe[ƒW
-                    if( slot(0) = '0' )then
-                        --  ƒtƒB[ƒhƒoƒbƒNƒƒ‚ƒŠ‚É‚Íƒ‚ƒWƒ…ƒŒ[ƒ^‚Ì‚Æ‚«‚µ‚©‘‚«ž‚Ü‚È‚¢
-                        fb_addr <= conv_integer(slot)/2;
-                        fb_wdata<= AVERAGE(mo_rdata, li_data);
-                        fb_wr   <= '1';
+                    elsif( stage = 1 )then
+                        --  opout ï¿½Éï¿½ï¿½]ï¿½Ì’lï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ï¿½Xï¿½eï¿½[ï¿½W
+                    elsif( stage = 2 )then
+                        --  ï¿½Ò‚ï¿½
+                    elsif( stage = 3 )then
+                        --  LinerTable ï¿½ï¿½ï¿½ï¿½ opout ï¿½ÅŽwï¿½è‚³ï¿½ê‚½ï¿½Aï¿½hï¿½ï¿½ï¿½Xï¿½É‘Î‰ï¿½ï¿½ï¿½ï¿½ï¿½lï¿½ï¿½ï¿½oï¿½Ä‚ï¿½ï¿½ï¿½Xï¿½eï¿½[ï¿½W
+                        if( slot(0) = '0' )then
+                            --  ï¿½tï¿½Bï¿½[ï¿½hï¿½oï¿½bï¿½Nï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É‚Íƒï¿½ï¿½Wï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½^ï¿½Ì‚Æ‚ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü‚È‚ï¿½
+                            fb_addr <= conv_integer(slot)/2;
+                            fb_wdata<= AVERAGE(mo_rdata, li_data);
+                            fb_wr   <= '1';
+                        end if;
+                        -- Store raw output
+                        mo_wdata<= li_data;
+                        mo_wr   <= '1';
                     end if;
-                    -- Store raw output
-                    mo_wdata<= li_data;
-                    mo_wr   <= '1';
                 end if;
             end if;
         end if;

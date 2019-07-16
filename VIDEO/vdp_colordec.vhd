@@ -143,27 +143,29 @@ BEGIN
     -- OUTPUT DATA LATCH
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_VIDEO_R <= "000000";
-            FF_VIDEO_G <= "000000";
-            FF_VIDEO_B <= "000000";
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( W_EVEN_DOTSTATE = '1' )THEN
-                IF( VDPMODEGRAPHIC7 = '1' AND FF_YJK_EN = '1' AND FF_SPRITECOLOROUT = '0' )THEN
-                    --  YJK MODE
-                    FF_VIDEO_R <= FF_YJK_R;
-                    FF_VIDEO_G <= FF_YJK_G;
-                    FF_VIDEO_B <= FF_YJK_B;
-                ELSIF( VDPMODEGRAPHIC7 = '0' OR REG_R25_YJK = '1' )THEN
-                    --  PALETTE COLOR (NOT GRAPHIC7, SPRITE ON YJK MODE, YAE COLOR ON YJK MODE)
-                    FF_VIDEO_R <= PALETTEDATARB_OUT( 6 DOWNTO 4 ) & "000";
-                    FF_VIDEO_G <= PALETTEDATAG_OUT(  2 DOWNTO 0 ) & "000";
-                    FF_VIDEO_B <= PALETTEDATARB_OUT( 2 DOWNTO 0 ) & "000";
-                ELSE
-                    --  GRAPHIC7
-                    FF_VIDEO_R <= FF_GRP7_COLOR_CODE( 4 DOWNTO 2 ) & "000";
-                    FF_VIDEO_G <= FF_GRP7_COLOR_CODE( 7 DOWNTO 5 ) & "000";
-                    FF_VIDEO_B <= FF_GRP7_COLOR_CODE( 1 DOWNTO 0 ) & FF_GRP7_COLOR_CODE(1) & "000";
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
+                FF_VIDEO_R <= "000000";
+                FF_VIDEO_G <= "000000";
+                FF_VIDEO_B <= "000000";
+	    ELSE
+                IF( W_EVEN_DOTSTATE = '1' )THEN
+                    IF( VDPMODEGRAPHIC7 = '1' AND FF_YJK_EN = '1' AND FF_SPRITECOLOROUT = '0' )THEN
+                        --  YJK MODE
+                        FF_VIDEO_R <= FF_YJK_R;
+                        FF_VIDEO_G <= FF_YJK_G;
+                        FF_VIDEO_B <= FF_YJK_B;
+                    ELSIF( VDPMODEGRAPHIC7 = '0' OR REG_R25_YJK = '1' )THEN
+                        --  PALETTE COLOR (NOT GRAPHIC7, SPRITE ON YJK MODE, YAE COLOR ON YJK MODE)
+                        FF_VIDEO_R <= PALETTEDATARB_OUT( 6 DOWNTO 4 ) & "000";
+                        FF_VIDEO_G <= PALETTEDATAG_OUT(  2 DOWNTO 0 ) & "000";
+                        FF_VIDEO_B <= PALETTEDATARB_OUT( 2 DOWNTO 0 ) & "000";
+                    ELSE
+                        --  GRAPHIC7
+                        FF_VIDEO_R <= FF_GRP7_COLOR_CODE( 4 DOWNTO 2 ) & "000";
+                        FF_VIDEO_G <= FF_GRP7_COLOR_CODE( 7 DOWNTO 5 ) & "000";
+                        FF_VIDEO_B <= FF_GRP7_COLOR_CODE( 1 DOWNTO 0 ) & FF_GRP7_COLOR_CODE(1) & "000";
+                    END IF;
                 END IF;
             END IF;
         END IF;
@@ -198,38 +200,15 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_PALETTE_ADDR     <= (OTHERS => '0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( W_EVEN_DOTSTATE = '1' )THEN
-                IF( WINDOW = '0' OR REG_R1_DISP_ON = '0' OR (W_FORE_COLOR = "0000" AND REG_R8_COL0_ON = '0') )THEN
-                    FF_PALETTE_ADDR     <= W_BACK_COLOR;
-                ELSE
-                    FF_PALETTE_ADDR     <= W_FORE_COLOR;
-                END IF;
-            END IF;
-        END IF;
-    END PROCESS;
-
-    PROCESS( RESET, CLK21M )
-    BEGIN
-        IF( RESET = '1' )THEN
-            FF_PALETTE_ADDR_G5  <= (OTHERS => '0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( W_EVEN_DOTSTATE = '1' )THEN
-                IF( WINDOW = '0' OR REG_R1_DISP_ON = '0' OR
-                        (DOTSTATE(1) = '0' AND W_FORE_COLOR( 1 DOWNTO 0 ) = "00" AND REG_R8_COL0_ON = '0') OR
-                        (DOTSTATE(1) = '1' AND W_FORE_COLOR( 3 DOWNTO 2 ) = "00" AND REG_R8_COL0_ON = '0') )THEN
-                    IF( DOTSTATE(1) = '0' )THEN
-                        FF_PALETTE_ADDR_G5  <= W_BACK_COLOR( 1 DOWNTO 0 );
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
+                FF_PALETTE_ADDR     <= (OTHERS => '0');
+	    ELSE
+                IF( W_EVEN_DOTSTATE = '1' )THEN
+                    IF( WINDOW = '0' OR REG_R1_DISP_ON = '0' OR (W_FORE_COLOR = "0000" AND REG_R8_COL0_ON = '0') )THEN
+                        FF_PALETTE_ADDR     <= W_BACK_COLOR;
                     ELSE
-                        FF_PALETTE_ADDR_G5  <= W_BACK_COLOR( 3 DOWNTO 2 );
-                    END IF;
-                ELSE
-                    IF( DOTSTATE(1) = '0' )THEN
-                        FF_PALETTE_ADDR_G5  <= W_FORE_COLOR( 1 DOWNTO 0 );
-                    ELSE
-                        FF_PALETTE_ADDR_G5  <= W_FORE_COLOR( 3 DOWNTO 2 );
+                        FF_PALETTE_ADDR     <= W_FORE_COLOR;
                     END IF;
                 END IF;
             END IF;
@@ -238,14 +217,26 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_GRP7_COLOR_CODE  <= (OTHERS => '0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( W_EVEN_DOTSTATE = '1' )THEN
-                IF( SPRITECOLOROUT = '1' )THEN
-                    FF_GRP7_COLOR_CODE  <= W_GRP7_SPRITE_COLOR;
-                ELSE
-                    FF_GRP7_COLOR_CODE  <= COLORCODEG4567;
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
+                FF_PALETTE_ADDR_G5  <= (OTHERS => '0');
+	    ELSE
+                IF( W_EVEN_DOTSTATE = '1' )THEN
+                    IF( WINDOW = '0' OR REG_R1_DISP_ON = '0' OR
+                            (DOTSTATE(1) = '0' AND W_FORE_COLOR( 1 DOWNTO 0 ) = "00" AND REG_R8_COL0_ON = '0') OR
+                            (DOTSTATE(1) = '1' AND W_FORE_COLOR( 3 DOWNTO 2 ) = "00" AND REG_R8_COL0_ON = '0') )THEN
+                        IF( DOTSTATE(1) = '0' )THEN
+                            FF_PALETTE_ADDR_G5  <= W_BACK_COLOR( 1 DOWNTO 0 );
+                        ELSE
+                            FF_PALETTE_ADDR_G5  <= W_BACK_COLOR( 3 DOWNTO 2 );
+                        END IF;
+                    ELSE
+                        IF( DOTSTATE(1) = '0' )THEN
+                            FF_PALETTE_ADDR_G5  <= W_FORE_COLOR( 1 DOWNTO 0 );
+                        ELSE
+                            FF_PALETTE_ADDR_G5  <= W_FORE_COLOR( 3 DOWNTO 2 );
+                        END IF;
+                    END IF;
                 END IF;
             END IF;
         END IF;
@@ -253,27 +244,46 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_SPRITECOLOROUT   <= '0';
-            FF_YJK_R            <= (OTHERS => '0');
-            FF_YJK_G            <= (OTHERS => '0');
-            FF_YJK_B            <= (OTHERS => '0');
-            FF_YJK_EN           <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( W_EVEN_DOTSTATE = '1' )THEN
-                FF_SPRITECOLOROUT   <= SPRITECOLOROUT AND WINDOW AND REG_R1_DISP_ON;
-                IF( WINDOW = '1' AND REG_R1_DISP_ON = '1' )THEN
-                    FF_YJK_R            <= P_YJK_R;
-                    FF_YJK_G            <= P_YJK_G;
-                    FF_YJK_B            <= P_YJK_B;
-                    FF_YJK_EN           <= P_YJK_EN;
-                ELSIF( (WINDOW = '0' OR REG_R1_DISP_ON = '0') AND REG_R25_YJK = '1' )THEN
-                    FF_YJK_EN           <= '0';
-                ELSE
-                    FF_YJK_R            <= REG_R7_FRAME_COL( 4 DOWNTO 2 ) & "000";
-                    FF_YJK_G            <= REG_R7_FRAME_COL( 7 DOWNTO 5 ) & "000";
-                    FF_YJK_B            <= REG_R7_FRAME_COL( 1 DOWNTO 0 ) & REG_R7_FRAME_COL(1) & "000";
-                    FF_YJK_EN           <= '1';
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
+                FF_GRP7_COLOR_CODE  <= (OTHERS => '0');
+	    ELSE
+                IF( W_EVEN_DOTSTATE = '1' )THEN
+                    IF( SPRITECOLOROUT = '1' )THEN
+                        FF_GRP7_COLOR_CODE  <= W_GRP7_SPRITE_COLOR;
+                    ELSE
+                        FF_GRP7_COLOR_CODE  <= COLORCODEG4567;
+                    END IF;
+                END IF;
+            END IF;
+        END IF;
+    END PROCESS;
+
+    PROCESS( RESET, CLK21M )
+    BEGIN
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
+                FF_SPRITECOLOROUT   <= '0';
+                FF_YJK_R            <= (OTHERS => '0');
+                FF_YJK_G            <= (OTHERS => '0');
+                FF_YJK_B            <= (OTHERS => '0');
+                FF_YJK_EN           <= '0';
+	    ELSE
+                IF( W_EVEN_DOTSTATE = '1' )THEN
+                    FF_SPRITECOLOROUT   <= SPRITECOLOROUT AND WINDOW AND REG_R1_DISP_ON;
+                    IF( WINDOW = '1' AND REG_R1_DISP_ON = '1' )THEN
+                        FF_YJK_R            <= P_YJK_R;
+                        FF_YJK_G            <= P_YJK_G;
+                        FF_YJK_B            <= P_YJK_B;
+                        FF_YJK_EN           <= P_YJK_EN;
+                    ELSIF( (WINDOW = '0' OR REG_R1_DISP_ON = '0') AND REG_R25_YJK = '1' )THEN
+                        FF_YJK_EN           <= '0';
+                    ELSE
+                        FF_YJK_R            <= REG_R7_FRAME_COL( 4 DOWNTO 2 ) & "000";
+                        FF_YJK_G            <= REG_R7_FRAME_COL( 7 DOWNTO 5 ) & "000";
+                        FF_YJK_B            <= REG_R7_FRAME_COL( 1 DOWNTO 0 ) & REG_R7_FRAME_COL(1) & "000";
+                        FF_YJK_EN           <= '1';
+                    END IF;
                 END IF;
             END IF;
         END IF;

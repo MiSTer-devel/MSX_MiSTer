@@ -49,7 +49,7 @@ entity RegisterMemory is
 end RegisterMemory;
 
 architecture rtl of registermemory is
-    --  ƒ`ƒƒƒlƒ‹î•ñ•Û—p 1read/1write ‚Ì SRAM
+    --  ï¿½`ï¿½ï¿½ï¿½lï¿½ï¿½ï¿½ï¿½ï¿½Ûï¿½ï¿½p 1read/1write ï¿½ï¿½ SRAM
     type regs_array_type is array (0 to 8) of std_logic_vector( 23 downto 0 );
     signal regs_array : regs_array_type;
 
@@ -57,19 +57,21 @@ begin
     process( reset, clk )
         variable init_state : integer range 0 to 9;
     begin
-        if( reset = '1' )then
-            init_state := 0;
-        elsif( clk'event and clk ='1' )then
-            if( init_state /= 9 )then
-                --  ‹N“®‚µ‚Ä‚·‚®‚É RAM ‚Ì“à—e‚ğ‰Šú‰»‚·‚é
-                regs_array( init_state ) <= (others => '0');
-                init_state := init_state + 1;
-            elsif( wr = '1' )then
-                --  ‘‚«‚İƒTƒCƒNƒ‹
-                regs_array( conv_integer(addr) ) <= idata;
+        if( rising_edge(clk) )then
+            if( reset = '1' )then
+                init_state := 0;
+            else
+                if( init_state /= 9 )then
+                    --  ï¿½Nï¿½ï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ï¿½ï¿½ï¿½ RAM ï¿½Ì“ï¿½ï¿½eï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+                    regs_array( init_state ) <= (others => '0');
+                    init_state := init_state + 1;
+                elsif( wr = '1' )then
+                    --  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½İƒTï¿½Cï¿½Nï¿½ï¿½
+                    regs_array( conv_integer(addr) ) <= idata;
+                end if;
+                --  ï¿½Ç‚İoï¿½ï¿½ï¿½Íí
+                odata <= regs_array( conv_integer(addr) );
             end if;
-            --  “Ç‚İo‚µ‚Íí
-            odata <= regs_array( conv_integer(addr) );
         end if;
     end process;
 end rtl;

@@ -161,7 +161,7 @@ architecture rtl of controller is
 
 begin   -- rtl
 
-    --  ƒŒƒWƒXƒ^İ’è’l‚ğ•Û‚·‚é‚½‚ß‚Ìƒƒ‚ƒŠ
+    --  ï¿½ï¿½ï¿½Wï¿½Xï¿½^ï¿½İ’ï¿½lï¿½ï¿½Ûï¿½ï¿½ï¿½ï¿½é‚½ï¿½ß‚Ìƒï¿½ï¿½ï¿½ï¿½ï¿½
     u_register_memory : RegisterMemory
     port map (
         clk     => clk,
@@ -176,38 +176,42 @@ begin   -- rtl
         clk, reset, user_voice_wdata, user_voice_wr, user_voice_addr, slot_voice_addr,
         user_voice_rdata, slot_voice_data );
 
-    --  ƒŒƒWƒXƒ^ƒAƒhƒŒƒXƒ‰ƒbƒ` (‘æ‚PƒXƒe[ƒW)
+    --  ï¿½ï¿½ï¿½Wï¿½Xï¿½^ï¿½Aï¿½hï¿½ï¿½ï¿½Xï¿½ï¿½ï¿½bï¿½` (ï¿½ï¿½Pï¿½Xï¿½eï¿½[ï¿½W)
     process( reset, clk )
     begin
-        if( reset = '1' )then
-            regs_addr   <= (others => '0');
-        elsif( clk'event and clk = '1' )then
-            if clkena='1' then
-                if( stage = "00" )then
-                    regs_addr <= slot( 4 downto 1 );
-                else
-                    --  hold
+        if( rising_edge(clk) )then
+            if( reset = '1' )then
+                regs_addr   <= (others => '0');
+            else
+                if clkena='1' then
+                    if( stage = "00" )then
+                        regs_addr <= slot( 4 downto 1 );
+                    else
+                        --  hold
+                    end if;
                 end if;
             end if;
         end if;
     end process;
 
-    --  Œ»İ‚ÌƒXƒƒbƒg‚Ì‰¹Fƒf[ƒ^“Ç‚İo‚µƒAƒhƒŒƒXƒ‰ƒbƒ` (‘æ‚PƒXƒe[ƒW)
+    --  ï¿½ï¿½ï¿½İ‚ÌƒXï¿½ï¿½ï¿½bï¿½gï¿½Ì‰ï¿½ï¿½Fï¿½fï¿½[ï¿½^ï¿½Ç‚İoï¿½ï¿½ï¿½Aï¿½hï¿½ï¿½ï¿½Xï¿½ï¿½ï¿½bï¿½` (ï¿½ï¿½Pï¿½Xï¿½eï¿½[ï¿½W)
     process( reset, clk )
     begin
-        if( reset = '1' )then
-            slot_voice_addr <= 0;
-        elsif( clk'event and clk = '1' )then
-            if clkena='1' then
-                if( stage = "00" )then
-                    if( rflag(5) = '1' and w_channel >= "0110" )then
-                        --  ƒŠƒYƒ€ƒ‚[ƒh‚Å ch6 ˆÈ~
-                        slot_voice_addr <= conv_integer(slot) - 12 + 32;
+        if( rising_edge(clk) )then
+            if( reset = '1' )then
+                slot_voice_addr <= 0;
+            else
+                if clkena='1' then
+                    if( stage = "00" )then
+                        if( rflag(5) = '1' and w_channel >= "0110" )then
+                            --  ï¿½ï¿½ï¿½Yï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½hï¿½ï¿½ ch6 ï¿½È~
+                            slot_voice_addr <= conv_integer(slot) - 12 + 32;
+                        else
+                            slot_voice_addr <= inst_cache(conv_integer(slot)/2) * 2 + conv_integer(slot) mod 2;
+                        end if;
                     else
-                        slot_voice_addr <= inst_cache(conv_integer(slot)/2) * 2 + conv_integer(slot) mod 2;
+                        --  hold
                     end if;
-                else
-                    --  hold
                 end if;
             end if;
         end if;
@@ -232,6 +236,8 @@ begin   -- rtl
         variable vindex : voice_id_type;
 
     begin   -- process
+
+        if rising_edge(clk) then if clkena='1' then
 
         if(reset = '1') then
 
@@ -259,8 +265,8 @@ begin   -- rtl
             rhythm <= '0';
             extra_mode := '0';
             vindex := 0;
-
-        elsif clk'event and clk='1' then if clkena='1' then
+        
+        else
 
             case stage is
             --------------------------------------------------------------------------
@@ -359,16 +365,16 @@ begin   -- rtl
                         if( conv_integer(addr(3 downto 0) ) = conv_integer(slot) / 2 ) then
                             regs_tmp := regs_rdata;
                             case addr( 5 downto 4 ) is
-                                when "01" => -- 10h`18h ‚Ìê‡i‰ºˆÊ F-Numberj
+                                when "01" => -- 10hï¿½`18h ï¿½Ìê‡ï¿½iï¿½ï¿½ï¿½ï¿½ F-Numberï¿½j
                                     regs_tmp(7 downto 0) := data;               --  F-Number
                                     regs_wr <= '1';
-                                when "10" => -- 20h`28h ‚Ìê‡iSus, Key, Block, F-Number MSBj
+                                when "10" => -- 20hï¿½`28h ï¿½Ìê‡ï¿½iSus, Key, Block, F-Number MSBï¿½j
                                     regs_tmp(13) := data(5);                    --  Sus
                                     regs_tmp(12) := data(4);                    --  Key
                                     regs_tmp(11 downto 9) := data(3 downto 1);  --  Block
                                     regs_tmp(8) := data(0);                     --  F-Number
                                     regs_wr <= '1';
-                                when "11" => -- 30h`38h ‚Ìê‡iInst, Volj
+                                when "11" => -- 30hï¿½`38h ï¿½Ìê‡ï¿½iInst, Volï¿½j
                                     regs_tmp(23 downto 20) := data(7 downto 4); --  Inst
                                     regs_tmp(19 downto 16) := data(3 downto 0); --  Vol
                                     regs_wr <='1';
@@ -507,6 +513,7 @@ begin   -- rtl
             end case;
 
         end if; end if;
+        end if;
 
     end process;
 

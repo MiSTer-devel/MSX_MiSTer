@@ -57,11 +57,13 @@ begin
 
   begin
 
+   if rising_edge(clk) then
+
    if reset = '1' then
 
       init_slot := 0;
 
-   elsif clk'event and clk = '1' then
+   else
 
      if init_slot /= 18 then
 
@@ -77,6 +79,7 @@ begin
      memout <= phase_array(conv_integer(slot));
 
     end if;
+   end if;
 
   end process;
 

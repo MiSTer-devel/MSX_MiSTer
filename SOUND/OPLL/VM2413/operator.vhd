@@ -52,13 +52,13 @@ entity Operator is
         FB      : in    FB_TYPE;
 
         noise   : in    std_logic;
-        pgout   : in    std_logic_vector( 17 downto 0 );    --  ®”•” 9bit, ¬”•” 9bit
+        pgout   : in    std_logic_vector( 17 downto 0 );    --  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 9bit, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 9bit
         egout   : in    std_logic_vector( 12 downto 0 );
 
         faddr   : out   CH_TYPE;
         fdata   : in    SIGNED_LI_TYPE;
 
-        opout   : out   std_logic_vector( 13 downto 0 )     -- ®”•” 8bit, ¬”•” 6bit
+        opout   : out   std_logic_vector( 13 downto 0 )     -- ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 8bit, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 6bit
     );
 end Operator;
 
@@ -69,8 +69,8 @@ architecture rtl of Operator is
             clk     : in    std_logic;
             clkena  : in    std_logic;
             wf      : in    std_logic;
-            addr    : in    std_logic_vector( 17 downto 0 );    --  ®”•” 9bit, ¬”•” 9bit
-            data    : out   std_logic_vector( 13 downto 0 )     --  ®”•” 8bit, ¬”•” 6bit
+            addr    : in    std_logic_vector( 17 downto 0 );    --  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 9bit, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 9bit
+            data    : out   std_logic_vector( 13 downto 0 )     --  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 8bit, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 6bit
         );
     end component;
 
@@ -83,13 +83,13 @@ architecture rtl of Operator is
     signal ff_egout     : std_logic_vector( 12 downto 0 );
 begin
 
-    --  ƒTƒCƒ“”gi‘Î”•\Œ»j--------------------------------------------------
-    --  addr w’è‚µ‚½ŸXƒTƒCƒNƒ‹‚É data ‚ªo‚Ä‚­‚é
+    --  ï¿½Tï¿½Cï¿½ï¿½ï¿½gï¿½iï¿½Îï¿½ï¿½\ï¿½ï¿½ï¿½j--------------------------------------------------
+    --  addr ï¿½wï¿½è‚µï¿½ï¿½ï¿½ï¿½ï¿½Xï¿½Tï¿½Cï¿½Nï¿½ï¿½ï¿½ï¿½ data ï¿½ï¿½ï¿½oï¿½Ä‚ï¿½ï¿½ï¿½
     --
     --  stage   X 00    X 01    X 10    X 11    X 00
-    --  addr            X Šm’è
-    --  data                            X Šm’è
-    --  opout                                   X Šm’è
+    --  addr            X ï¿½mï¿½ï¿½
+    --  data                            X ï¿½mï¿½ï¿½
+    --  opout                                   X ï¿½mï¿½ï¿½
     --
     u_sine_table : SineTable
     port map(
@@ -108,51 +108,53 @@ begin
                         w_modula_m;
 
     process( reset, clk )
-        variable opout_buf  : std_logic_vector( 13 downto 0 );  --  ®”•” 8bit, ¬”•” 6bit
+        variable opout_buf  : std_logic_vector( 13 downto 0 );  --  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 8bit, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 6bit
     begin
-        if( reset = '1' )then
-            opout       <= (others => '0');
-            ff_egout    <= (others => '0');
-        elsif( clk'event and clk='1' )then
-            if( clkena = '1' )then
-                if( stage = "00" )then
-                    --  ƒTƒCƒ“”g‚ÌQÆƒAƒhƒŒƒXiˆÊ‘Šj‚ğŒˆ’è‚·‚éƒXƒe[ƒW
-                    if(    rhythm = '1' and ( slot = 14 or slot = 17 ))then -- HH or CYM
-                        addr <= (not noise) & "01111111" & "000000000";
-                    elsif( rhythm = '1' and slot = 15 )then -- SD
-                        addr <= (not pgout(pgout'high)) & "01111111" & "000000000";
-                    elsif( rhythm = '1' and slot = 16 )then -- TOM
-                        addr <= pgout;
-                    else
-                        if( fdata.sign = '0' )then      -- modula ‚Í fdata ‚Ìâ‘Î’l‚ğƒVƒtƒg‚µ‚½’l‚¾‚©‚çA‚±‚±‚Å•„†ˆ—‚µ‚Ä‚é
-                            addr <= pgout + w_modula(pgout'range);
+        if( rising_edge(clk) )then
+            if( reset = '1' )then
+                opout       <= (others => '0');
+                ff_egout    <= (others => '0');
+            else
+                if( clkena = '1' )then
+                    if( stage = "00" )then
+                        --  ï¿½Tï¿½Cï¿½ï¿½ï¿½gï¿½ÌQï¿½ÆƒAï¿½hï¿½ï¿½ï¿½Xï¿½iï¿½Ê‘ï¿½ï¿½jï¿½ï¿½ï¿½ï¿½ï¿½è‚·ï¿½ï¿½Xï¿½eï¿½[ï¿½W
+                        if(    rhythm = '1' and ( slot = 14 or slot = 17 ))then -- HH or CYM
+                            addr <= (not noise) & "01111111" & "000000000";
+                        elsif( rhythm = '1' and slot = 15 )then -- SD
+                            addr <= (not pgout(pgout'high)) & "01111111" & "000000000";
+                        elsif( rhythm = '1' and slot = 16 )then -- TOM
+                            addr <= pgout;
                         else
-                            addr <= pgout - w_modula(pgout'range);
+                            if( fdata.sign = '0' )then      -- modula ï¿½ï¿½ fdata ï¿½Ìï¿½Î’lï¿½ï¿½ï¿½Vï¿½tï¿½gï¿½ï¿½ï¿½ï¿½ï¿½lï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Aï¿½ï¿½ï¿½ï¿½ï¿½Å•ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä‚ï¿½
+                                addr <= pgout + w_modula(pgout'range);
+                            else
+                                addr <= pgout - w_modula(pgout'range);
+                            end if;
                         end if;
-                    end if;
 
-                elsif( stage = "01" )then
-                    --  Œˆ’è‚³‚ê‚½QÆƒAƒhƒŒƒX‚ª u_sine_table ‚Ö‹Ÿ‹‹‚³‚ê‚éƒXƒe[ƒW
-                elsif( stage = "10" )then
-                    ff_egout <= egout;
+                    elsif( stage = "01" )then
+                        --  ï¿½ï¿½ï¿½è‚³ï¿½ê‚½ï¿½Qï¿½ÆƒAï¿½hï¿½ï¿½ï¿½Xï¿½ï¿½ u_sine_table ï¿½Ö‹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Xï¿½eï¿½[ï¿½W
+                    elsif( stage = "10" )then
+                        ff_egout <= egout;
 
-                    --  ƒtƒB[ƒhƒoƒbƒNƒƒ‚ƒŠ‚ÌƒAƒhƒŒƒX‚ğŒˆ‚ß‚éƒXƒe[ƒW
-                    if( slot(0) = '1' )then
-                        if( conv_integer(slot)/2 = 8 )then
-                            faddr <= 0;
+                        --  ï¿½tï¿½Bï¿½[ï¿½hï¿½oï¿½bï¿½Nï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÌƒAï¿½hï¿½ï¿½ï¿½Xï¿½ï¿½ï¿½ï¿½ï¿½ß‚ï¿½Xï¿½eï¿½[ï¿½W
+                        if( slot(0) = '1' )then
+                            if( conv_integer(slot)/2 = 8 )then
+                                faddr <= 0;
+                            else
+                                faddr <= conv_integer(slot)/2 + 1;  --  ï¿½ï¿½ï¿½Ìƒï¿½ï¿½Wï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½^ï¿½ÌƒAï¿½hï¿½ï¿½ï¿½Xï¿½È‚Ì‚ï¿½ +1
+                            end if;
+                        end if;
+                    elsif( stage = "11" )then
+                        -- SineTable ï¿½ï¿½ï¿½ï¿½fï¿½[ï¿½^ï¿½ï¿½ï¿½oï¿½Ä‚ï¿½ï¿½ï¿½Xï¿½eï¿½[ï¿½W
+                        if ( ( '0' & ff_egout ) + ('0'& data(12 downto 0) ) ) < "10000000000000" then
+                            opout_buf := data(13) & (ff_egout + data(12 downto 0) );
                         else
-                            faddr <= conv_integer(slot)/2 + 1;  --  Ÿ‚Ìƒ‚ƒWƒ…ƒŒ[ƒ^‚ÌƒAƒhƒŒƒX‚È‚Ì‚Å +1
+                            opout_buf := data(13) & "1111111111111";
                         end if;
+                        opout <= opout_buf;
+                        --  ï¿½ï¿½ï¿½è‚³ï¿½ê‚½ï¿½tï¿½Bï¿½[ï¿½hï¿½oï¿½bï¿½Nï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Aï¿½hï¿½ï¿½ï¿½Xï¿½ï¿½ FeedBackMemory ï¿½Ö‹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Xï¿½eï¿½[ï¿½W
                     end if;
-                elsif( stage = "11" )then
-                    -- SineTable ‚©‚çƒf[ƒ^‚ªo‚Ä‚­‚éƒXƒe[ƒW
-                    if ( ( '0' & ff_egout ) + ('0'& data(12 downto 0) ) ) < "10000000000000" then
-                        opout_buf := data(13) & (ff_egout + data(12 downto 0) );
-                    else
-                        opout_buf := data(13) & "1111111111111";
-                    end if;
-                    opout <= opout_buf;
-                    --  Œˆ’è‚³‚ê‚½ƒtƒB[ƒhƒoƒbƒNƒƒ‚ƒŠƒAƒhƒŒƒX‚ª FeedBackMemory ‚Ö‹Ÿ‹‹‚³‚ê‚éƒXƒe[ƒW
                 end if;
             end if;
         end if;

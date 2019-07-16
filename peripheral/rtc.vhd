@@ -168,10 +168,12 @@ begin
     ----------------------------------------------------------------
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            ff_req <= '0';
-        elsif( clk21m'event and clk21m = '1' )then
-            ff_req <= req;
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                ff_req <= '0';
+	    else
+                ff_req <= req;
+            end if;
         end if;
     end process;
 
@@ -187,18 +189,20 @@ begin
     ----------------------------------------------------------------
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            ff_1sec_cnt <= "1001";
-        elsif( clk21m'event and clk21m = '1' )then
-            if( w_wrt = '1' and adr(0) = '1' and w_bank_dec(1) = '1' and w_adr_dec(15) = '1' )then
-                -- reset register [cr bit]
-                if( dbo(1) = '1' )then
-                    ff_1sec_cnt <= "1001";
-                end if;
-            elsif( w_1sec = '1' )then
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
                 ff_1sec_cnt <= "1001";
-            elsif( w_enable = '1' )then
-                ff_1sec_cnt <= ff_1sec_cnt - 1;
+	    else
+                if( w_wrt = '1' and adr(0) = '1' and w_bank_dec(1) = '1' and w_adr_dec(15) = '1' )then
+                    -- reset register [cr bit]
+                    if( dbo(1) = '1' )then
+                        ff_1sec_cnt <= "1001";
+                    end if;
+                elsif( w_1sec = '1' )then
+                    ff_1sec_cnt <= "1001";
+                elsif( w_enable = '1' )then
+                    ff_1sec_cnt <= ff_1sec_cnt - 1;
+                end if;
             end if;
         end if;
     end process;
@@ -211,7 +215,7 @@ begin
     ----------------------------------------------------------------
     process( clk21m )
     begin
-        if( clk21m'event and clk21m = '1' )then
+        if( rising_edge(clk21m) )then
             if( w_wrt = '1' and adr(0) = '1' and w_bank_dec(0) = '1' and w_adr_dec( 0) = '1' )then
                 reg_sec_l <= dbo(3 downto 0);
             elsif( w_1sec = '1' )then
@@ -235,7 +239,7 @@ begin
     ----------------------------------------------------------------
     process( clk21m )
     begin
-        if( clk21m'event and clk21m = '1' )then
+        if( rising_edge(clk21m) )then
             if( w_wrt = '1' and adr(0) = '1' and w_bank_dec(0) = '1' and w_adr_dec( 1) = '1' )then
                 reg_sec_h <= dbo(2 downto 0);
             elsif( (w_1sec and w_10sec) = '1' )then
@@ -259,7 +263,7 @@ begin
     ----------------------------------------------------------------
     process( clk21m )
     begin
-        if( clk21m'event and clk21m = '1' )then
+        if( rising_edge(clk21m) )then
             if( w_wrt = '1' and adr(0) = '1' and w_bank_dec(0) = '1' and w_adr_dec( 2) = '1' )then
                 reg_min_l <= dbo(3 downto 0);
             elsif( (w_1sec and w_10sec and w_60sec) = '1' )then
@@ -283,7 +287,7 @@ begin
     ----------------------------------------------------------------
     process( clk21m )
     begin
-        if( clk21m'event and clk21m = '1' )then
+        if( rising_edge(clk21m) )then
             if( w_wrt = '1' and adr(0) = '1' and w_bank_dec(0) = '1' and w_adr_dec( 3) = '1' )then
                 reg_min_h <= dbo(2 downto 0);
             elsif( (w_1sec and w_10sec and w_60sec and w_10min) = '1' )then
@@ -307,7 +311,7 @@ begin
     ----------------------------------------------------------------
     process( clk21m )
     begin
-        if( clk21m'event and clk21m = '1' )then
+        if( rising_edge(clk21m) )then
             if( w_wrt = '1' and adr(0) = '1' and w_bank_dec(0) = '1' and w_adr_dec( 4) = '1' )then
                 reg_hou_l <= dbo(3 downto 0);
             elsif( (w_1sec and w_10sec and w_60sec and w_10min and w_60min) = '1' )then
@@ -325,7 +329,7 @@ begin
 
     process( clk21m )
     begin
-        if( clk21m'event and clk21m = '1' )then
+        if( rising_edge(clk21m) )then
             if( w_wrt = '1' and adr(0) = '1' and w_bank_dec(0) = '1' and w_adr_dec( 5) = '1' )then
                 reg_hou_h <= dbo(1 downto 0);
             elsif( (w_1sec and w_10sec and w_60sec and w_10min and w_60min) = '1' )then
@@ -354,7 +358,7 @@ begin
     ----------------------------------------------------------------
     process( clk21m )
     begin
-        if( clk21m'event and clk21m = '1' )then
+        if( rising_edge(clk21m) )then
             if( w_wrt = '1' and adr(0) = '1' and w_bank_dec(0) = '1' and w_adr_dec( 6) = '1' )then
                 reg_wee <= dbo(2 downto 0);
             elsif( (w_1sec and w_10sec and w_60sec and w_10min and w_60min and w_1224hour) = '1' )then
@@ -375,7 +379,7 @@ begin
     ----------------------------------------------------------------
     process( clk21m )
     begin
-        if( clk21m'event and clk21m = '1' )then
+        if( rising_edge(clk21m) )then
             if( w_wrt = '1' and adr(0) = '1' and w_bank_dec(0) = '1' and w_adr_dec( 7) = '1' )then
                 reg_day_l <= dbo(3 downto 0);
             elsif( (w_1sec and w_10sec and w_60sec and w_10min and w_60min and w_1224hour) = '1' )then
@@ -401,7 +405,7 @@ begin
     ----------------------------------------------------------------
     process( clk21m )
     begin
-        if( clk21m'event and clk21m = '1' )then
+        if( rising_edge(clk21m) )then
             if( w_wrt = '1' and adr(0) = '1' and w_bank_dec(0) = '1' and w_adr_dec( 8) = '1' )then
                 reg_day_h <= dbo(1 downto 0);
             elsif( (w_1sec and w_10sec and w_60sec and w_10min and w_60min and w_1224hour) = '1' )then
@@ -431,7 +435,7 @@ begin
     ----------------------------------------------------------------
     process( clk21m )
     begin
-        if( clk21m'event and clk21m = '1' )then
+        if( rising_edge(clk21m) )then
             if( w_wrt = '1' and adr(0) = '1' and w_bank_dec(0) = '1' and w_adr_dec( 9) = '1' )then
                 reg_mon_l <= dbo(3 downto 0);
             elsif( (w_1sec and w_10sec and w_60sec and w_10min and w_60min and w_1224hour and w_next_mon) = '1' )then
@@ -457,7 +461,7 @@ begin
     ----------------------------------------------------------------
     process( clk21m )
     begin
-        if( clk21m'event and clk21m = '1' )then
+        if( rising_edge(clk21m) )then
             if( w_wrt = '1' and adr(0) = '1' and w_bank_dec(0) = '1' and w_adr_dec(10) = '1' )then
                 reg_mon_h <= dbo(0);
             elsif( (w_1sec and w_10sec and w_60sec and w_10min and w_60min and w_1224hour and w_next_mon) = '1' )then
@@ -481,7 +485,7 @@ begin
     ----------------------------------------------------------------
     process( clk21m )
     begin
-        if( clk21m'event and clk21m = '1' )then
+        if( rising_edge(clk21m) )then
             if( w_wrt = '1' and adr(0) = '1' and w_bank_dec(0) = '1' and w_adr_dec(11) = '1' )then
                 reg_yea_l <= dbo(3 downto 0);
             elsif( (w_1sec and w_10sec and w_60sec and w_10min and w_60min and w_1224hour and w_next_mon and w_1year) = '1' )then
@@ -558,12 +562,14 @@ begin
     ----------------------------------------------------------------
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            reg_ptr <= (others => '0');
-        elsif( clk21m'event and clk21m = '1' )then
-            if( w_wrt = '1' and adr(0) = '0' )then
-                -- register pointer
-                reg_ptr <= dbo(3 downto 0);
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                reg_ptr <= (others => '0');
+	    else
+                if( w_wrt = '1' and adr(0) = '0' )then
+                    -- register pointer
+                    reg_ptr <= dbo(3 downto 0);
+                end if;
             end if;
         end if;
     end process;
@@ -573,11 +579,13 @@ begin
     ----------------------------------------------------------------
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            reg_mode        <= "1000";
-        elsif( clk21m'event and clk21m = '1' )then
-            if( w_wrt = '1' and adr(0) = '1' and w_adr_dec(13) = '1' )then
-                reg_mode <= dbo(3 downto 0);
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                reg_mode        <= "1000";
+	    else
+                if( w_wrt = '1' and adr(0) = '1' and w_adr_dec(13) = '1' )then
+                    reg_mode <= dbo(3 downto 0);
+                end if;
             end if;
         end if;
     end process;

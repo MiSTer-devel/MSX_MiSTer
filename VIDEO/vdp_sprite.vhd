@@ -354,11 +354,13 @@ BEGIN
     ---------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_SP_EN <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( DOTSTATE = "01" AND DOTCOUNTERX = 0 )THEN
-                FF_SP_EN <= (NOT REG_R8_SP_OFF) AND W_ACTIVE;
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
+                FF_SP_EN <= '0';
+	    ELSE
+                IF( DOTSTATE = "01" AND DOTCOUNTERX = 0 )THEN
+                    FF_SP_EN <= (NOT REG_R8_SP_OFF) AND W_ACTIVE;
+                END IF;
             END IF;
         END IF;
     END PROCESS;
@@ -434,26 +436,28 @@ BEGIN
     -----------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            SPSTATE <= SPSTATE_IDLE;
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( DOTSTATE = "10" )THEN
-                CASE SPSTATE IS
-                WHEN SPSTATE_IDLE =>
-                    IF( DOTCOUNTERX = 0 )THEN
-                        SPSTATE <= SPSTATE_YTEST_DRAW;
-                    END IF;
-                WHEN SPSTATE_YTEST_DRAW =>
-                    IF( DOTCOUNTERX = 256+8 )THEN
-                        SPSTATE <= SPSTATE_PREPARE;
-                    END IF;
-                WHEN SPSTATE_PREPARE =>
-                    IF( SPPREPAREEND = '1' )THEN
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
+                SPSTATE <= SPSTATE_IDLE;
+	    ELSE
+                IF( DOTSTATE = "10" )THEN
+                    CASE SPSTATE IS
+                    WHEN SPSTATE_IDLE =>
+                        IF( DOTCOUNTERX = 0 )THEN
+                            SPSTATE <= SPSTATE_YTEST_DRAW;
+                        END IF;
+                    WHEN SPSTATE_YTEST_DRAW =>
+                        IF( DOTCOUNTERX = 256+8 )THEN
+                            SPSTATE <= SPSTATE_PREPARE;
+                        END IF;
+                    WHEN SPSTATE_PREPARE =>
+                        IF( SPPREPAREEND = '1' )THEN
+                            SPSTATE <= SPSTATE_IDLE;
+                        END IF;
+                    WHEN OTHERS =>
                         SPSTATE <= SPSTATE_IDLE;
-                    END IF;
-                WHEN OTHERS =>
-                    SPSTATE <= SPSTATE_IDLE;
-                END CASE;
+                    END CASE;
+                END IF;
             END IF;
         END IF;
     END PROCESS;
@@ -494,26 +498,28 @@ BEGIN
     -----------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            SPVRAMACCESSING <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( DOTSTATE = "10" )THEN
-                CASE SPSTATE IS
-                WHEN SPSTATE_IDLE =>
-                    IF( DOTCOUNTERX = 0 )THEN
-                        SPVRAMACCESSING <= (NOT REG_R8_SP_OFF) AND W_ACTIVE;
-                    END IF;
-                WHEN SPSTATE_YTEST_DRAW =>
-                    IF( DOTCOUNTERX = 256+8 )THEN
-                        SPVRAMACCESSING <= FF_SP_EN;
-                    END IF;
-                WHEN SPSTATE_PREPARE =>
-                    IF( SPPREPAREEND = '1' )THEN
-                        SPVRAMACCESSING <= '0';
-                    END IF;
-                WHEN OTHERS =>
-                    NULL;
-                END CASE;
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                SPVRAMACCESSING <= '0';
+	    ELSE
+                IF( DOTSTATE = "10" )THEN
+                    CASE SPSTATE IS
+                    WHEN SPSTATE_IDLE =>
+                        IF( DOTCOUNTERX = 0 )THEN
+                            SPVRAMACCESSING <= (NOT REG_R8_SP_OFF) AND W_ACTIVE;
+                        END IF;
+                    WHEN SPSTATE_YTEST_DRAW =>
+                        IF( DOTCOUNTERX = 256+8 )THEN
+                            SPVRAMACCESSING <= FF_SP_EN;
+                        END IF;
+                    WHEN SPSTATE_PREPARE =>
+                        IF( SPPREPAREEND = '1' )THEN
+                            SPVRAMACCESSING <= '0';
+                        END IF;
+                    WHEN OTHERS =>
+                        NULL;
+                    END CASE;
+                END IF;
             END IF;
         END IF;
     END PROCESS;
@@ -546,15 +552,17 @@ BEGIN
     ---------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_Y_TEST_EN <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( DOTSTATE = "01" )THEN
-                IF( DOTCOUNTERX = 0 ) THEN
-                    FF_Y_TEST_EN <= FF_SP_EN;
-                ELSIF( EIGHTDOTSTATE = "110" )THEN
-                    IF( W_SP_OFF = '1' OR (W_SP_OVERMAP AND W_TARGET_SP_EN) = '1' OR FF_Y_TEST_SP_NUM = "11111" )THEN
-                        FF_Y_TEST_EN <= '0';
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                FF_Y_TEST_EN <= '0';
+	    ELSE
+                IF( DOTSTATE = "01" )THEN
+                    IF( DOTCOUNTERX = 0 ) THEN
+                        FF_Y_TEST_EN <= FF_SP_EN;
+                    ELSIF( EIGHTDOTSTATE = "110" )THEN
+                        IF( W_SP_OFF = '1' OR (W_SP_OVERMAP AND W_TARGET_SP_EN) = '1' OR FF_Y_TEST_SP_NUM = "11111" )THEN
+                            FF_Y_TEST_EN <= '0';
+                        END IF;
                     END IF;
                 END IF;
             END IF;
@@ -566,15 +574,17 @@ BEGIN
     ---------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_Y_TEST_SP_NUM <= (OTHERS => '0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( DOTSTATE = "01" )THEN
-                IF( DOTCOUNTERX = 0 )THEN
-                    FF_Y_TEST_SP_NUM <= (OTHERS => '0');
-                ELSIF( EIGHTDOTSTATE = "110" )THEN
-                    IF( FF_Y_TEST_EN = '1' AND FF_Y_TEST_SP_NUM /= "11111" )THEN
-                        FF_Y_TEST_SP_NUM <= FF_Y_TEST_SP_NUM + 1;
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                FF_Y_TEST_SP_NUM <= (OTHERS => '0');
+	    ELSE
+                IF( DOTSTATE = "01" )THEN
+                    IF( DOTCOUNTERX = 0 )THEN
+                        FF_Y_TEST_SP_NUM <= (OTHERS => '0');
+                    ELSIF( EIGHTDOTSTATE = "110" )THEN
+                        IF( FF_Y_TEST_EN = '1' AND FF_Y_TEST_SP_NUM /= "11111" )THEN
+                            FF_Y_TEST_SP_NUM <= FF_Y_TEST_SP_NUM + 1;
+                        END IF;
                     END IF;
                 END IF;
             END IF;
@@ -586,17 +596,19 @@ BEGIN
     ---------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_Y_TEST_LISTUP_ADDR <= (OTHERS => '0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( DOTSTATE = "01" )THEN
-                IF( DOTCOUNTERX = 0 )THEN
-                    -- INITIALIZE
-                    FF_Y_TEST_LISTUP_ADDR <= (OTHERS => '0');
-                ELSIF( EIGHTDOTSTATE = "110" )THEN
-                    -- NEXT SPRITE [リストアップメモリが満杯になるまでインクリメント]
-                    IF( FF_Y_TEST_EN = '1' AND W_TARGET_SP_EN = '1' AND W_SP_OVERMAP = '0' AND W_SP_OFF = '0' )THEN
-                        FF_Y_TEST_LISTUP_ADDR <= FF_Y_TEST_LISTUP_ADDR + 1;
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                FF_Y_TEST_LISTUP_ADDR <= (OTHERS => '0');
+	    ELSE
+                IF( DOTSTATE = "01" )THEN
+                    IF( DOTCOUNTERX = 0 )THEN
+                        -- INITIALIZE
+                        FF_Y_TEST_LISTUP_ADDR <= (OTHERS => '0');
+                    ELSIF( EIGHTDOTSTATE = "110" )THEN
+                        -- NEXT SPRITE [リストアップメモリが満杯になるまでインクリメント]
+                        IF( FF_Y_TEST_EN = '1' AND W_TARGET_SP_EN = '1' AND W_SP_OVERMAP = '0' AND W_SP_OFF = '0' )THEN
+                            FF_Y_TEST_LISTUP_ADDR <= FF_Y_TEST_LISTUP_ADDR + 1;
+                        END IF;
                     END IF;
                 END IF;
             END IF;
@@ -627,21 +639,23 @@ BEGIN
     ---------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_SP_OVERMAP       <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( PVDPS0RESETREQ = NOT FF_VDPS0RESETACK )THEN
-                -- S#0が読み込まれるまでクリアしない
-                FF_SP_OVERMAP       <= '0';
-            ELSIF( DOTSTATE = "01" )THEN
-                IF( DOTCOUNTERX = 0 )THEN
-                    -- INITIALIZE
-                ELSIF( EIGHTDOTSTATE = "110" )THEN
-                    IF( FF_Y_TEST_EN = '1' AND W_TARGET_SP_EN = '1' AND W_SP_OVERMAP = '1' AND W_SP_OFF = '0' )THEN
-                        FF_SP_OVERMAP <= '1';
-                    END IF;
-                END IF;
-            END IF;
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+           IF( RESET = '1' )THEN
+               FF_SP_OVERMAP       <= '0';
+	   ELSE
+               IF( PVDPS0RESETREQ = NOT FF_VDPS0RESETACK )THEN
+                   -- S#0が読み込まれるまでクリアしない
+                   FF_SP_OVERMAP       <= '0';
+               ELSIF( DOTSTATE = "01" )THEN
+                   IF( DOTCOUNTERX = 0 )THEN
+                       -- INITIALIZE
+                   ELSIF( EIGHTDOTSTATE = "110" )THEN
+                       IF( FF_Y_TEST_EN = '1' AND W_TARGET_SP_EN = '1' AND W_SP_OVERMAP = '1' AND W_SP_OFF = '0' )THEN
+                           FF_SP_OVERMAP <= '1';
+                       END IF;
+                   END IF;
+               END IF;
+           END IF;
         END IF;
     END PROCESS;
 
@@ -650,19 +664,21 @@ BEGIN
     ---------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_SP_OVERMAP_NUM   <= (OTHERS => '1');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( PVDPS0RESETREQ = NOT FF_VDPS0RESETACK )THEN
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
                 FF_SP_OVERMAP_NUM   <= (OTHERS => '1');
-            ELSIF( DOTSTATE = "01" )THEN
-                IF( DOTCOUNTERX = 0 )THEN
-                    -- INITIALIZE
-                ELSIF( EIGHTDOTSTATE = "110" )THEN
-                    -- JP: 調査をあきらめたスプライト番号が格納される。OVERMAPとは限らない。
-                    -- JP: しかし、すでに OVERMAP で値が確定している場合は更新しない。
-                    IF( FF_Y_TEST_EN = '1' AND W_TARGET_SP_EN = '1' AND W_SP_OVERMAP = '1' AND W_SP_OFF = '0' AND FF_SP_OVERMAP = '0' )THEN
-                        FF_SP_OVERMAP_NUM <= FF_Y_TEST_SP_NUM;
+	    ELSE
+                IF( PVDPS0RESETREQ = NOT FF_VDPS0RESETACK )THEN
+                    FF_SP_OVERMAP_NUM   <= (OTHERS => '1');
+                ELSIF( DOTSTATE = "01" )THEN
+                    IF( DOTCOUNTERX = 0 )THEN
+                        -- INITIALIZE
+                    ELSIF( EIGHTDOTSTATE = "110" )THEN
+                        -- JP: 調査をあきらめたスプライト番号が格納される。OVERMAPとは限らない。
+                        -- JP: しかし、すでに OVERMAP で値が確定している場合は更新しない。
+                        IF( FF_Y_TEST_EN = '1' AND W_TARGET_SP_EN = '1' AND W_SP_OVERMAP = '1' AND W_SP_OFF = '0' AND FF_SP_OVERMAP = '0' )THEN
+                            FF_SP_OVERMAP_NUM <= FF_Y_TEST_SP_NUM;
+                        END IF;
                     END IF;
                 END IF;
             END IF;
@@ -674,11 +690,13 @@ BEGIN
     ---------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_Y_TEST_VRAM_ADDR <= (OTHERS => '0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( DOTSTATE = "11" )THEN
-                FF_Y_TEST_VRAM_ADDR <= SPATTRTBLBASEADDR & FF_Y_TEST_SP_NUM & "00";
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                FF_Y_TEST_VRAM_ADDR <= (OTHERS => '0');
+	    ELSE
+                IF( DOTSTATE = "11" )THEN
+                    FF_Y_TEST_VRAM_ADDR <= SPATTRTBLBASEADDR & FF_Y_TEST_SP_NUM & "00";
+                END IF;
             END IF;
         END IF;
     END PROCESS;
@@ -703,25 +721,27 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            IRAMADRPREPARE <= (OTHERS => '0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            -- PREPAREING
-            IF( DOTSTATE = "11" )THEN
-                CASE EIGHTDOTSTATE IS
-                WHEN "000" =>                               -- Y READ
-                    IRAMADRPREPARE <= SPATTRIB_ADDR & "00";
-                WHEN "001" =>                               -- X READ
-                    IRAMADRPREPARE <= SPATTRIB_ADDR & "01";
-                WHEN "010" =>                               -- PATTERN NUM READ
-                    IRAMADRPREPARE <= SPATTRIB_ADDR & "10";
-                WHEN "011" | "100" =>                       -- PATTERN READ
-                    IRAMADRPREPARE <= READVRAMADDRPTREAD;
-                WHEN "101" =>                               -- COLOR READ
-                    IRAMADRPREPARE <= READVRAMADDRCREAD;
-                WHEN OTHERS =>
-                    NULL;
-                END CASE;
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                IRAMADRPREPARE <= (OTHERS => '0');
+	    ELSE
+                -- PREPAREING
+                IF( DOTSTATE = "11" )THEN
+                    CASE EIGHTDOTSTATE IS
+                    WHEN "000" =>                               -- Y READ
+                        IRAMADRPREPARE <= SPATTRIB_ADDR & "00";
+                    WHEN "001" =>                               -- X READ
+                        IRAMADRPREPARE <= SPATTRIB_ADDR & "01";
+                    WHEN "010" =>                               -- PATTERN NUM READ
+                        IRAMADRPREPARE <= SPATTRIB_ADDR & "10";
+                    WHEN "011" | "100" =>                       -- PATTERN READ
+                        IRAMADRPREPARE <= READVRAMADDRPTREAD;
+                    WHEN "101" =>                               -- COLOR READ
+                        IRAMADRPREPARE <= READVRAMADDRCREAD;
+                    WHEN OTHERS =>
+                        NULL;
+                    END CASE;
+                END IF;
             END IF;
         END IF;
     END PROCESS;
@@ -748,77 +768,79 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            SPPREPARELOCALPLANENUM  <= (OTHERS => '0');
-            SPPREPAREEND            <= '0';
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                SPPREPARELOCALPLANENUM  <= (OTHERS => '0');
+                SPPREPAREEND            <= '0';
 
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            -- PREPAREING
-            CASE DOTSTATE IS
-                WHEN "01" =>
-                    IF( SPSTATE = SPSTATE_PREPARE ) THEN
-                        CASE EIGHTDOTSTATE IS
-                            WHEN "001" =>                               -- Y READ
-                                -- JP: スプライトの何行目が該当したか覚えておく
-                                IF( REG_R1_SP_ZOOM = '0' ) THEN
-                                    SPPREPARELINENUM    <= W_SPLISTUPY(3 DOWNTO 0);
-                                ELSE
-                                    SPPREPARELINENUM    <= W_SPLISTUPY(4 DOWNTO 1);
-                                END IF;
-                            WHEN "010" =>                               -- X READ
-                                SPINFORAMX_IN <= '0' & PRAMDAT;
-                            WHEN "011" =>                               -- PATTERN NUM READ
-                                SPPREPAREPATTERNNUM <= PRAMDAT;
-                            WHEN "100" =>                               -- PATTERN READ LEFT
-                                SPINFORAMPATTERN_IN(15 DOWNTO 8) <= PRAMDAT;
-                            WHEN "101" =>                               -- PATTERN READ RIGHT
-                                IF( REG_R1_SP_SIZE = '0' ) THEN
-                                    -- 8X8 MODE
-                                    SPINFORAMPATTERN_IN( 7 DOWNTO 0) <= (OTHERS => '0');
-                                ELSE
-                                    -- 16X16 MODE
-                                    SPINFORAMPATTERN_IN( 7 DOWNTO 0) <= PRAMDAT;
-                                END IF;
-                            WHEN "110" =>                               -- COLOR READ
-                                -- COLOR
-                                SPINFORAMCOLOR_IN <= PRAMDAT(3 DOWNTO 0);
-                                -- CC   優先順位ビット (1: 優先順位無し, 0: 優先順位あり)
-                                IF(SPMODE2 = '1') THEN
-                                    SPINFORAMCC_IN <= PRAMDAT(6);
-                                ELSE
-                                    SPINFORAMCC_IN <= '0';
-                                END IF;
-                                -- IC   衝突検知ビット (1: 検知しない, 0: 検知する)
-                                SPINFORAMIC_IN <= PRAMDAT(5) AND SPMODE2;
-                                -- EC   32ドット左シフト (1: する, 0: しない)
-                                IF( PRAMDAT(7) = '1' ) THEN
-                                    SPINFORAMX_IN <= SPINFORAMX_IN - 32;
-                                END IF;
+	    ELSE
+                -- PREPARING
+                CASE DOTSTATE IS
+                    WHEN "01" =>
+                        IF( SPSTATE = SPSTATE_PREPARE ) THEN
+                            CASE EIGHTDOTSTATE IS
+                                WHEN "001" =>                               -- Y READ
+                                    -- JP: スプライトの何行目が該当したか覚えておく
+                                    IF( REG_R1_SP_ZOOM = '0' ) THEN
+                                        SPPREPARELINENUM    <= W_SPLISTUPY(3 DOWNTO 0);
+                                    ELSE
+                                        SPPREPARELINENUM    <= W_SPLISTUPY(4 DOWNTO 1);
+                                    END IF;
+                                WHEN "010" =>                               -- X READ
+                                    SPINFORAMX_IN <= '0' & PRAMDAT;
+                                WHEN "011" =>                               -- PATTERN NUM READ
+                                    SPPREPAREPATTERNNUM <= PRAMDAT;
+                                WHEN "100" =>                               -- PATTERN READ LEFT
+                                    SPINFORAMPATTERN_IN(15 DOWNTO 8) <= PRAMDAT;
+                                WHEN "101" =>                               -- PATTERN READ RIGHT
+                                    IF( REG_R1_SP_SIZE = '0' ) THEN
+                                        -- 8X8 MODE
+                                        SPINFORAMPATTERN_IN( 7 DOWNTO 0) <= (OTHERS => '0');
+                                    ELSE
+                                        -- 16X16 MODE
+                                        SPINFORAMPATTERN_IN( 7 DOWNTO 0) <= PRAMDAT;
+                                    END IF;
+                                WHEN "110" =>                               -- COLOR READ
+                                    -- COLOR
+                                    SPINFORAMCOLOR_IN <= PRAMDAT(3 DOWNTO 0);
+                                    -- CC   優先順位ビット (1: 優先順位無し, 0: 優先順位あり)
+                                    IF(SPMODE2 = '1') THEN
+                                        SPINFORAMCC_IN <= PRAMDAT(6);
+                                    ELSE
+                                        SPINFORAMCC_IN <= '0';
+                                    END IF;
+                                    -- IC   衝突検知ビット (1: 検知しない, 0: 検知する)
+                                    SPINFORAMIC_IN <= PRAMDAT(5) AND SPMODE2;
+                                    -- EC   32ドット左シフト (1: する, 0: しない)
+                                    IF( PRAMDAT(7) = '1' ) THEN
+                                        SPINFORAMX_IN <= SPINFORAMX_IN - 32;
+                                    END IF;
 
-                                -- IF ALL OF THE SPRITES LIST-UPED ARE READED,
-                                -- THE SPRITES LEFT SHOULD NOT BE DRAWN.
-                                IF( SPPREPARELOCALPLANENUM >= FF_Y_TEST_LISTUP_ADDR )THEN
-                                    SPINFORAMPATTERN_IN <= (OTHERS => '0');
-                                END IF;
-                            WHEN "111" =>
-                                SPPREPARELOCALPLANENUM <= SPPREPARELOCALPLANENUM + 1;
-                                IF( SPPREPARELOCALPLANENUM = 7 ) THEN
-                                    SPPREPAREEND <= '1';
-                                END IF;
-                            WHEN OTHERS =>
-                                NULL;
-                        END CASE;
-                    ELSE
-                        SPPREPARELOCALPLANENUM <= (OTHERS => '0');
-                        SPPREPAREEND <= '0';
-                    END IF;
-                WHEN OTHERS =>
-                    NULL;
-            END CASE;
+                                    -- IF ALL OF THE SPRITES LIST-UPED ARE READED,
+                                    -- THE SPRITES LEFT SHOULD NOT BE DRAWN.
+                                    IF( SPPREPARELOCALPLANENUM >= FF_Y_TEST_LISTUP_ADDR )THEN
+                                        SPINFORAMPATTERN_IN <= (OTHERS => '0');
+                                    END IF;
+                                WHEN "111" =>
+                                    SPPREPARELOCALPLANENUM <= SPPREPARELOCALPLANENUM + 1;
+                                    IF( SPPREPARELOCALPLANENUM = 7 ) THEN
+                                        SPPREPAREEND <= '1';
+                                    END IF;
+                                WHEN OTHERS =>
+                                    NULL;
+                            END CASE;
+                        ELSE
+                            SPPREPARELOCALPLANENUM <= (OTHERS => '0');
+                            SPPREPAREEND <= '0';
+                        END IF;
+                    WHEN OTHERS =>
+                        NULL;
+                END CASE;
+            END IF;
         END IF;
     END PROCESS;
 
-    PROCESS( RESET, CLK21M )
+    PROCESS( CLK21M )
     BEGIN
         IF( CLK21M'EVENT AND CLK21M = '1' )THEN
             IF( DOTSTATE = "01" )THEN
@@ -850,106 +872,109 @@ BEGIN
         VARIABLE VDPS3S4SPCOLLISIONXV               : STD_LOGIC_VECTOR(8 DOWNTO 0);
         VARIABLE VDPS5S6SPCOLLISIONYV               : STD_LOGIC_VECTOR(8 DOWNTO 0);
     BEGIN
-        IF( RESET ='1' ) THEN
-            SPLINEBUFDRAWWE             <= '0';                 -- JP: ラインバッファへの書き込みイネーブラ
-            SPPREDRAWEND                <= '0';
-            SPDRAWPATTERN               <= (OTHERS => '0');
-            SPLINEBUFDRAWCOLOR          <= (OTHERS => '0');
-            SPLINEBUFDRAWX              <= (OTHERS => '0');
-            SPDRAWCOLOR                 <= (OTHERS => '0');
+        IF (CLK21M'EVENT AND CLK21M = '1') THEN
+            IF( RESET ='1' ) THEN
+                SPLINEBUFDRAWWE             <= '0';                 -- JP: ラインバッファへの書き込みイネーブラ
+                SPPREDRAWEND                <= '0';
+                SPDRAWPATTERN               <= (OTHERS => '0');
+                SPLINEBUFDRAWCOLOR          <= (OTHERS => '0');
+                SPLINEBUFDRAWX              <= (OTHERS => '0');
+                SPDRAWCOLOR                 <= (OTHERS => '0');
 
-            VDPS0SPCOLLISIONINCIDENCEV  := '0';                 -- JP: スプライトが衝突したかどうかを示すフラグ
-            VDPS3S4SPCOLLISIONXV        := (OTHERS => '0');
-            VDPS5S6SPCOLLISIONYV        := (OTHERS => '0');
-            SPCC0FOUNDV                 := '0';
-            LASTCC0LOCALPLANENUMV       := (OTHERS => '0');
+                VDPS0SPCOLLISIONINCIDENCEV  := '0';                 -- JP: スプライトが衝突したかどうかを示すフラグ
+                VDPS3S4SPCOLLISIONXV        := (OTHERS => '0');
+                VDPS5S6SPCOLLISIONYV        := (OTHERS => '0');
+                SPCC0FOUNDV                 := '0';
+                LASTCC0LOCALPLANENUMV       := (OTHERS => '0');
 
-        ELSIF (CLK21M'EVENT AND CLK21M = '1') THEN
-            IF( SPSTATE = SPSTATE_YTEST_DRAW ) THEN
-                CASE DOTSTATE IS
-                    WHEN "10" =>
-                        -- JP: 処理単位の始まり
-                        SPLINEBUFDRAWWE <= '0';
-                    WHEN "00" =>
-                        -- JP:
-                        IF( DOTCOUNTERX(4 DOWNTO 0) = 1 ) THEN
-                            SPDRAWPATTERN   <= SPINFORAMPATTERN_OUT;
-                            SPDRAWXV        := SPINFORAMX_OUT;
-                        ELSE
-                            IF( (REG_R1_SP_ZOOM = '0') OR (DOTCOUNTERX(0) = '1') ) THEN
-                                SPDRAWPATTERN <= SPDRAWPATTERN(14 DOWNTO 0) & "0";
+	    ELSE
+
+                IF( SPSTATE = SPSTATE_YTEST_DRAW ) THEN
+                    CASE DOTSTATE IS
+                        WHEN "10" =>
+                            -- JP: 処理単位の始まり
+                            SPLINEBUFDRAWWE <= '0';
+                        WHEN "00" =>
+                            -- JP:
+                            IF( DOTCOUNTERX(4 DOWNTO 0) = 1 ) THEN
+                                SPDRAWPATTERN   <= SPINFORAMPATTERN_OUT;
+                                SPDRAWXV        := SPINFORAMX_OUT;
+                            ELSE
+                                IF( (REG_R1_SP_ZOOM = '0') OR (DOTCOUNTERX(0) = '1') ) THEN
+                                    SPDRAWPATTERN <= SPDRAWPATTERN(14 DOWNTO 0) & "0";
+                                END IF;
+                                SPDRAWXV := SPDRAWX + 1;
                             END IF;
-                            SPDRAWXV := SPDRAWX + 1;
-                        END IF;
-                        SPDRAWX <= SPDRAWXV;
-                        SPLINEBUFDRAWX <= SPDRAWXV(7 DOWNTO 0);
-                    WHEN "01" =>
-                        SPDRAWCOLOR <= SPINFORAMCOLOR_OUT;
-                    WHEN "11" =>
-                        IF( SPINFORAMCC_OUT = '0' ) THEN
-                            LASTCC0LOCALPLANENUMV := SPPREDRAWLOCALPLANENUM;
-                            SPCC0FOUNDV := '1';
-                        END IF;
-                        IF( (SPDRAWPATTERN(15) = '1') AND (SPDRAWX(8) = '0') AND (SPPREDRAWEND = '0') AND
-                                ((REG_R8_COL0_ON = '1') OR (SPDRAWCOLOR /= 0)) ) THEN
-                            -- JP: スプライトのドットを描画
-                            -- JP: ラインバッファの7ビット目は、何らかの色を描画した時に'1'になる。
-                            -- JP: ラインバッファの6-4ビット目はそこに描画されているドットのローカルプレーン番号
-                            -- JP: (色合成されているときは親となるCC='0'のスプライトのローカルプレーン番号)が入る。
-                            -- JP: つまり、LASTCC0LOCALPLANENUMVがこの番号と等しいときはOR合成してよい事になる。
-                            IF( (SPLINEBUFDRAWDATA_OUT(7) = '0') AND (SPCC0FOUNDV = '1') ) THEN
-                                -- JP: 何も描かれていない(ビット7が'0')とき、このドットに初めての
-                                -- JP: スプライトが描画される。ただし、CC='0'のスプライトが同一ライン上にまだ
-                                -- JP: 現れていない時は描画しない
-                                SPLINEBUFDRAWCOLOR <= ("1" & LASTCC0LOCALPLANENUMV & SPDRAWCOLOR);
-                                SPLINEBUFDRAWWE <= '1';
-                            ELSIF( (SPLINEBUFDRAWDATA_OUT(7) = '1') AND (SPINFORAMCC_OUT = '1') AND
-                                         (SPLINEBUFDRAWDATA_OUT(6 DOWNTO 4) = LASTCC0LOCALPLANENUMV) ) THEN
-                                -- JP: 既に絵が描かれているが、CCが'1'でかつこのドットに描かれているスプライトの
-                                -- JP: LOCALPLANENUMが LASTCC0LOCALPLANENUMVと等しい時は、ラインバッファから
-                                -- JP: 下地データを読み、書きたい色と論理和を取リ、書き戻す。
-                                SPLINEBUFDRAWCOLOR <= SPLINEBUFDRAWDATA_OUT OR ("0000" & SPDRAWCOLOR);
-                                SPLINEBUFDRAWWE <= '1';
-                            ELSIF( (SPLINEBUFDRAWDATA_OUT(7) = '1') AND (SPINFORAMIC_OUT = '0') ) THEN
-                                SPLINEBUFDRAWCOLOR <= SPLINEBUFDRAWDATA_OUT;
-                                -- JP: スプライトが衝突。
-                                -- SPRITE COLISION OCCURED
-                                VDPS0SPCOLLISIONINCIDENCEV := '1';
-                                VDPS3S4SPCOLLISIONXV := SPDRAWX + 12;
-                                -- NOTE: DRAWING LINE IS PREVIOUS LINE.
-                                VDPS5S6SPCOLLISIONYV := FF_CUR_Y + 7;
+                            SPDRAWX <= SPDRAWXV;
+                            SPLINEBUFDRAWX <= SPDRAWXV(7 DOWNTO 0);
+                        WHEN "01" =>
+                            SPDRAWCOLOR <= SPINFORAMCOLOR_OUT;
+                        WHEN "11" =>
+                            IF( SPINFORAMCC_OUT = '0' ) THEN
+                                LASTCC0LOCALPLANENUMV := SPPREDRAWLOCALPLANENUM;
+                                SPCC0FOUNDV := '1';
                             END IF;
-                        END IF;
-                        --
-                        IF( DOTCOUNTERX = 0 ) THEN
-                            SPPREDRAWLOCALPLANENUM <= (OTHERS => '0');
-                            SPPREDRAWEND <= '0';
-                            LASTCC0LOCALPLANENUMV := (OTHERS => '0');
-                            SPCC0FOUNDV := '0';
-                        ELSIF( DOTCOUNTERX(4 DOWNTO 0) = 0 ) THEN
-                            SPPREDRAWLOCALPLANENUM <= SPPREDRAWLOCALPLANENUM + 1;
-                            IF( SPPREDRAWLOCALPLANENUM = 7 ) THEN
-                                SPPREDRAWEND <= '1';
+                            IF( (SPDRAWPATTERN(15) = '1') AND (SPDRAWX(8) = '0') AND (SPPREDRAWEND = '0') AND
+                                    ((REG_R8_COL0_ON = '1') OR (SPDRAWCOLOR /= 0)) ) THEN
+                                -- JP: スプライトのドットを描画
+                                -- JP: ラインバッファの7ビット目は、何らかの色を描画した時に'1'になる。
+                                -- JP: ラインバッファの6-4ビット目はそこに描画されているドットのローカルプレーン番号
+                                -- JP: (色合成されているときは親となるCC='0'のスプライトのローカルプレーン番号)が入る。
+                                -- JP: つまり、LASTCC0LOCALPLANENUMVがこの番号と等しいときはOR合成してよい事になる。
+                                IF( (SPLINEBUFDRAWDATA_OUT(7) = '0') AND (SPCC0FOUNDV = '1') ) THEN
+                                    -- JP: 何も描かれていない(ビット7が'0')とき、このドットに初めての
+                                    -- JP: スプライトが描画される。ただし、CC='0'のスプライトが同一ライン上にまだ
+                                    -- JP: 現れていない時は描画しない
+                                    SPLINEBUFDRAWCOLOR <= ("1" & LASTCC0LOCALPLANENUMV & SPDRAWCOLOR);
+                                    SPLINEBUFDRAWWE <= '1';
+                                ELSIF( (SPLINEBUFDRAWDATA_OUT(7) = '1') AND (SPINFORAMCC_OUT = '1') AND
+                                             (SPLINEBUFDRAWDATA_OUT(6 DOWNTO 4) = LASTCC0LOCALPLANENUMV) ) THEN
+                                    -- JP: 既に絵が描かれているが、CCが'1'でかつこのドットに描かれているスプライトの
+                                    -- JP: LOCALPLANENUMが LASTCC0LOCALPLANENUMVと等しい時は、ラインバッファから
+                                    -- JP: 下地データを読み、書きたい色と論理和を取リ、書き戻す。
+                                    SPLINEBUFDRAWCOLOR <= SPLINEBUFDRAWDATA_OUT OR ("0000" & SPDRAWCOLOR);
+                                    SPLINEBUFDRAWWE <= '1';
+                                ELSIF( (SPLINEBUFDRAWDATA_OUT(7) = '1') AND (SPINFORAMIC_OUT = '0') ) THEN
+                                    SPLINEBUFDRAWCOLOR <= SPLINEBUFDRAWDATA_OUT;
+                                    -- JP: スプライトが衝突。
+                                    -- SPRITE COLISION OCCURED
+                                    VDPS0SPCOLLISIONINCIDENCEV := '1';
+                                    VDPS3S4SPCOLLISIONXV := SPDRAWX + 12;
+                                    -- NOTE: DRAWING LINE IS PREVIOUS LINE.
+                                    VDPS5S6SPCOLLISIONYV := FF_CUR_Y + 7;
+                                END IF;
                             END IF;
-                        END IF;
-                    WHEN OTHERS => NULL;
-                END CASE;
-            END IF;
+                            --
+                            IF( DOTCOUNTERX = 0 ) THEN
+                                SPPREDRAWLOCALPLANENUM <= (OTHERS => '0');
+                                SPPREDRAWEND <= '0';
+                                LASTCC0LOCALPLANENUMV := (OTHERS => '0');
+                                SPCC0FOUNDV := '0';
+                            ELSIF( DOTCOUNTERX(4 DOWNTO 0) = 0 ) THEN
+                                SPPREDRAWLOCALPLANENUM <= SPPREDRAWLOCALPLANENUM + 1;
+                                IF( SPPREDRAWLOCALPLANENUM = 7 ) THEN
+                                    SPPREDRAWEND <= '1';
+                                END IF;
+                            END IF;
+                        WHEN OTHERS => NULL;
+                    END CASE;
+                END IF;
 
-            -- STATUS REGISTER
-            IF( PVDPS0RESETREQ /= FF_VDPS0RESETACK ) THEN
-                FF_VDPS0RESETACK <= PVDPS0RESETREQ;
-                VDPS0SPCOLLISIONINCIDENCEV := '0';
-            END IF;
-            IF( PVDPS5RESETREQ /= FF_VDPS5RESETACK ) THEN
-                FF_VDPS5RESETACK <= PVDPS5RESETREQ;
-                VDPS3S4SPCOLLISIONXV := (OTHERS => '0');
-                VDPS5S6SPCOLLISIONYV := (OTHERS => '0');
-            END IF;
+                -- STATUS REGISTER
+                IF( PVDPS0RESETREQ /= FF_VDPS0RESETACK ) THEN
+                    FF_VDPS0RESETACK <= PVDPS0RESETREQ;
+                    VDPS0SPCOLLISIONINCIDENCEV := '0';
+                END IF;
+                IF( PVDPS5RESETREQ /= FF_VDPS5RESETACK ) THEN
+                    FF_VDPS5RESETACK <= PVDPS5RESETREQ;
+                    VDPS3S4SPCOLLISIONXV := (OTHERS => '0');
+                    VDPS5S6SPCOLLISIONYV := (OTHERS => '0');
+                END IF;
 
-            PVDPS0SPCOLLISIONINCIDENCE <= VDPS0SPCOLLISIONINCIDENCEV;
-            PVDPS3S4SPCOLLISIONX    <= VDPS3S4SPCOLLISIONXV;
-            PVDPS5S6SPCOLLISIONY    <= VDPS5S6SPCOLLISIONYV;
+                PVDPS0SPCOLLISIONINCIDENCE <= VDPS0SPCOLLISIONINCIDENCEV;
+                PVDPS3S4SPCOLLISIONX    <= VDPS3S4SPCOLLISIONXV;
+                PVDPS5S6SPCOLLISIONY    <= VDPS5S6SPCOLLISIONYV;
+            END IF;
         END IF;
     END PROCESS;
 
@@ -959,15 +984,17 @@ BEGIN
     -----------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            SPLINEBUFDISPX  <= (OTHERS => '0');
-        ELSIF (CLK21M'EVENT AND CLK21M = '1') THEN
-            IF( DOTSTATE = "10" )THEN
-                -- JP: DOTCOUNTERと実際の表示(カラーコードの出力)は8ドットずれている
-                IF( DOTCOUNTERX = 8 )THEN
-                    SPLINEBUFDISPX <= ("00000" & REG_R27_H_SCROLL);
-                ELSE
-                    SPLINEBUFDISPX <= SPLINEBUFDISPX + 1;
+        IF ( RISING_EDGE(CLK21M) ) THEN
+            IF( RESET = '1' )THEN
+                SPLINEBUFDISPX  <= (OTHERS => '0');
+	    ELSE
+                IF( DOTSTATE = "10" )THEN
+                    -- JP: DOTCOUNTERと実際の表示(カラーコードの出力)は8ドットずれている
+                    IF( DOTCOUNTERX = 8 )THEN
+                        SPLINEBUFDISPX <= ("00000" & REG_R27_H_SCROLL);
+                    ELSE
+                        SPLINEBUFDISPX <= SPLINEBUFDISPX + 1;
+                    END IF;
                 END IF;
             END IF;
         END IF;
@@ -975,15 +1002,17 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' ) THEN
-            SPWINDOWX <= '0';
-        ELSIF (CLK21M'EVENT AND CLK21M = '1') THEN
-            IF( DOTSTATE = "10" )THEN
-                -- JP: DOTCOUNTERと実際の表示(カラーコードの出力)は8ドットずれている
-                IF( DOTCOUNTERX = 8 )THEN
-                    SPWINDOWX <= '1';
-                ELSIF( SPLINEBUFDISPX = X"FF" ) THEN
-                    SPWINDOWX <= '0';
+        IF (CLK21M'EVENT AND CLK21M = '1') THEN
+            IF( RESET = '1' ) THEN
+                SPWINDOWX <= '0';
+	    ELSE
+                IF( DOTSTATE = "10" )THEN
+                    -- JP: DOTCOUNTERと実際の表示(カラーコードの出力)は8ドットずれている
+                    IF( DOTCOUNTERX = 8 )THEN
+                        SPWINDOWX <= '1';
+                    ELSIF( SPLINEBUFDISPX = X"FF" ) THEN
+                        SPWINDOWX <= '0';
+                    END IF;
                 END IF;
             END IF;
         END IF;
@@ -991,14 +1020,16 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' ) THEN
-            SPLINEBUFDISPWE <= '0';
-        ELSIF (CLK21M'EVENT AND CLK21M = '1') THEN
-            IF( DOTSTATE = "10" )THEN
+        IF (CLK21M'EVENT AND CLK21M = '1') THEN
+            IF( RESET = '1' ) THEN
                 SPLINEBUFDISPWE <= '0';
-            ELSIF( DOTSTATE = "11" AND SPWINDOWX = '1' )THEN
-                -- CLEAR DISPLAYED DOT
-                SPLINEBUFDISPWE <= '1';
+	    ELSE
+                IF( DOTSTATE = "10" )THEN
+                    SPLINEBUFDISPWE <= '0';
+                ELSIF( DOTSTATE = "11" AND SPWINDOWX = '1' )THEN
+                    -- CLEAR DISPLAYED DOT
+                    SPLINEBUFDISPWE <= '1';
+                END IF;
             END IF;
         END IF;
     END PROCESS;
@@ -1006,17 +1037,19 @@ BEGIN
     -- JP: ウィンドウで表示をカットする
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' ) THEN
-            SPCOLOROUT  <= '0';                     -- JP:  0=透明, 1=スプライトドット
-            SPCOLORCODE <= (OTHERS => '0');         -- JP:  SPCOLOROUT=1 の時のスプライトドット色番号
-        ELSIF (CLK21M'EVENT AND CLK21M = '1') THEN
-            IF( DOTSTATE = "01" )THEN
-                IF( SPWINDOWX = '1' ) THEN
-                    SPCOLOROUT  <= SPLINEBUFDISPDATA_OUT( 7 );
-                    SPCOLORCODE <= SPLINEBUFDISPDATA_OUT( 3 DOWNTO 0 );
-                ELSE
-                    SPCOLOROUT  <= '0';
-                    SPCOLORCODE <= (OTHERS => '0');
+        IF (CLK21M'EVENT AND CLK21M = '1') THEN
+            IF( RESET = '1' ) THEN
+                SPCOLOROUT  <= '0';                     -- JP:  0=透明, 1=スプライトドット
+                SPCOLORCODE <= (OTHERS => '0');         -- JP:  SPCOLOROUT=1 の時のスプライトドット色番号
+	    ELSE
+                IF( DOTSTATE = "01" )THEN
+                    IF( SPWINDOWX = '1' ) THEN
+                        SPCOLOROUT  <= SPLINEBUFDISPDATA_OUT( 7 );
+                        SPCOLORCODE <= SPLINEBUFDISPDATA_OUT( 3 DOWNTO 0 );
+                    ELSE
+                        SPCOLOROUT  <= '0';
+                        SPCOLORCODE <= (OTHERS => '0');
+                    END IF;
                 END IF;
             END IF;
         END IF;

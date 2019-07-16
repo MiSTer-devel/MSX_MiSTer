@@ -110,20 +110,22 @@ begin
     process( reset, clk21m )
         variable flag : std_logic;
     begin
-        if( reset = '1' )then
-            flag    := '0';
-            WavCpy  <= '0';
-        elsif( clk21m'event and clk21m = '1' )then
-            -- SCC wave memory copy (ch.D > ch.E)
-            if( WavReq = '1' and WavAck = '1' )then
-                if( wrt = '1' and adr(7 downto 5) = "011" and DecSccA = '1' and flag = '0' )then
-                    flag := '1';
-                else
-                    flag := '0';
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                flag    := '0';
+                WavCpy  <= '0';
+            else
+                -- SCC wave memory copy (ch.D > ch.E)
+                if( WavReq = '1' and WavAck = '1' )then
+                    if( wrt = '1' and adr(7 downto 5) = "011" and DecSccA = '1' and flag = '0' )then
+                        flag := '1';
+                    else
+                        flag := '0';
+                    end if;
+                    WavCpy <= '0';
+                elsif( flag = '1' and WavAck = '0' )then
+                    WavCpy <= '1';
                 end if;
-                WavCpy <= '0';
-            elsif( flag = '1' and WavAck = '0' )then
-                WavCpy <= '1';
             end if;
         end if;
     end process;
@@ -223,78 +225,80 @@ begin
     ----------------------------------------------------------------
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            SccBank0    <= X"00";
-            SccBank1    <= X"01";
-            SccBank2    <= X"02";
-            SccBank3    <= X"03";
-            SccModeA    <= (others => '0');
-            SccModeB    <= (others => '0');
-        elsif( clk21m'event and clk21m = '1' )then
-            if( mapsel(0) = '0' )then
-
-                -- Mapped I/O port access on 5000-57FFh ... Bank register write
-                if (req = '1' and SccSel = "00" and wrt = '1' and adr(15 downto 11) = "01010" and
-                        SccModeA(6) = '0' and SccModeA(4) = '0' and SccModeB(4) = '0') then
-                    SccBank0 <= dbo;
-                end if;
-                -- Mapped I/O port access on 7000-77FFh ... Bank register write
-                if (req = '1' and SccSel = "00" and wrt = '1' and adr(15 downto 11) = "01110" and
-                        SccModeA(6) = '0' and SccModeA(4) = '0' and SccModeB(4) = '0') then
-                    SccBank1 <= dbo;
-                end if;
-                -- Mapped I/O port access on 9000-97FFh ... Bank register write
-                if (req = '1' and SccSel = "00" and wrt = '1' and adr(15 downto 11) = "10010" and
-                        SccModeB(4) = '0') then
-                    SccBank2 <= dbo;
-                end if;
-                -- Mapped I/O port access on B000-B7FFh ... Bank register write
-                if (req = '1' and SccSel = "00" and wrt = '1' and adr(15 downto 11) = "10110" and
-                        SccModeA(6) = '0' and SccModeA(4) = '0' and SccModeB(4) = '0') then
-                    SccBank3 <= dbo;
-                end if;
-                -- Mapped I/O port access on 7FFE-7FFFh ... Register write
-                if (req = '1' and SccSel = "00" and wrt = '1' and adr(15 downto 13) = "011" and
-                        Dec1FFE = '1' and SccModeB(5 downto 4) = "00") then
-                    SccModeA <= dbo;
-                end if;
-                -- Mapped I/O port access on BFFE-BFFFh ... Register write
-                if (req = '1' and SccSel = "00" and wrt = '1' and adr(15 downto 13) = "101" and
-                        Dec1FFE = '1' and SccModeA(6) = '0' and SccModeA(4) = '0') then
-                    SccModeB <= dbo;
-                end if;
-
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                SccBank0    <= X"00";
+                SccBank1    <= X"01";
+                SccBank2    <= X"02";
+                SccBank3    <= X"03";
+                SccModeA    <= (others => '0');
+                SccModeB    <= (others => '0');
             else
+                if( mapsel(0) = '0' )then
 
-                -- Mapped I/O port access on 6000-6FFFh ... Bank register write
-                if (req = '1' and SccSel = "00" and wrt = '1' and adr(15 downto 12) = "0110") then
-                    -- ASC8K / 6000-67FFh
-                    if (mapsel(1) = '0' and adr(11) = '0') then
+                    -- Mapped I/O port access on 5000-57FFh ... Bank register write
+                    if (req = '1' and SccSel = "00" and wrt = '1' and adr(15 downto 11) = "01010" and
+                            SccModeA(6) = '0' and SccModeA(4) = '0' and SccModeB(4) = '0') then
                         SccBank0 <= dbo;
-                    -- ASC8K / 6800-6FFFh
-                    elsif (mapsel(1) = '0' and adr(11) = '1') then
-                        SccBank1 <= dbo;
-                    -- ASC16K / 6000-67FFh
-                    elsif (adr(11) = '0') then
-                        SccBankL <= dbo(6);
-                        SccBank0 <= dbo(7) & dbo(5 downto 0) & '0';
-                        SccBank1 <= dbo(7) & dbo(5 downto 0) & '1';
                     end if;
-                end if;
-
-                -- Mapped I/O port access on 7000-7FFFh ... Bank register write
-                if (req = '1' and SccSel = "00" and wrt = '1' and adr(15 downto 12) = "0111") then
-                    -- ASC8K / 7000-77FFh
-                    if (mapsel(1) = '0' and adr(11) = '0') then
+                    -- Mapped I/O port access on 7000-77FFh ... Bank register write
+                    if (req = '1' and SccSel = "00" and wrt = '1' and adr(15 downto 11) = "01110" and
+                            SccModeA(6) = '0' and SccModeA(4) = '0' and SccModeB(4) = '0') then
+                        SccBank1 <= dbo;
+                    end if;
+                    -- Mapped I/O port access on 9000-97FFh ... Bank register write
+                    if (req = '1' and SccSel = "00" and wrt = '1' and adr(15 downto 11) = "10010" and
+                            SccModeB(4) = '0') then
                         SccBank2 <= dbo;
-                    -- ASC8K / 7800-7FFFh
-                    elsif (mapsel(1) = '0' and adr(11) = '1') then
+                    end if;
+                    -- Mapped I/O port access on B000-B7FFh ... Bank register write
+                    if (req = '1' and SccSel = "00" and wrt = '1' and adr(15 downto 11) = "10110" and
+                            SccModeA(6) = '0' and SccModeA(4) = '0' and SccModeB(4) = '0') then
                         SccBank3 <= dbo;
-                    -- ASC16K / 7000-77FFh
-                    elsif (adr(11) = '0') then
-                        SccBankM <= dbo(6);
-                        SccBank2 <= dbo(7) & dbo(5 downto 0) & '0';
-                        SccBank3 <= dbo(7) & dbo(5 downto 0) & '1';
+                    end if;
+                    -- Mapped I/O port access on 7FFE-7FFFh ... Register write
+                    if (req = '1' and SccSel = "00" and wrt = '1' and adr(15 downto 13) = "011" and
+                            Dec1FFE = '1' and SccModeB(5 downto 4) = "00") then
+                        SccModeA <= dbo;
+                    end if;
+                    -- Mapped I/O port access on BFFE-BFFFh ... Register write
+                    if (req = '1' and SccSel = "00" and wrt = '1' and adr(15 downto 13) = "101" and
+                            Dec1FFE = '1' and SccModeA(6) = '0' and SccModeA(4) = '0') then
+                        SccModeB <= dbo;
+                    end if;
+
+                else
+
+                    -- Mapped I/O port access on 6000-6FFFh ... Bank register write
+                    if (req = '1' and SccSel = "00" and wrt = '1' and adr(15 downto 12) = "0110") then
+                        -- ASC8K / 6000-67FFh
+                        if (mapsel(1) = '0' and adr(11) = '0') then
+                            SccBank0 <= dbo;
+                        -- ASC8K / 6800-6FFFh
+                        elsif (mapsel(1) = '0' and adr(11) = '1') then
+                            SccBank1 <= dbo;
+                        -- ASC16K / 6000-67FFh
+                        elsif (adr(11) = '0') then
+                            SccBankL <= dbo(6);
+                            SccBank0 <= dbo(7) & dbo(5 downto 0) & '0';
+                            SccBank1 <= dbo(7) & dbo(5 downto 0) & '1';
+                        end if;
+                    end if;
+
+                    -- Mapped I/O port access on 7000-7FFFh ... Bank register write
+                    if (req = '1' and SccSel = "00" and wrt = '1' and adr(15 downto 12) = "0111") then
+                        -- ASC8K / 7000-77FFh
+                        if (mapsel(1) = '0' and adr(11) = '0') then
+                            SccBank2 <= dbo;
+                        -- ASC8K / 7800-7FFFh
+                        elsif (mapsel(1) = '0' and adr(11) = '1') then
+                            SccBank3 <= dbo;
+                        -- ASC16K / 7000-77FFh
+                        elsif (adr(11) = '0') then
+                            SccBankM <= dbo(6);
+                            SccBank2 <= dbo(7) & dbo(5 downto 0) & '0';
+                            SccBank3 <= dbo(7) & dbo(5 downto 0) & '1';
+                        end if;
                     end if;
                 end if;
             end if;

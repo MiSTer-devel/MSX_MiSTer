@@ -75,41 +75,44 @@ begin
 
   begin
 
-    if reset = '1' then
+    if rising_edge(clk21m) then
 
-      counter <= 0;
+      if reset = '1' then
 
-    elsif clk21m'event and clk21m = '1' then
+        counter <= 0;
 
-      if counter /= 0 then
-        counter <= counter - 1;
-        ack <= '0';
       else
-        if req = '1' then
-          if enawait = '1' then
-            if adr(0) = '0' then
-              counter <= 4*6;
-            else
-              counter <= 72*6;
+
+        if counter /= 0 then
+          counter <= counter - 1;
+          ack <= '0';
+        else
+          if req = '1' then
+            if enawait = '1' then
+              if adr(0) = '0' then
+                counter <= 4*6;
+              else
+                counter <= 72*6;
+              end if;
             end if;
+            A_buf <= adr(0);
+            dbo_buf <= dbo;
+            CS_n_buf <= not req;
+            WE_n_buf <= not wrt;
           end if;
-          A_buf <= adr(0);
-          dbo_buf <= dbo;
-          CS_n_buf <= not req;
-          WE_n_buf <= not wrt;
+          ack <= req;
         end if;
-        ack <= req;
+
+        if (clkena = '1') then
+
+          A    <= A_buf;
+          D    <= dbo_buf;
+          CS_n <= CS_n_buf;
+          WE_n <= WE_n_buf;
+
+        end if;
+
       end if;
-
-      if (clkena = '1') then
-
-        A    <= A_buf;
-        D    <= dbo_buf;
-        CS_n <= CS_n_buf;
-        WE_n <= WE_n_buf;
-
-      end if;
-
     end if;
 
   end process;

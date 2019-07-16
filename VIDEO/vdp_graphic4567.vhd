@@ -244,118 +244,126 @@ BEGIN
     -- FIFO CONTROL
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FIFOADDR_IN <= (OTHERS => '0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( DOTSTATE = "00" )THEN
-                IF( EIGHTDOTSTATE = "000" AND DOTCOUNTERX = 0 ) THEN
-                    FIFOADDR_IN <= (OTHERS => '0');
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                FIFOADDR_IN <= (OTHERS => '0');
+	    ELSE
+                IF( DOTSTATE = "00" )THEN
+                    IF( EIGHTDOTSTATE = "000" AND DOTCOUNTERX = 0 ) THEN
+                        FIFOADDR_IN <= (OTHERS => '0');
+                    END IF;
+                ELSIF( FIFOIN = '1' ) THEN
+                    FIFOADDR_IN <= FIFOADDR_IN + 1;
                 END IF;
-            ELSIF( FIFOIN = '1' ) THEN
-                FIFOADDR_IN <= FIFOADDR_IN + 1;
             END IF;
         END IF;
     END PROCESS;
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FIFOADDR_OUT    <= (OTHERS => '0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            CASE DOTSTATE IS
-            WHEN "00" =>
-                NULL;
-            WHEN "01" =>
-                IF( (VDPMODEGRAPHIC4 = '0') AND (VDPMODEGRAPHIC5 = '0') )THEN
-                    FIFOADDR_OUT <= FIFOADDR_OUT + 1;
-                ELSIF( EIGHTDOTSTATE(0) = '0' )THEN
-                    -- GRAPHIC4, 5
-                    FIFOADDR_OUT <= FIFOADDR_OUT + 1;
-                END IF;
-            WHEN "11" =>
-                NULL;
-            WHEN "10" =>
-                IF( DOTCOUNTERX = X"04" )THEN
-                    FIFOADDR_OUT <= (OTHERS => '0');
-                END IF;
-            WHEN OTHERS =>
-                NULL;
-            END CASE;
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                FIFOADDR_OUT    <= (OTHERS => '0');
+	    ELSE
+                CASE DOTSTATE IS
+                WHEN "00" =>
+                    NULL;
+                WHEN "01" =>
+                    IF( (VDPMODEGRAPHIC4 = '0') AND (VDPMODEGRAPHIC5 = '0') )THEN
+                        FIFOADDR_OUT <= FIFOADDR_OUT + 1;
+                    ELSIF( EIGHTDOTSTATE(0) = '0' )THEN
+                        -- GRAPHIC4, 5
+                        FIFOADDR_OUT <= FIFOADDR_OUT + 1;
+                    END IF;
+                WHEN "11" =>
+                    NULL;
+                WHEN "10" =>
+                    IF( DOTCOUNTERX = X"04" )THEN
+                        FIFOADDR_OUT <= (OTHERS => '0');
+                    END IF;
+                WHEN OTHERS =>
+                    NULL;
+                END CASE;
+            END IF;
         END IF;
     END PROCESS;
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FIFOIN <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            CASE DOTSTATE IS
-            WHEN "00" =>
-                IF(     EIGHTDOTSTATE = "000" ) THEN
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                FIFOIN <= '0';
+	    ELSE
+                CASE DOTSTATE IS
+                WHEN "00" =>
+                    IF(     EIGHTDOTSTATE = "000" ) THEN
+                        FIFOIN <= '0';
+                    ELSIF(  (EIGHTDOTSTATE = "001") OR
+                            (EIGHTDOTSTATE = "010") OR
+                            (EIGHTDOTSTATE = "011") OR
+                            (EIGHTDOTSTATE = "100") )THEN
+                        FIFOIN <= '1';
+                    END IF;
+                WHEN "01" =>
                     FIFOIN <= '0';
-                ELSIF(  (EIGHTDOTSTATE = "001") OR
-                        (EIGHTDOTSTATE = "010") OR
-                        (EIGHTDOTSTATE = "011") OR
-                        (EIGHTDOTSTATE = "100") )THEN
-                    FIFOIN <= '1';
-                END IF;
-            WHEN "01" =>
-                FIFOIN <= '0';
-            WHEN "11" =>
-                IF( ((VDPMODEGRAPHIC6 = '1') OR (VDPMODEGRAPHIC7 = '1')) AND
-                    (   (EIGHTDOTSTATE = "001") OR
-                        (EIGHTDOTSTATE = "010") OR
-                        (EIGHTDOTSTATE = "011") OR
-                        (EIGHTDOTSTATE = "100")) )THEN
-                    FIFOIN <= '1';
-                END IF;
-            WHEN "10" =>
-                FIFOIN <= '0';
-            WHEN OTHERS =>
-                NULL;
-            END CASE;
+                WHEN "11" =>
+                    IF( ((VDPMODEGRAPHIC6 = '1') OR (VDPMODEGRAPHIC7 = '1')) AND
+                        (   (EIGHTDOTSTATE = "001") OR
+                            (EIGHTDOTSTATE = "010") OR
+                            (EIGHTDOTSTATE = "011") OR
+                            (EIGHTDOTSTATE = "100")) )THEN
+                        FIFOIN <= '1';
+                    END IF;
+                WHEN "10" =>
+                    FIFOIN <= '0';
+                WHEN OTHERS =>
+                    NULL;
+                END CASE;
+            END IF;
         END IF;
     END PROCESS;
 
     -- FIFO OUT LATCH
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            COLORDATA   <= (OTHERS => '0');
-            PCOLORCODE  <= (OTHERS => '0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            CASE DOTSTATE IS
-            WHEN "00" =>
-                NULL;
-            WHEN "01" =>
-                IF( (VDPMODEGRAPHIC4 = '1') OR (VDPMODEGRAPHIC5 = '1') )THEN
-                    IF( EIGHTDOTSTATE(0) = '0' )THEN
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                COLORDATA   <= (OTHERS => '0');
+                PCOLORCODE  <= (OTHERS => '0');
+	    ELSE
+                CASE DOTSTATE IS
+                WHEN "00" =>
+                    NULL;
+                WHEN "01" =>
+                    IF( (VDPMODEGRAPHIC4 = '1') OR (VDPMODEGRAPHIC5 = '1') )THEN
+                        IF( EIGHTDOTSTATE(0) = '0' )THEN
+                            COLORDATA <= W_PIX;
+                            PCOLORCODE( 7 DOWNTO 4 ) <= (OTHERS => '0');
+                            PCOLORCODE( 3 DOWNTO 0 ) <= W_PIX( 7 DOWNTO 4 );
+                        ELSE
+                            PCOLORCODE( 7 DOWNTO 4 ) <= (OTHERS => '0');
+                            PCOLORCODE( 3 DOWNTO 0 ) <= COLORDATA( 3 DOWNTO 0 );
+                        END IF;
+                    ELSIF( VDPMODEGRAPHIC6 = '1' OR REG_R25_YAE = '1' )THEN
                         COLORDATA <= W_PIX;
                         PCOLORCODE( 7 DOWNTO 4 ) <= (OTHERS => '0');
                         PCOLORCODE( 3 DOWNTO 0 ) <= W_PIX( 7 DOWNTO 4 );
                     ELSE
+                        -- GRAPHIC7
+                        PCOLORCODE <= W_PIX;
+                    END IF;
+                WHEN "11" =>
+                    NULL;
+                WHEN "10" =>
+                    -- HIGH RESOLUTION MODE .
+                    IF( VDPMODEGRAPHIC6 = '1' )THEN
                         PCOLORCODE( 7 DOWNTO 4 ) <= (OTHERS => '0');
                         PCOLORCODE( 3 DOWNTO 0 ) <= COLORDATA( 3 DOWNTO 0 );
                     END IF;
-                ELSIF( VDPMODEGRAPHIC6 = '1' OR REG_R25_YAE = '1' )THEN
-                    COLORDATA <= W_PIX;
-                    PCOLORCODE( 7 DOWNTO 4 ) <= (OTHERS => '0');
-                    PCOLORCODE( 3 DOWNTO 0 ) <= W_PIX( 7 DOWNTO 4 );
-                ELSE
-                    -- GRAPHIC7
-                    PCOLORCODE <= W_PIX;
-                END IF;
-            WHEN "11" =>
-                NULL;
-            WHEN "10" =>
-                -- HIGH RESOLUTION MODE .
-                IF( VDPMODEGRAPHIC6 = '1' )THEN
-                    PCOLORCODE( 7 DOWNTO 4 ) <= (OTHERS => '0');
-                    PCOLORCODE( 3 DOWNTO 0 ) <= COLORDATA( 3 DOWNTO 0 );
-                END IF;
-            WHEN OTHERS =>
-                NULL;
-            END CASE;
+                WHEN OTHERS =>
+                    NULL;
+                END CASE;
+            END IF;
         END IF;
     END PROCESS;
 
@@ -383,30 +391,34 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            P_YJK_R <=  (OTHERS => '0');
-            P_YJK_G <=  (OTHERS => '0');
-            P_YJK_B <=  (OTHERS => '0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( DOTSTATE = "01" )THEN
-                P_YJK_R <= W_R;
-                P_YJK_G <= W_G;
-                P_YJK_B <= W_B;
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                P_YJK_R <=  (OTHERS => '0');
+                P_YJK_G <=  (OTHERS => '0');
+                P_YJK_B <=  (OTHERS => '0');
+	    ELSE
+                IF( DOTSTATE = "01" )THEN
+                    P_YJK_R <= W_R;
+                    P_YJK_G <= W_G;
+                    P_YJK_B <= W_B;
+                END IF;
             END IF;
         END IF;
     END PROCESS;
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            P_YJK_EN <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( DOTSTATE = "01" )THEN
-                IF( REG_R25_YAE = '1' AND W_PIX(3) = '1' )THEN
-                    -- PALETTE COLOR ON SCREEN10/SCREEN11
-                    P_YJK_EN <= '0';
-                ELSE
-                    P_YJK_EN <= REG_R25_YJK;
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                P_YJK_EN <= '0';
+	    ELSE
+                IF( DOTSTATE = "01" )THEN
+                    IF( REG_R25_YAE = '1' AND W_PIX(3) = '1' )THEN
+                        -- PALETTE COLOR ON SCREEN10/SCREEN11
+                        P_YJK_EN <= '0';
+                    ELSE
+                        P_YJK_EN <= REG_R25_YJK;
+                    END IF;
                 END IF;
             END IF;
         END IF;
@@ -415,14 +427,16 @@ BEGIN
     -- VRAM READ ADDRESS
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            PRAMADR <= (OTHERS => '0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( DOTSTATE = "11" )THEN
-                IF( (VDPMODEGRAPHIC4 = '1') OR (VDPMODEGRAPHIC5 = '1') ) THEN
-                    PRAMADR <= LOGICALVRAMADDRG45( 16 DOWNTO 0 );
-                ELSE
-                    PRAMADR <= LOGICALVRAMADDRG67(0) & LOGICALVRAMADDRG67( 16 DOWNTO 1 );
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                PRAMADR <= (OTHERS => '0');
+	    ELSE
+                IF( DOTSTATE = "11" )THEN
+                    IF( (VDPMODEGRAPHIC4 = '1') OR (VDPMODEGRAPHIC5 = '1') ) THEN
+                        PRAMADR <= LOGICALVRAMADDRG45( 16 DOWNTO 0 );
+                    ELSE
+                        PRAMADR <= LOGICALVRAMADDRG67(0) & LOGICALVRAMADDRG67( 16 DOWNTO 1 );
+                    END IF;
                 END IF;
             END IF;
         END IF;
@@ -430,11 +444,13 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            LATCHEDPTNNAMETBLBASEADDR   <= (OTHERS => '0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( DOTSTATE = "00" AND EIGHTDOTSTATE = "000" )THEN
-                LATCHEDPTNNAMETBLBASEADDR <= REG_R2_PT_NAM_ADDR;
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                LATCHEDPTNNAMETBLBASEADDR   <= (OTHERS => '0');
+	    ELSE
+                IF( DOTSTATE = "00" AND EIGHTDOTSTATE = "000" )THEN
+                    LATCHEDPTNNAMETBLBASEADDR <= REG_R2_PT_NAM_ADDR;
+                END IF;
             END IF;
         END IF;
     END PROCESS;
@@ -443,17 +459,19 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            LOCALDOTCOUNTERX <= (OTHERS => '0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( DOTSTATE = "00" )THEN
-                IF( EIGHTDOTSTATE = "000" ) THEN
-                    LOCALDOTCOUNTERX <= W_DOTCOUNTERX;
-                ELSIF(  (EIGHTDOTSTATE = "001") OR
-                        (EIGHTDOTSTATE = "010") OR
-                        (EIGHTDOTSTATE = "011") OR
-                        (EIGHTDOTSTATE = "100") ) THEN
-                    LOCALDOTCOUNTERX <= LOCALDOTCOUNTERX + 2;
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                LOCALDOTCOUNTERX <= (OTHERS => '0');
+	    ELSE
+                IF( DOTSTATE = "00" )THEN
+                    IF( EIGHTDOTSTATE = "000" ) THEN
+                        LOCALDOTCOUNTERX <= W_DOTCOUNTERX;
+                    ELSIF(  (EIGHTDOTSTATE = "001") OR
+                            (EIGHTDOTSTATE = "010") OR
+                            (EIGHTDOTSTATE = "011") OR
+                            (EIGHTDOTSTATE = "100") ) THEN
+                        LOCALDOTCOUNTERX <= LOCALDOTCOUNTERX + 2;
+                    END IF;
                 END IF;
             END IF;
         END IF;

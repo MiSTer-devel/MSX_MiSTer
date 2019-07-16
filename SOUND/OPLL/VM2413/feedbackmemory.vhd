@@ -62,25 +62,28 @@ begin
 
   begin
 
-    if reset = '1' then
+    if rising_edge(clk) then
 
-      init_ch := 0;
+      if reset = '1' then
 
-    elsif clk'event and clk='1' then
+        init_ch := 0;
 
-      if init_ch /= 9 then
+      else
 
-        data_array(init_ch) <= (others=>'0');
-        init_ch := init_ch + 1;
+        if init_ch /= 9 then
 
-      elsif wr='1' then
+          data_array(init_ch) <= (others=>'0');
+          init_ch := init_ch + 1;
 
-        data_array(waddr) <= CONV_SIGNED_LI_VECTOR(wdata);
+        elsif wr='1' then
+
+          data_array(waddr) <= CONV_SIGNED_LI_VECTOR(wdata);
+
+        end if;
+
+        rdata <= CONV_SIGNED_LI(data_array(raddr));
 
       end if;
-
-      rdata <= CONV_SIGNED_LI(data_array(raddr));
-
     end if;
 
   end process;

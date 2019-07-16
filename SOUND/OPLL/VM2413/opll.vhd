@@ -257,19 +257,21 @@ begin
     --  CPU�A�N�Z�X���� ------------------------------------------------------
     process( xin, reset )
     begin
-        if( reset ='1' )then
-            opllwr  <= '0';
-            opllptr <= (others =>'0');
-        elsif( xin'event and xin = '1' )then
-            if( xena = '1' )then
-                if(    cs_n = '0' and we_n = '0' and a = '0' )then
-                    --  �����W�X�^�A�h���X�w�背�W�X�^ �ւ̏�������
-                    opllptr <= d;
-                    opllwr  <= '0';
-                elsif( cs_n = '0' and we_n = '0' and a = '1' )then
-                    --  �����W�X�^ �ւ̏�������
-                    oplldat <= d;
-                    opllwr  <= '1';
+        if( rising_edge(xin) )then
+            if( reset ='1' )then
+                opllwr  <= '0';
+                opllptr <= (others =>'0');
+            else
+                if( xena = '1' )then
+                    if(    cs_n = '0' and we_n = '0' and a = '0' )then
+                        --  �����W�X�^�A�h���X�w�背�W�X�^ �ւ̏�������
+                        opllptr <= d;
+                        opllwr  <= '0';
+                    elsif( cs_n = '0' and we_n = '0' and a = '1' )then
+                        --  �����W�X�^ �ւ̏�������
+                        oplldat <= d;
+                        opllwr  <= '1';
+                    end if;
                 end if;
             end if;
         end if;

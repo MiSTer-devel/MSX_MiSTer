@@ -75,34 +75,37 @@ begin
 
   begin
 
-    if reset = '1' then
+    if rising_edge(clk) then
 
-      init_id := 0;
-      rstate <= 0;
+      if reset = '1' then
 
-    elsif clk'event and clk = '1' then
+        init_id := 0;
+        rstate <= 0;
 
-      if init_id /= VOICE_ID_TYPE'high+1 then
+      else
 
-        case rstate is
-        when 0 =>
-          rom_addr <= init_id;
-          rstate <= 1;
-        when 1 =>
-          rstate <= 2;
-        when 2 =>
-          voices(init_id) <= CONV_VOICE_VECTOR(rom_data);
-          rstate <= 0;
-          init_id := init_id + 1;
-        end case;
+        if init_id /= VOICE_ID_TYPE'high+1 then
 
-      elsif wr = '1' then
-        voices(rwaddr) <= CONV_VOICE_VECTOR(idata);
+          case rstate is
+          when 0 =>
+            rom_addr <= init_id;
+            rstate <= 1;
+          when 1 =>
+            rstate <= 2;
+          when 2 =>
+            voices(init_id) <= CONV_VOICE_VECTOR(rom_data);
+            rstate <= 0;
+            init_id := init_id + 1;
+          end case;
+
+        elsif wr = '1' then
+          voices(rwaddr) <= CONV_VOICE_VECTOR(idata);
+        end if;
+
+        odata <= CONV_VOICE(voices(rwaddr));
+        rodata <= CONV_VOICE(voices(roaddr));
+
       end if;
-
-      odata <= CONV_VOICE(voices(rwaddr));
-      rodata <= CONV_VOICE(voices(roaddr));
-
     end if;
 
   end process;

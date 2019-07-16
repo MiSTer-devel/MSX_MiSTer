@@ -199,36 +199,38 @@ BEGIN
     --------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_DOTSTATE     <= "00";
-            FF_VIDEO_DH_CLK <= '0';
-            FF_VIDEO_DL_CLK <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( W_H_CNT = CLOCKS_PER_LINE-1 )THEN
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
                 FF_DOTSTATE     <= "00";
-                FF_VIDEO_DH_CLK <= '1';
-                FF_VIDEO_DL_CLK <= '1';
-            ELSE
-                CASE FF_DOTSTATE IS
-                WHEN "00" =>
-                    FF_DOTSTATE     <= "01";
-                    FF_VIDEO_DH_CLK <= '0';
-                    FF_VIDEO_DL_CLK <= '1';
-                WHEN "01" =>
-                    FF_DOTSTATE     <= "11";
-                    FF_VIDEO_DH_CLK <= '1';
-                    FF_VIDEO_DL_CLK <= '0';
-                WHEN "11" =>
-                    FF_DOTSTATE     <= "10";
-                    FF_VIDEO_DH_CLK <= '0';
-                    FF_VIDEO_DL_CLK <= '0';
-                WHEN "10" =>
+                FF_VIDEO_DH_CLK <= '0';
+                FF_VIDEO_DL_CLK <= '0';
+	    ELSE
+                IF( W_H_CNT = CLOCKS_PER_LINE-1 )THEN
                     FF_DOTSTATE     <= "00";
                     FF_VIDEO_DH_CLK <= '1';
                     FF_VIDEO_DL_CLK <= '1';
-                WHEN OTHERS =>
-                    NULL;
-                END CASE;
+                ELSE
+                    CASE FF_DOTSTATE IS
+                    WHEN "00" =>
+                        FF_DOTSTATE     <= "01";
+                        FF_VIDEO_DH_CLK <= '0';
+                        FF_VIDEO_DL_CLK <= '1';
+                    WHEN "01" =>
+                        FF_DOTSTATE     <= "11";
+                        FF_VIDEO_DH_CLK <= '1';
+                        FF_VIDEO_DL_CLK <= '0';
+                    WHEN "11" =>
+                        FF_DOTSTATE     <= "10";
+                        FF_VIDEO_DH_CLK <= '0';
+                        FF_VIDEO_DL_CLK <= '0';
+                    WHEN "10" =>
+                        FF_DOTSTATE     <= "00";
+                        FF_VIDEO_DH_CLK <= '1';
+                        FF_VIDEO_DL_CLK <= '1';
+                    WHEN OTHERS =>
+                        NULL;
+                    END CASE;
+                END IF;
             END IF;
         END IF;
     END PROCESS;
@@ -238,14 +240,16 @@ BEGIN
     --------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_EIGHTDOTSTATE <= "000";
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( W_H_CNT(1 DOWNTO 0) = "11" )THEN
-                IF( FF_PRE_X_CNT = 0 )THEN
-                    FF_EIGHTDOTSTATE <= "000";
-                ELSE
-                    FF_EIGHTDOTSTATE <= FF_EIGHTDOTSTATE + 1;
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
+                FF_EIGHTDOTSTATE <= "000";
+	    ELSE
+                IF( W_H_CNT(1 DOWNTO 0) = "11" )THEN
+                    IF( FF_PRE_X_CNT = 0 )THEN
+                        FF_EIGHTDOTSTATE <= "000";
+                    ELSE
+                        FF_EIGHTDOTSTATE <= FF_EIGHTDOTSTATE + 1;
+                    END IF;
                 END IF;
             END IF;
         END IF;
@@ -259,10 +263,12 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_PRE_X_CNT_START1 <= (OTHERS => '0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            FF_PRE_X_CNT_START1 <= (W_PRE_X_CNT_START0(4) & W_PRE_X_CNT_START0) - ("000" & REG_R27_H_SCROLL);   -- (-23...-1)
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
+                FF_PRE_X_CNT_START1 <= (OTHERS => '0');
+	    ELSE
+                FF_PRE_X_CNT_START1 <= (W_PRE_X_CNT_START0(4) & W_PRE_X_CNT_START0) - ("000" & REG_R27_H_SCROLL);   -- (-23...-1)
+            END IF;
         END IF;
     END PROCESS;
 
@@ -271,36 +277,40 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_PRE_X_CNT <= (OTHERS =>'0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( (W_H_CNT = ("00" & (OFFSET_X + LED_TV_X_NTSC - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00") + 4) & "10") AND REG_R25_YJK = '1' AND CENTERYJK_R25_N = '1' AND VDPR9PALMODE = '0') OR
-                (W_H_CNT = ("00" & (OFFSET_X + LED_TV_X_NTSC - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00")    ) & "10") AND (REG_R25_YJK = '0' OR CENTERYJK_R25_N = '0') AND VDPR9PALMODE = '0') OR
-                (W_H_CNT = ("00" & (OFFSET_X + LED_TV_X_PAL - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00") + 4) & "10") AND REG_R25_YJK = '1' AND CENTERYJK_R25_N = '1' AND VDPR9PALMODE = '1') OR
-                (W_H_CNT = ("00" & (OFFSET_X + LED_TV_X_PAL - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00")    ) & "10") AND (REG_R25_YJK = '0' OR CENTERYJK_R25_N = '0') AND VDPR9PALMODE = '1') )THEN
-                FF_PRE_X_CNT <= W_PRE_X_CNT_START2;
-            ELSIF( W_H_CNT(1 DOWNTO 0) = "10" )THEN
-                FF_PRE_X_CNT <= FF_PRE_X_CNT + 1;
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
+                FF_PRE_X_CNT <= (OTHERS =>'0');
+	    ELSE
+                IF( (W_H_CNT = ("00" & (OFFSET_X + LED_TV_X_NTSC - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00") + 4) & "10") AND REG_R25_YJK = '1' AND CENTERYJK_R25_N = '1' AND VDPR9PALMODE = '0') OR
+                    (W_H_CNT = ("00" & (OFFSET_X + LED_TV_X_NTSC - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00")    ) & "10") AND (REG_R25_YJK = '0' OR CENTERYJK_R25_N = '0') AND VDPR9PALMODE = '0') OR
+                    (W_H_CNT = ("00" & (OFFSET_X + LED_TV_X_PAL - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00") + 4) & "10") AND REG_R25_YJK = '1' AND CENTERYJK_R25_N = '1' AND VDPR9PALMODE = '1') OR
+                    (W_H_CNT = ("00" & (OFFSET_X + LED_TV_X_PAL - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00")    ) & "10") AND (REG_R25_YJK = '0' OR CENTERYJK_R25_N = '0') AND VDPR9PALMODE = '1') )THEN
+                    FF_PRE_X_CNT <= W_PRE_X_CNT_START2;
+                ELSIF( W_H_CNT(1 DOWNTO 0) = "10" )THEN
+                    FF_PRE_X_CNT <= FF_PRE_X_CNT + 1;
+                END IF;
             END IF;
         END IF;
     END PROCESS;
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_X_CNT <= (OTHERS =>'0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( (W_H_CNT = ("00" & (OFFSET_X + LED_TV_X_NTSC - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00") + 4) & "10") AND REG_R25_YJK = '1' AND CENTERYJK_R25_N = '1' AND VDPR9PALMODE = '0') OR
-                (W_H_CNT = ("00" & (OFFSET_X + LED_TV_X_NTSC - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00")    ) & "10") AND (REG_R25_YJK = '0' OR CENTERYJK_R25_N = '0') AND VDPR9PALMODE = '0') OR
-                (W_H_CNT = ("00" & (OFFSET_X + LED_TV_X_PAL - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00") + 4) & "10") AND REG_R25_YJK = '1' AND CENTERYJK_R25_N = '1' AND VDPR9PALMODE = '1') OR
-                (W_H_CNT = ("00" & (OFFSET_X + LED_TV_X_PAL - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00")    ) & "10") AND (REG_R25_YJK = '0' OR CENTERYJK_R25_N = '0') AND VDPR9PALMODE = '1') )THEN
-                -- HOLD
-            ELSIF( W_H_CNT(1 DOWNTO 0) = "10") THEN
-                IF( FF_PRE_X_CNT = "111111111" )THEN
-                    -- JP: FF_PRE_X_CNT が -1から0にカウントアップする時にFF_X_CNTを-8にする
-                    FF_X_CNT <= "111111000";        -- -8
-                ELSE
-                    FF_X_CNT <= FF_X_CNT + 1;
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
+                FF_X_CNT <= (OTHERS =>'0');
+	    ELSE
+                IF( (W_H_CNT = ("00" & (OFFSET_X + LED_TV_X_NTSC - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00") + 4) & "10") AND REG_R25_YJK = '1' AND CENTERYJK_R25_N = '1' AND VDPR9PALMODE = '0') OR
+                    (W_H_CNT = ("00" & (OFFSET_X + LED_TV_X_NTSC - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00")    ) & "10") AND (REG_R25_YJK = '0' OR CENTERYJK_R25_N = '0') AND VDPR9PALMODE = '0') OR
+                    (W_H_CNT = ("00" & (OFFSET_X + LED_TV_X_PAL - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00") + 4) & "10") AND REG_R25_YJK = '1' AND CENTERYJK_R25_N = '1' AND VDPR9PALMODE = '1') OR
+                    (W_H_CNT = ("00" & (OFFSET_X + LED_TV_X_PAL - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00")    ) & "10") AND (REG_R25_YJK = '0' OR CENTERYJK_R25_N = '0') AND VDPR9PALMODE = '1') )THEN
+                    -- HOLD
+                ELSIF( W_H_CNT(1 DOWNTO 0) = "10") THEN
+                    IF( FF_PRE_X_CNT = "111111111" )THEN
+                        -- JP: FF_PRE_X_CNT が -1から0にカウントアップする時にFF_X_CNTを-8にする
+                        FF_X_CNT <= "111111000";        -- -8
+                    ELSE
+                        FF_X_CNT <= FF_X_CNT + 1;
+                    END IF;
                 END IF;
             END IF;
         END IF;
@@ -311,15 +321,17 @@ BEGIN
     -----------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            IVIDEOVS_N <= '1';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( W_V_CNT_IN_FIELD = 6 )THEN
-                -- SSTATE = SSTATE_B
-                IVIDEOVS_N <= '0';
-            ELSIF( W_V_CNT_IN_FIELD = 12 )THEN
-                -- SSTATE = SSTATE_A
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
                 IVIDEOVS_N <= '1';
+	    ELSE
+                IF( W_V_CNT_IN_FIELD = 6 )THEN
+                    -- SSTATE = SSTATE_B
+                    IVIDEOVS_N <= '0';
+                ELSIF( W_V_CNT_IN_FIELD = 12 )THEN
+                    -- SSTATE = SSTATE_A
+                    IVIDEOVS_N <= '1';
+                END IF;
             END IF;
         END IF;
     END PROCESS;
@@ -353,16 +365,18 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_WINDOW_X <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            -- MAIN WINDOW
-            IF( W_H_CNT( 1 DOWNTO 0) = "01" AND FF_X_CNT = W_LEFT_MASK ) THEN
-                -- WHEN DOTCOUNTER_X = 0
-                FF_WINDOW_X <= '1';
-            ELSIF( W_H_CNT( 1 DOWNTO 0) = "01" AND FF_X_CNT = FF_RIGHT_MASK ) THEN
-                -- WHEN DOTCOUNTER_X = 256
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
                 FF_WINDOW_X <= '0';
+	    ELSE
+                -- MAIN WINDOW
+                IF( W_H_CNT( 1 DOWNTO 0) = "01" AND FF_X_CNT = W_LEFT_MASK ) THEN
+                    -- WHEN DOTCOUNTER_X = 0
+                    FF_WINDOW_X <= '1';
+                ELSIF( W_H_CNT( 1 DOWNTO 0) = "01" AND FF_X_CNT = FF_RIGHT_MASK ) THEN
+                    -- WHEN DOTCOUNTER_X = 256
+                    FF_WINDOW_X <= '0';
+                END IF;
             END IF;
         END IF;
     END PROCESS;
@@ -380,50 +394,52 @@ BEGIN
         VARIABLE PREDOTCOUNTER_YP_V     : STD_LOGIC_VECTOR(  8 DOWNTO 0 );
         VARIABLE PREDOTCOUNTERYPSTART   : STD_LOGIC_VECTOR(  8 DOWNTO 0 );
     BEGIN
-        IF (RESET = '1') THEN
-            FF_PRE_Y_CNT        <= (OTHERS =>'0');
-            FF_MONITOR_LINE     <= (OTHERS =>'0');
-            PREWINDOW_Y         <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF (RESET = '1') THEN
+                FF_PRE_Y_CNT        <= (OTHERS =>'0');
+                FF_MONITOR_LINE     <= (OTHERS =>'0');
+                PREWINDOW_Y         <= '0';
+	    ELSE
 
-            IF( W_HSYNC = '1' )THEN
-                -- JP: PREWINDOW_Xが 1になるタイミングと同じタイミングでY座標の計算
-                IF(  W_V_BLANKING_END = '1' )THEN
-                    IF(    REG_R9_Y_DOTS = '0' AND VDPR9PALMODE = '0' )THEN
-                        PREDOTCOUNTERYPSTART := "111100110";    -- TOP BORDER LINES = -26
-                    ELSIF( REG_R9_Y_DOTS = '1' AND VDPR9PALMODE = '0' )THEN
-                        PREDOTCOUNTERYPSTART := "111110000";    -- TOP BORDER LINES = -16
-                    ELSIF( REG_R9_Y_DOTS = '0' AND VDPR9PALMODE = '1' )THEN
-                        PREDOTCOUNTERYPSTART := "111001011";    -- TOP BORDER LINES = -53
-                    ELSIF( REG_R9_Y_DOTS = '1' AND VDPR9PALMODE = '1' )THEN
-                        PREDOTCOUNTERYPSTART := "111010101";    -- TOP BORDER LINES = -43
-                    END IF;
-                    FF_MONITOR_LINE <= PREDOTCOUNTERYPSTART + W_Y_ADJ;
-                    PREWINDOW_Y_SP  <= '1';
-                ELSE
-                    IF( PREDOTCOUNTER_YP_V = 255 )THEN
-                        PREDOTCOUNTER_YP_V := FF_MONITOR_LINE;
+                IF( W_HSYNC = '1' )THEN
+                    -- JP: PREWINDOW_Xが 1になるタイミングと同じタイミングでY座標の計算
+                    IF(  W_V_BLANKING_END = '1' )THEN
+                        IF(    REG_R9_Y_DOTS = '0' AND VDPR9PALMODE = '0' )THEN
+                            PREDOTCOUNTERYPSTART := "111100110";    -- TOP BORDER LINES = -26
+                        ELSIF( REG_R9_Y_DOTS = '1' AND VDPR9PALMODE = '0' )THEN
+                            PREDOTCOUNTERYPSTART := "111110000";    -- TOP BORDER LINES = -16
+                        ELSIF( REG_R9_Y_DOTS = '0' AND VDPR9PALMODE = '1' )THEN
+                            PREDOTCOUNTERYPSTART := "111001011";    -- TOP BORDER LINES = -53
+                        ELSIF( REG_R9_Y_DOTS = '1' AND VDPR9PALMODE = '1' )THEN
+                            PREDOTCOUNTERYPSTART := "111010101";    -- TOP BORDER LINES = -43
+                        END IF;
+                        FF_MONITOR_LINE <= PREDOTCOUNTERYPSTART + W_Y_ADJ;
+                        PREWINDOW_Y_SP  <= '1';
                     ELSE
-                        PREDOTCOUNTER_YP_V := FF_MONITOR_LINE + 1;
+                        IF( PREDOTCOUNTER_YP_V = 255 )THEN
+                            PREDOTCOUNTER_YP_V := FF_MONITOR_LINE;
+                        ELSE
+                            PREDOTCOUNTER_YP_V := FF_MONITOR_LINE + 1;
+                        END IF;
+                        IF( PREDOTCOUNTER_YP_V = 0 ) THEN
+                            ENAHSYNC        <= '1';
+                            PREWINDOW_Y     <= '1';
+                        ELSIF( (REG_R9_Y_DOTS = '0' AND PREDOTCOUNTER_YP_V = 192) OR
+                               (REG_R9_Y_DOTS = '1' AND PREDOTCOUNTER_YP_V = 212) )THEN
+                            PREWINDOW_Y     <= '0';
+                            PREWINDOW_Y_SP  <= '0';
+                        ELSIF( (REG_R9_Y_DOTS = '0' AND VDPR9PALMODE = '0' AND PREDOTCOUNTER_YP_V = 235) OR
+                               (REG_R9_Y_DOTS = '1' AND VDPR9PALMODE = '0' AND PREDOTCOUNTER_YP_V = 245) OR
+                               (REG_R9_Y_DOTS = '0' AND VDPR9PALMODE = '1' AND PREDOTCOUNTER_YP_V = 259) OR
+                               (REG_R9_Y_DOTS = '1' AND VDPR9PALMODE = '1' AND PREDOTCOUNTER_YP_V = 269) )THEN
+                            ENAHSYNC        <= '0';
+                        END IF;
+                        FF_MONITOR_LINE <= PREDOTCOUNTER_YP_V;
                     END IF;
-                    IF( PREDOTCOUNTER_YP_V = 0 ) THEN
-                        ENAHSYNC        <= '1';
-                        PREWINDOW_Y     <= '1';
-                    ELSIF( (REG_R9_Y_DOTS = '0' AND PREDOTCOUNTER_YP_V = 192) OR
-                           (REG_R9_Y_DOTS = '1' AND PREDOTCOUNTER_YP_V = 212) )THEN
-                        PREWINDOW_Y     <= '0';
-                        PREWINDOW_Y_SP  <= '0';
-                    ELSIF( (REG_R9_Y_DOTS = '0' AND VDPR9PALMODE = '0' AND PREDOTCOUNTER_YP_V = 235) OR
-                           (REG_R9_Y_DOTS = '1' AND VDPR9PALMODE = '0' AND PREDOTCOUNTER_YP_V = 245) OR
-                           (REG_R9_Y_DOTS = '0' AND VDPR9PALMODE = '1' AND PREDOTCOUNTER_YP_V = 259) OR
-                           (REG_R9_Y_DOTS = '1' AND VDPR9PALMODE = '1' AND PREDOTCOUNTER_YP_V = 269) )THEN
-                        ENAHSYNC        <= '0';
-                    END IF;
-                    FF_MONITOR_LINE <= PREDOTCOUNTER_YP_V;
                 END IF;
-            END IF;
 
-            FF_PRE_Y_CNT <= FF_MONITOR_LINE + ("0" & REG_R23_VSTART_LINE);
+                FF_PRE_Y_CNT <= FF_MONITOR_LINE + ("0" & REG_R23_VSTART_LINE);
+            END IF;
         END IF;
     END PROCESS;
 

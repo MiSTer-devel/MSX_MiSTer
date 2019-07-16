@@ -189,13 +189,15 @@ BEGIN
     -- GENERATE H-SYNC SIGNAL
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_HSYNC_N <= '1';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( (HCOUNTERIN = 0) OR (HCOUNTERIN = (CLOCKS_PER_LINE/2)) ) THEN
-                FF_HSYNC_N <= '0';
-            ELSIF( (HCOUNTERIN = 40) OR (HCOUNTERIN = (CLOCKS_PER_LINE/2) + 40) ) THEN
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
                 FF_HSYNC_N <= '1';
+	    ELSE
+                IF( (HCOUNTERIN = 0) OR (HCOUNTERIN = (CLOCKS_PER_LINE/2)) ) THEN
+                    FF_HSYNC_N <= '0';
+                ELSIF( (HCOUNTERIN = 40) OR (HCOUNTERIN = (CLOCKS_PER_LINE/2) + 40) ) THEN
+                    FF_HSYNC_N <= '1';
+                END IF;
             END IF;
         END IF;
     END PROCESS;
@@ -204,35 +206,37 @@ BEGIN
     -- THE VIDEOVSIN_N SIGNAL IS NOT USED
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            VIDEOVSOUT_N <= '1';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF ( PALMODE = '0' ) THEN -- caro
-                IF( INTERLACEMODE = '0' ) THEN
-                    IF( (VCOUNTERIN = 3*2) OR (VCOUNTERIN = 524+3*2) )THEN
-                        VIDEOVSOUT_N <= '0';
-                    ELSIF( (VCOUNTERIN = 6*2) OR (VCOUNTERIN = 524+6*2) ) THEN
-                        VIDEOVSOUT_N <= '1';
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
+                VIDEOVSOUT_N <= '1';
+	    ELSE
+                IF ( PALMODE = '0' ) THEN -- caro
+                    IF( INTERLACEMODE = '0' ) THEN
+                        IF( (VCOUNTERIN = 3*2) OR (VCOUNTERIN = 524+3*2) )THEN
+                            VIDEOVSOUT_N <= '0';
+                        ELSIF( (VCOUNTERIN = 6*2) OR (VCOUNTERIN = 524+6*2) ) THEN
+                            VIDEOVSOUT_N <= '1';
+                        END IF;
+                    ELSE
+                        IF( (VCOUNTERIN = 3*2) OR (VCOUNTERIN = 525+3*2) )THEN
+                            VIDEOVSOUT_N <= '0';
+                        ELSIF( (VCOUNTERIN = 6*2) OR (VCOUNTERIN = 525+6*2) ) THEN
+                            VIDEOVSOUT_N <= '1';
+                        END IF;
                     END IF;
                 ELSE
-                    IF( (VCOUNTERIN = 3*2) OR (VCOUNTERIN = 525+3*2) )THEN
-                        VIDEOVSOUT_N <= '0';
-                    ELSIF( (VCOUNTERIN = 6*2) OR (VCOUNTERIN = 525+6*2) ) THEN
-                        VIDEOVSOUT_N <= '1';
-                    END IF;
-                END IF;
-            ELSE
-                IF( INTERLACEMODE = '0' ) THEN
-                    IF( (VCOUNTERIN = 3*2) OR (VCOUNTERIN = 626+3*2) )THEN
-                        VIDEOVSOUT_N <= '0';
-                    ELSIF( (VCOUNTERIN = 6*2) OR (VCOUNTERIN = 626+6*2) ) THEN
-                        VIDEOVSOUT_N <= '1';
-                    END IF;
-                ELSE
-                    IF( (VCOUNTERIN = 3*2) OR (VCOUNTERIN = 625+3*2) )THEN
-                        VIDEOVSOUT_N <= '0';
-                    ELSIF( (VCOUNTERIN = 6*2) OR (VCOUNTERIN = 625+6*2) ) THEN
-                        VIDEOVSOUT_N <= '1';
+                    IF( INTERLACEMODE = '0' ) THEN
+                        IF( (VCOUNTERIN = 3*2) OR (VCOUNTERIN = 626+3*2) )THEN
+                            VIDEOVSOUT_N <= '0';
+                        ELSIF( (VCOUNTERIN = 6*2) OR (VCOUNTERIN = 626+6*2) ) THEN
+                            VIDEOVSOUT_N <= '1';
+                        END IF;
+                    ELSE
+                        IF( (VCOUNTERIN = 3*2) OR (VCOUNTERIN = 625+3*2) )THEN
+                            VIDEOVSOUT_N <= '0';
+                        ELSIF( (VCOUNTERIN = 6*2) OR (VCOUNTERIN = 625+6*2) ) THEN
+                            VIDEOVSOUT_N <= '1';
+                        END IF;
                     END IF;
                 END IF;
             END IF;
@@ -242,14 +246,16 @@ BEGIN
     -- GENERATE DATA READ TIMING
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            XPOSITIONR <= (OTHERS => '0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( (HCOUNTERIN = DISP_START_X) OR
-                    (HCOUNTERIN = DISP_START_X + (CLOCKS_PER_LINE/2)) ) THEN
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
                 XPOSITIONR <= (OTHERS => '0');
-            ELSE
-                XPOSITIONR <= XPOSITIONR + 1;
+	    ELSE
+                IF( (HCOUNTERIN = DISP_START_X) OR
+                        (HCOUNTERIN = DISP_START_X + (CLOCKS_PER_LINE/2)) ) THEN
+                    XPOSITIONR <= (OTHERS => '0');
+                ELSE
+                    XPOSITIONR <= XPOSITIONR + 1;
+                END IF;
             END IF;
         END IF;
     END PROCESS;
@@ -257,44 +263,46 @@ BEGIN
     -- GENERATE VIDEO OUTPUT TIMING
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            VIDEOOUTX <= '0';
-            VIDEOOUTY <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( (HCOUNTERIN = DISP_START_X) OR
-                    ((HCOUNTERIN = DISP_START_X + (CLOCKS_PER_LINE/2)) AND INTERLACEMODE = '0') ) THEN
-                VIDEOOUTX <= VIDEOOUTY;
-            ELSIF( (HCOUNTERIN = DISP_START_X + DISP_WIDTH) OR
-                       (HCOUNTERIN = DISP_START_X + DISP_WIDTH + (CLOCKS_PER_LINE/2)) ) THEN
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
                 VIDEOOUTX <= '0';
-            END IF;
-
-            IF( INTERLACEMODE='0' ) THEN
-                -- NON-INTERLACE
-                -- 3+3+16 = 19
-                IF( (VCOUNTERIN = 20*2) OR
-                        ((VCOUNTERIN = 524+20*2) AND (PALMODE = '0')) OR
-                        ((VCOUNTERIN = 626+20*2) AND (PALMODE = '1')) ) THEN
-                    VIDEOOUTY <= '1';
-                ELSIF(  ((VCOUNTERIN = 524) AND (PALMODE = '0')) OR
-                        ((VCOUNTERIN = 626) AND (PALMODE = '1')) OR
-                         (VCOUNTERIN = 0) ) THEN
-                    VIDEOOUTY <= '0';
+                VIDEOOUTY <= '0';
+	    ELSE
+                IF( (HCOUNTERIN = DISP_START_X) OR
+                        ((HCOUNTERIN = DISP_START_X + (CLOCKS_PER_LINE/2)) AND INTERLACEMODE = '0') ) THEN
+                    VIDEOOUTX <= VIDEOOUTY;
+                ELSIF( (HCOUNTERIN = DISP_START_X + DISP_WIDTH) OR
+                           (HCOUNTERIN = DISP_START_X + DISP_WIDTH + (CLOCKS_PER_LINE/2)) ) THEN
+                    VIDEOOUTX <= '0';
                 END IF;
-            ELSE
-                -- INTERLACE
-                IF( (VCOUNTERIN = 20*2) OR
-                        -- +1 SHOULD BE NEEDED.
-                        -- BECAUSE ODD FIELD'S START IS DELAYED HALF LINE.
-                        -- SO THE START POSITION OF DISPLAY TIME SHOULD BE
-                        -- DELAYED MORE HALF LINE.
-                        ((VCOUNTERIN = 525+20*2 + 1) AND (PALMODE = '0')) OR
-                        ((VCOUNTERIN = 625+20*2 + 1) AND (PALMODE = '1')) ) THEN
-                    VIDEOOUTY <= '1';
-                ELSIF(  ((VCOUNTERIN = 525) AND (PALMODE = '0')) OR
-                        ((VCOUNTERIN = 625) AND (PALMODE = '1')) OR
-                         (VCOUNTERIN = 0) ) THEN
-                    VIDEOOUTY <= '0';
+
+                IF( INTERLACEMODE='0' ) THEN
+                    -- NON-INTERLACE
+                    -- 3+3+16 = 19
+                    IF( (VCOUNTERIN = 20*2) OR
+                            ((VCOUNTERIN = 524+20*2) AND (PALMODE = '0')) OR
+                            ((VCOUNTERIN = 626+20*2) AND (PALMODE = '1')) ) THEN
+                        VIDEOOUTY <= '1';
+                    ELSIF(  ((VCOUNTERIN = 524) AND (PALMODE = '0')) OR
+                            ((VCOUNTERIN = 626) AND (PALMODE = '1')) OR
+                             (VCOUNTERIN = 0) ) THEN
+                        VIDEOOUTY <= '0';
+                    END IF;
+                ELSE
+                    -- INTERLACE
+                    IF( (VCOUNTERIN = 20*2) OR
+                            -- +1 SHOULD BE NEEDED.
+                            -- BECAUSE ODD FIELD'S START IS DELAYED HALF LINE.
+                            -- SO THE START POSITION OF DISPLAY TIME SHOULD BE
+                            -- DELAYED MORE HALF LINE.
+                            ((VCOUNTERIN = 525+20*2 + 1) AND (PALMODE = '0')) OR
+                            ((VCOUNTERIN = 625+20*2 + 1) AND (PALMODE = '1')) ) THEN
+                        VIDEOOUTY <= '1';
+                    ELSIF(  ((VCOUNTERIN = 525) AND (PALMODE = '0')) OR
+                            ((VCOUNTERIN = 625) AND (PALMODE = '1')) OR
+                             (VCOUNTERIN = 0) ) THEN
+                        VIDEOOUTY <= '0';
+                    END IF;
                 END IF;
             END IF;
         END IF;

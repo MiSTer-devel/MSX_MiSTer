@@ -173,79 +173,93 @@ BEGIN
     -- FF
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_PAT_COL <= ( OTHERS => '0' );
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( DOTSTATE = "00" AND EIGHTDOTSTATE_DEC(0) = '1' )THEN
-                FF_PAT_COL <= FF_PRE_PAT_COL;
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                FF_PAT_COL <= ( OTHERS => '0' );
+	    ELSE
+                IF( DOTSTATE = "00" AND EIGHTDOTSTATE_DEC(0) = '1' )THEN
+                    FF_PAT_COL <= FF_PRE_PAT_COL;
+                END IF;
             END IF;
         END IF;
     END PROCESS;
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_PAT_GEN <= ( OTHERS => '0' );
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( DOTSTATE = "00" AND EIGHTDOTSTATE_DEC(0) = '1' )THEN
-                FF_PAT_GEN <= FF_PRE_PAT_GEN;
-            ELSIF( DOTSTATE = "01" )THEN
-                FF_PAT_GEN <= FF_PAT_GEN( 6 DOWNTO 0 ) & '0';
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                FF_PAT_GEN <= ( OTHERS => '0' );
+	    ELSE
+                IF( DOTSTATE = "00" AND EIGHTDOTSTATE_DEC(0) = '1' )THEN
+                    FF_PAT_GEN <= FF_PRE_PAT_GEN;
+                ELSIF( DOTSTATE = "01" )THEN
+                    FF_PAT_GEN <= FF_PAT_GEN( 6 DOWNTO 0 ) & '0';
+                END IF;
             END IF;
         END IF;
     END PROCESS;
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_PAT_NUM <= ( OTHERS => '0' );
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( DOTSTATE = "01" AND EIGHTDOTSTATE_DEC(1) = '1' )THEN
-                FF_PAT_NUM <= PRAMDAT;
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                FF_PAT_NUM <= ( OTHERS => '0' );
+	    ELSE
+                IF( DOTSTATE = "01" AND EIGHTDOTSTATE_DEC(1) = '1' )THEN
+                    FF_PAT_NUM <= PRAMDAT;
+                END IF;
             END IF;
         END IF;
     END PROCESS;
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_PRE_PAT_GEN <= ( OTHERS => '0' );
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( DOTSTATE = "01" AND EIGHTDOTSTATE_DEC(2) = '1' )THEN
-                FF_PRE_PAT_GEN <= PRAMDAT;
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                FF_PRE_PAT_GEN <= ( OTHERS => '0' );
+	    ELSE
+                IF( DOTSTATE = "01" AND EIGHTDOTSTATE_DEC(2) = '1' )THEN
+                    FF_PRE_PAT_GEN <= PRAMDAT;
+                END IF;
             END IF;
         END IF;
     END PROCESS;
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_PRE_PAT_COL <= ( OTHERS => '0' );
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( DOTSTATE = "01" AND EIGHTDOTSTATE_DEC(3) = '1' )THEN
-                FF_PRE_PAT_COL <= PRAMDAT;
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                FF_PRE_PAT_COL <= ( OTHERS => '0' );
+	    ELSE
+                IF( DOTSTATE = "01" AND EIGHTDOTSTATE_DEC(3) = '1' )THEN
+                    FF_PRE_PAT_COL <= PRAMDAT;
+                END IF;
             END IF;
         END IF;
     END PROCESS;
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_COL_CODE <= ( OTHERS => '0' );
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( DOTSTATE = "01" )THEN
-                FF_COL_CODE <= COL_CODE;
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                FF_COL_CODE <= ( OTHERS => '0' );
+	    ELSE
+                IF( DOTSTATE = "01" )THEN
+                    FF_COL_CODE <= COL_CODE;
+                END IF;
             END IF;
         END IF;
     END PROCESS;
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_REQ_ADDR <= ( OTHERS => '0' );
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( DOTSTATE = "11" )THEN
-                FF_REQ_ADDR <= REQ_ADDR;
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                FF_REQ_ADDR <= ( OTHERS => '0' );
+	    ELSE
+                IF( DOTSTATE = "11" )THEN
+                    FF_REQ_ADDR <= REQ_ADDR;
+                END IF;
             END IF;
         END IF;
     END PROCESS;

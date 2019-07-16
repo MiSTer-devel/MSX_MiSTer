@@ -119,13 +119,15 @@ BEGIN
     --------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_PAL_MODE         <= '0';
-            FF_INTERLACE_MODE   <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( ((W_H_CNT_HALF OR W_H_CNT_END) AND W_FIELD_END AND FF_FIELD) = '1' )THEN
-                FF_PAL_MODE         <= PAL_MODE;
-                FF_INTERLACE_MODE   <= INTERLACE_MODE;
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
+                FF_PAL_MODE         <= '0';
+                FF_INTERLACE_MODE   <= '0';
+            ELSE
+                IF( ((W_H_CNT_HALF OR W_H_CNT_END) AND W_FIELD_END AND FF_FIELD) = '1' )THEN
+                    FF_PAL_MODE         <= PAL_MODE;
+                    FF_INTERLACE_MODE   <= INTERLACE_MODE;
+                END IF;
             END IF;
         END IF;
     END PROCESS;
@@ -140,13 +142,15 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_H_CNT <= (OTHERS => '0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( W_H_CNT_END = '1' )THEN
-                FF_H_CNT <= (OTHERS => '0' );
-            ELSE
-                FF_H_CNT <= FF_H_CNT + 1;
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
+                FF_H_CNT <= (OTHERS => '0');
+	    else
+                IF( W_H_CNT_END = '1' )THEN
+                    FF_H_CNT <= (OTHERS => '0' );
+                ELSE
+                    FF_H_CNT <= FF_H_CNT + 1;
+                END IF;
             END IF;
         END IF;
     END PROCESS;
@@ -168,14 +172,16 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_V_CNT_IN_FIELD   <= (OTHERS => '0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( (W_H_CNT_HALF OR W_H_CNT_END) = '1' )THEN
-                IF( W_FIELD_END = '1' )THEN
-                    FF_V_CNT_IN_FIELD <= (OTHERS => '0');
-                ELSE
-                    FF_V_CNT_IN_FIELD <= FF_V_CNT_IN_FIELD + 1;
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
+                FF_V_CNT_IN_FIELD   <= (OTHERS => '0');
+	    else
+                IF( (W_H_CNT_HALF OR W_H_CNT_END) = '1' )THEN
+                    IF( W_FIELD_END = '1' )THEN
+                        FF_V_CNT_IN_FIELD <= (OTHERS => '0');
+                    ELSE
+                        FF_V_CNT_IN_FIELD <= FF_V_CNT_IN_FIELD + 1;
+                    END IF;
                 END IF;
             END IF;
         END IF;
@@ -186,13 +192,15 @@ BEGIN
     --------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_FIELD <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            -- GENERATE FF_FIELD SIGNAL
-            IF( (W_H_CNT_HALF OR W_H_CNT_END) = '1' )THEN
-                IF( W_FIELD_END = '1' )THEN
-                    FF_FIELD <= NOT FF_FIELD;
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
+                FF_FIELD <= '0';
+	    else
+                -- GENERATE FF_FIELD SIGNAL
+                IF( (W_H_CNT_HALF OR W_H_CNT_END) = '1' )THEN
+                    IF( W_FIELD_END = '1' )THEN
+                        FF_FIELD <= NOT FF_FIELD;
+                    END IF;
                 END IF;
             END IF;
         END IF;
@@ -203,14 +211,16 @@ BEGIN
     --------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_V_CNT_IN_FRAME   <= (OTHERS => '0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( (W_H_CNT_HALF OR W_H_CNT_END) = '1' )THEN
-                IF( W_FIELD_END = '1' AND FF_FIELD = '1' )THEN
-                    FF_V_CNT_IN_FRAME   <= (OTHERS => '0');
-                ELSE
-                    FF_V_CNT_IN_FRAME   <= FF_V_CNT_IN_FRAME + 1;
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
+                FF_V_CNT_IN_FRAME   <= (OTHERS => '0');
+	    ELSE
+                IF( (W_H_CNT_HALF OR W_H_CNT_END) = '1' )THEN
+                    IF( W_FIELD_END = '1' AND FF_FIELD = '1' )THEN
+                        FF_V_CNT_IN_FRAME   <= (OTHERS => '0');
+                    ELSE
+                        FF_V_CNT_IN_FRAME   <= FF_V_CNT_IN_FRAME + 1;
+                    END IF;
                 END IF;
             END IF;
         END IF;
@@ -225,13 +235,15 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_H_BLANK <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( W_H_BLANK_START = '1' )THEN
-                FF_H_BLANK <= '1';
-            ELSIF( W_H_BLANK_END = '1' )THEN
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
                 FF_H_BLANK <= '0';
+	    ELSE
+                IF( W_H_BLANK_START = '1' )THEN
+                    FF_H_BLANK <= '1';
+                ELSIF( W_H_BLANK_END = '1' )THEN
+                    FF_H_BLANK <= '0';
+                END IF;
             END IF;
         END IF;
     END PROCESS;
@@ -257,14 +269,16 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_V_BLANK <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( W_H_BLANK_END = '1' )THEN
-                IF( W_V_BLANKING_END = '1' )THEN
-                    FF_V_BLANK <= '0';
-                ELSIF( W_V_BLANKING_START = '1' )THEN
-                    FF_V_BLANK <= '1';
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
+                FF_V_BLANK <= '0';
+	    ELSE
+                IF( W_H_BLANK_END = '1' )THEN
+                    IF( W_V_BLANKING_END = '1' )THEN
+                        FF_V_BLANK <= '0';
+                    ELSIF( W_V_BLANKING_START = '1' )THEN
+                        FF_V_BLANK <= '1';
+                    END IF;
                 END IF;
             END IF;
         END IF;

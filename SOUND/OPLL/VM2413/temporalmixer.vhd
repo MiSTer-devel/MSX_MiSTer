@@ -62,14 +62,16 @@ begin
   process (clk, reset)
   begin
 
+    if rising_edge(clk) then if clkena='1' then
+
     if reset = '1' then
 
       maddr  <= (others => '0');
       mute   <= '1';
-		mix    <= (others =>'0');
-		mixout <= (others =>'0');
+      mix    <= (others =>'0');
+      mixout <= (others =>'0');
 
-    elsif clk'event and clk = '1' then if clkena='1' then
+    else
 
       if stage = 0 then
 
@@ -142,6 +144,7 @@ begin
       end if;
 
     end if; end if;
+    end if;
 
   end process;
 

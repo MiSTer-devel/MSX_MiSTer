@@ -98,8 +98,10 @@ begin
         variable dphase : PHASE_TYPE;
         variable noise14 : std_logic;
         variable noise17 : std_logic;
-        variable pgout_buf : std_logic_vector( 17 downto 0 );   --  ®”•” 9bit, ¬”•” 9bit
+        variable pgout_buf : std_logic_vector( 17 downto 0 );   --  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 9bit, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 9bit
   begin
+
+    if rising_edge(clk) then if clkena = '1' then
 
     if reset = '1' then
 
@@ -110,7 +112,7 @@ begin
       noise14 := '0';
       noise17 := '0';
 
-    elsif clk'event and clk='1' then if clkena = '1' then
+    else
 
       noise <= noise14 xor noise17;
 
@@ -168,6 +170,7 @@ begin
       end if;
 
     end if; end if;
+    end if;
 
   end process;
 

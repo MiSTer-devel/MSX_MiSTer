@@ -269,28 +269,32 @@ BEGIN
     ----------------------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_ACK <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            FF_ACK <= REQ;
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                FF_ACK <= '0';
+	    ELSE
+                FF_ACK <= REQ;
+            END IF;
         END IF;
     END PROCESS;
 
     ----------------------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            REG_R1_DISP_MODE    <= "00";
-            VDPR0DISPNUM        <= "000";
-            REG_R25_SP2         <= '0';
-            REG_R26_H_SCROLL    <= (OTHERS => '0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( HSYNC = '1' )THEN
-                REG_R1_DISP_ON      <= FF_R1_DISP_ON;
-                REG_R1_DISP_MODE    <= FF_R1_DISP_MODE;
-                VDPR0DISPNUM        <= VDPR0DISPNUMX;
-                REG_R25_SP2         <= FF_R25_SP2;
-                REG_R26_H_SCROLL    <= FF_R26_H_SCROLL;
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                REG_R1_DISP_MODE    <= "00";
+                VDPR0DISPNUM        <= "000";
+                REG_R25_SP2         <= '0';
+                REG_R26_H_SCROLL    <= (OTHERS => '0');
+	    ELSE
+                IF( HSYNC = '1' )THEN
+                    REG_R1_DISP_ON      <= FF_R1_DISP_ON;
+                    REG_R1_DISP_MODE    <= FF_R1_DISP_MODE;
+                    VDPR0DISPNUM        <= VDPR0DISPNUMX;
+                    REG_R25_SP2         <= FF_R25_SP2;
+                    REG_R26_H_SCROLL    <= FF_R26_H_SCROLL;
+                END IF;
             END IF;
         END IF;
     END PROCESS;
@@ -322,14 +326,16 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_PALETTE_IN <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( W_EVEN_DOTSTATE = '1' )THEN
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
                 FF_PALETTE_IN <= '0';
-            ELSE
-                IF( FF_PALETTE_WR_REQ /= FF_PALETTE_WR_ACK )THEN
-                    FF_PALETTE_IN <= '1';
+	    ELSE
+                IF( W_EVEN_DOTSTATE = '1' )THEN
+                    FF_PALETTE_IN <= '0';
+                ELSE
+                    IF( FF_PALETTE_WR_REQ /= FF_PALETTE_WR_ACK )THEN
+                        FF_PALETTE_IN <= '1';
+                    END IF;
                 END IF;
             END IF;
         END IF;
@@ -337,12 +343,14 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_PALETTE_WR_ACK <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( W_EVEN_DOTSTATE = '0' )THEN
-                IF( FF_PALETTE_WR_REQ /= FF_PALETTE_WR_ACK ) THEN
-                    FF_PALETTE_WR_ACK <= NOT FF_PALETTE_WR_ACK;
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                FF_PALETTE_WR_ACK <= '0';
+	    ELSE
+                IF( W_EVEN_DOTSTATE = '0' )THEN
+                    IF( FF_PALETTE_WR_REQ /= FF_PALETTE_WR_ACK ) THEN
+                        FF_PALETTE_WR_ACK <= NOT FF_PALETTE_WR_ACK;
+                    END IF;
                 END IF;
             END IF;
         END IF;
@@ -371,42 +379,44 @@ BEGIN
     --------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            DBI <= (OTHERS => '0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( REQ = '1' AND WRT = '0' )THEN
-                -- READ REQUEST
-                CASE( ADR(1 DOWNTO 0) )IS
-                WHEN "00"       => -- PORT#0 (0x98): READ VRAM
-                    DBI <= VDPVRAMRDDATA;
-                WHEN "01"       => -- PORT#1 (0x99): READ STATUS REGISTER
-                    CASE( VDPR15STATUSREGNUM )IS
-                    WHEN "0000" => -- READ S#0
-                        DBI <= (NOT REQ_VSYNC_INT_N) & (VDPS0SPOVERMAPPED AND REQ_VSYNC_INT_N) & VDPS0SPCOLLISIONINCIDENCE & VDPS0SPOVERMAPPEDNUM;
-                    WHEN "0001" => -- READ S#1
-                        DBI <= "00" & VDP_ID & (NOT REQ_HSYNC_INT_N);
-                    WHEN "0010" => -- READ S#2
-                        DBI <= VDPCMDTR & VD & HD & VDPCMDBD & "11" & FIELD & VDPCMDCE;
-                    WHEN "0011" => -- READ S#3
-                        DBI <= VDPS3S4SPCOLLISIONX(7 DOWNTO 0);
-                    WHEN "0100" => -- READ S#4
-                        DBI <= "0000000" & VDPS3S4SPCOLLISIONX(8);
-                    WHEN "0101" => -- READ S#5
-                        DBI <= VDPS5S6SPCOLLISIONY(7 DOWNTO 0);
-                    WHEN "0110" => -- READ S#6
-                        DBI <= "0000000" & VDPS5S6SPCOLLISIONY(8);
-                    WHEN "0111" => -- READ S#7: THE COLOR REGISTER
-                        DBI <= VDPCMDCLR;
-                    WHEN "1000" => -- READ S#8: SXTMP LSB
-                        DBI <= VDPCMDSXTMP(7 DOWNTO 0);
-                    WHEN "1001" => -- READ S#9: SXTMP MSB
-                        DBI <= "1111111" & VDPCMDSXTMP(8);
-                    WHEN OTHERS =>
-                        DBI <= (OTHERS => '0');
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                DBI <= (OTHERS => '0');
+	    ELSE
+                IF( REQ = '1' AND WRT = '0' )THEN
+                    -- READ REQUEST
+                    CASE( ADR(1 DOWNTO 0) )IS
+                    WHEN "00"       => -- PORT#0 (0x98): READ VRAM
+                        DBI <= VDPVRAMRDDATA;
+                    WHEN "01"       => -- PORT#1 (0x99): READ STATUS REGISTER
+                        CASE( VDPR15STATUSREGNUM )IS
+                        WHEN "0000" => -- READ S#0
+                            DBI <= (NOT REQ_VSYNC_INT_N) & (VDPS0SPOVERMAPPED AND REQ_VSYNC_INT_N) & VDPS0SPCOLLISIONINCIDENCE & VDPS0SPOVERMAPPEDNUM;
+                        WHEN "0001" => -- READ S#1
+                            DBI <= "00" & VDP_ID & (NOT REQ_HSYNC_INT_N);
+                        WHEN "0010" => -- READ S#2
+                            DBI <= VDPCMDTR & VD & HD & VDPCMDBD & "11" & FIELD & VDPCMDCE;
+                        WHEN "0011" => -- READ S#3
+                            DBI <= VDPS3S4SPCOLLISIONX(7 DOWNTO 0);
+                        WHEN "0100" => -- READ S#4
+                            DBI <= "0000000" & VDPS3S4SPCOLLISIONX(8);
+                        WHEN "0101" => -- READ S#5
+                            DBI <= VDPS5S6SPCOLLISIONY(7 DOWNTO 0);
+                        WHEN "0110" => -- READ S#6
+                            DBI <= "0000000" & VDPS5S6SPCOLLISIONY(8);
+                        WHEN "0111" => -- READ S#7: THE COLOR REGISTER
+                            DBI <= VDPCMDCLR;
+                        WHEN "1000" => -- READ S#8: SXTMP LSB
+                            DBI <= VDPCMDSXTMP(7 DOWNTO 0);
+                        WHEN "1001" => -- READ S#9: SXTMP MSB
+                            DBI <= "1111111" & VDPCMDSXTMP(8);
+                        WHEN OTHERS =>
+                            DBI <= (OTHERS => '0');
+                        END CASE;
+                    WHEN OTHERS => -- PORT#2, #3: NOT SUPPORTED IN READ MODE
+                        DBI <= (OTHERS => '1');
                     END CASE;
-                WHEN OTHERS => -- PORT#2, #3: NOT SUPPORTED IN READ MODE
-                    DBI <= (OTHERS => '1');
-                END CASE;
+                END IF;
             END IF;
         END IF;
     END PROCESS;
@@ -416,26 +426,28 @@ BEGIN
     --------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            CLR_HSYNC_INT <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( REQ = '1' AND WRT = '0' )THEN
-                -- CASE OF READ REQUEST
-                IF( ADR(1 DOWNTO 0) = "01" AND VDPR15STATUSREGNUM = "0001" )THEN
-                    -- CLEAR HSYNC INTERRUPT BY READ S#1
-                    CLR_HSYNC_INT <= '1';
-                ELSE
-                    CLR_HSYNC_INT <= '0';
-                END IF;
-            ELSIF( VDPREGWRPULSE = '1' )THEN
-                IF( VDPREGPTR = "010011" OR (VDPREGPTR = "000000" AND VDPP1DATA(4) = '1') )THEN
-                    -- CLEAR HSYNC INTERRUPT BY WRITE R#19, R#0
-                    CLR_HSYNC_INT <= '1';
-                ELSE
-                    CLR_HSYNC_INT <= '0';
-                END IF;
-            ELSE
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
                 CLR_HSYNC_INT <= '0';
+	    ELSE
+                IF( REQ = '1' AND WRT = '0' )THEN
+                    -- CASE OF READ REQUEST
+                    IF( ADR(1 DOWNTO 0) = "01" AND VDPR15STATUSREGNUM = "0001" )THEN
+                        -- CLEAR HSYNC INTERRUPT BY READ S#1
+                        CLR_HSYNC_INT <= '1';
+                    ELSE
+                        CLR_HSYNC_INT <= '0';
+                    END IF;
+                ELSIF( VDPREGWRPULSE = '1' )THEN
+                    IF( VDPREGPTR = "010011" OR (VDPREGPTR = "000000" AND VDPP1DATA(4) = '1') )THEN
+                        -- CLEAR HSYNC INTERRUPT BY WRITE R#19, R#0
+                        CLR_HSYNC_INT <= '1';
+                    ELSE
+                        CLR_HSYNC_INT <= '0';
+                    END IF;
+                ELSE
+                    CLR_HSYNC_INT <= '0';
+                END IF;
             END IF;
         END IF;
     END PROCESS;
@@ -445,19 +457,21 @@ BEGIN
     --------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            CLR_VSYNC_INT <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( REQ = '1' AND WRT = '0' )THEN
-                -- CASE OF READ REQUEST
-                IF( ADR(1 DOWNTO 0) = "01" AND VDPR15STATUSREGNUM = "0000" )THEN
-                    -- CLEAR VSYNC INTERRUPT BY READ S#0
-                    CLR_VSYNC_INT <= '1';
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                CLR_VSYNC_INT <= '0';
+	    ELSE
+                IF( REQ = '1' AND WRT = '0' )THEN
+                    -- CASE OF READ REQUEST
+                    IF( ADR(1 DOWNTO 0) = "01" AND VDPR15STATUSREGNUM = "0000" )THEN
+                        -- CLEAR VSYNC INTERRUPT BY READ S#0
+                        CLR_VSYNC_INT <= '1';
+                    ELSE
+                        CLR_VSYNC_INT <= '0';
+                    END IF;
                 ELSE
                     CLR_VSYNC_INT <= '0';
                 END IF;
-            ELSE
-                CLR_VSYNC_INT <= '0';
             END IF;
         END IF;
     END PROCESS;
@@ -467,228 +481,230 @@ BEGIN
     --------------------------------------------------------------------------
     PROCESS( RESET, CLK21M, FORCED_V_MODE )
     BEGIN
-        IF( RESET = '1' )THEN
-            VDPP1DATA <= (OTHERS => '0');
-            VDPP1IS1STBYTE <= '1';
-            VDPP2IS1STBYTE <= '1';
-            VDPREGWRPULSE <= '0';
-            VDPREGPTR <= (OTHERS => '0');
-            VDPVRAMWRREQ <= '0';
-            VDPVRAMRDREQ <= '0';
-            VDPVRAMADDRSETREQ <= '0';
-            VDPVRAMACCESSADDRTMP <= (OTHERS => '0');
-            VDPVRAMACCESSDATA <= (OTHERS => '0');
-            VDPR0DISPNUMX <= (OTHERS => '0');
-
-            REG_R0_HSYNC_INT_EN <= '0';
-            FF_R1_DISP_MODE <= (OTHERS => '0');
-            REG_R1_SP_SIZE <= '0';
-            REG_R1_SP_ZOOM <= '0';
-            REG_R1_VSYNC_INT_EN <= '0';
-            FF_R1_DISP_ON <= '0';
-            FF_R2_PT_NAM_ADDR <= (OTHERS => '0');
-            REG_R12_BLINK_MODE <= (OTHERS => '0');
-            REG_R13_BLINK_PERIOD <= (OTHERS => '0');
-            REG_R7_FRAME_COL <= (OTHERS => '0');
-            REG_R8_SP_OFF <= '1';
-            REG_R8_COL0_ON <= '0';
-            REG_R9_PAL_MODE <= FORCED_V_MODE;
-            FF_R9_2PAGE_MODE <= '0';
-            REG_R9_INTERLACE_MODE <= '0';
-            REG_R9_Y_DOTS <= '0';
-            VDPR15STATUSREGNUM <= (OTHERS => '0');
-            VDPR16PALNUM <= (OTHERS => '0');
-            VDPR17REGNUM <= (OTHERS => '0');
-            VDPR17INCREGNUM <= '0';
-            REG_R18_ADJ <= (OTHERS => '0');
-            REG_R19_HSYNC_INT_LINE <= (OTHERS => '0');
-            REG_R23_VSTART_LINE <= (OTHERS => '0');
-            REG_R25_CMD <= '0';
-            REG_R25_YAE <= '0';
-            REG_R25_YJK <= '0';
-            REG_R25_MSK <= '0';
-            FF_R25_SP2 <= '0';
-            FF_R26_H_SCROLL     <= (OTHERS => '0');
-            REG_R27_H_SCROLL    <= (OTHERS => '0');
-            VDPCMDREGNUM <= (OTHERS => '0');
-            VDPCMDREGDATA <= (OTHERS => '0');
-            VDPCMDREGWRREQ <= '0';
-            VDPCMDTRCLRREQ <= '0';
-
-            -- PALETTE
-            PALETTEDATARB_IN <= (OTHERS => '0');
-            PALETTEDATAG_IN  <= (OTHERS => '0');
-            FF_PALETTE_WR_REQ <= '0';
-            PALETTEWRNUM <= (OTHERS => '0');
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF (REQ = '1' AND WRT = '0') THEN
-                -- READ REQUEST
-                CASE ADR(1 DOWNTO 0) IS
-                WHEN "00"       => -- PORT#0 (0x98): READ VRAM
-                    VDPVRAMRDREQ <= NOT VDPVRAMRDACK;
-                WHEN "01"       => -- PORT#1 (0x99): READ STATUS REGISTER
-                    VDPP1IS1STBYTE <= '1';
-                    CASE VDPR15STATUSREGNUM IS
-                    WHEN "0000" => -- READ S#0
-                        FF_SPVDPS0RESETREQ <= NOT SPVDPS0RESETACK;
-                    WHEN "0001" => -- READ S#1
-                        NULL;
-                    WHEN "0101" => -- READ S#5
-                        SPVDPS5RESETREQ <= NOT SPVDPS5RESETACK;
-                    WHEN "0111" => -- READ S#7: THE COLOR REGISTER
-                        VDPCMDTRCLRREQ <= NOT VDPCMDTRCLRACK;
-                    WHEN OTHERS =>
-                        NULL;
-                    END CASE;
-                WHEN OTHERS => -- PORT#3: NOT SUPPORTED IN READ MODE
-                    NULL;
-                END CASE;
-
-            ELSIF (REQ = '1' AND WRT = '1') THEN
-                -- WRITE REQUEST
-                CASE ADR(1 DOWNTO 0) IS
-                    WHEN "00"       => -- PORT#0 (0x98): WRITE VRAM
-                        VDPVRAMACCESSDATA <= DBO;
-                        VDPVRAMWRREQ <= NOT VDPVRAMWRACK;
-
-                    WHEN "01"       => -- PORT#1 (0x99): REGISTER WRITE OR VRAM ADDR SETUP
-                        IF(VDPP1IS1STBYTE = '1') THEN
-                            -- IT IS THE FIRST BYTE; BUFFER IT
-                            VDPP1IS1STBYTE <= '0';
-                            VDPP1DATA      <= DBO;
-                        ELSE
-                            -- IT IS THE SECOND BYTE; PROCESS BOTH BYTES
-                            VDPP1IS1STBYTE <= '1';
-                            CASE DBO( 7 DOWNTO 6 ) IS
-                                WHEN "01" =>    -- SET VRAM ACCESS ADDRESS(WRITE)
-                                    VDPVRAMACCESSADDRTMP( 7 DOWNTO 0 ) <= VDPP1DATA( 7 DOWNTO 0);
-                                    VDPVRAMACCESSADDRTMP(13 DOWNTO 8 ) <= DBO( 5 DOWNTO 0);
-                                    VDPVRAMADDRSETREQ <= NOT VDPVRAMADDRSETACK;
-                                WHEN "00" =>    -- SET VRAM ACCESS ADDRESS(READ)
-                                    VDPVRAMACCESSADDRTMP( 7 DOWNTO 0 ) <= VDPP1DATA( 7 DOWNTO 0);
-                                    VDPVRAMACCESSADDRTMP(13 DOWNTO 8 ) <= DBO( 5 DOWNTO 0);
-                                    VDPVRAMADDRSETREQ <= NOT VDPVRAMADDRSETACK;
-                                    VDPVRAMRDREQ <= NOT VDPVRAMRDACK;
-                                WHEN "10" =>    -- DIRECT REGISTER SELECTION
-                                    VDPREGPTR <= DBO( 5 DOWNTO 0);
-                                    VDPREGWRPULSE <= '1';
-                                WHEN "11" =>    -- DIRECT REGISTER SELECTION ??
-                                    VDPREGPTR <= DBO( 5 DOWNTO 0);
-                                    VDPREGWRPULSE <= '1';
-                                WHEN OTHERS =>
-                                    NULL;
-                            END CASE;
-                        END IF;
-
-                    WHEN "10"       => -- PORT#2: PALETTE WRITE
-                        IF(VDPP2IS1STBYTE = '1') THEN
-                            PALETTEDATARB_IN <= DBO;
-                            VDPP2IS1STBYTE <= '0';
-                        ELSE
-                            -- pbgÍRGBÌf[^ªµÁ½ÉêxÉ«·¦éB
-                            -- (À@Å®ìðmFµ½)
-                            PALETTEDATAG_IN <= DBO;
-                            PALETTEWRNUM <= VDPR16PALNUM;
-                            FF_PALETTE_WR_REQ <= NOT FF_PALETTE_WR_ACK;
-                            VDPP2IS1STBYTE <= '1';
-                            VDPR16PALNUM <= VDPR16PALNUM + 1;
-                        END IF;
-
-                    WHEN "11" => -- PORT#3: INDIRECT REGISTER WRITE
-                        IF( VDPR17REGNUM /= "010001" ) THEN
-                            -- REGISTER 17 CAN NOT BE MODIFIED. ALL OTHERS ARE OK
-                            VDPREGWRPULSE <= '1';
-                        END IF;
-                        VDPP1DATA <= DBO;
-                        VDPREGPTR <= VDPR17REGNUM;
-                        IF( VDPR17INCREGNUM = '1' ) THEN
-                            VDPR17REGNUM <= VDPR17REGNUM + 1;
-                        END IF;
-
-                    WHEN OTHERS =>
-                        NULL;
-                END CASE;
-
-            ELSIF (VDPREGWRPULSE = '1') THEN
-                -- WRITE TO REGISTER (IF PREVIOUSLY REQUESTED)
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                VDPP1DATA <= (OTHERS => '0');
+                VDPP1IS1STBYTE <= '1';
+                VDPP2IS1STBYTE <= '1';
                 VDPREGWRPULSE <= '0';
-                IF ( VDPREGPTR(5) = '0') THEN
-                    -- IT IS A NOT A COMMAND ENGINE REGISTER:
-                    CASE VDPREGPTR(4 DOWNTO 0) IS
-                        WHEN "00000" =>     -- #00
-                            VDPR0DISPNUMX <= VDPP1DATA(3 DOWNTO 1);
-                            REG_R0_HSYNC_INT_EN <= VDPP1DATA(4);
-                        WHEN "00001" =>     -- #01
-                            REG_R1_SP_ZOOM      <= VDPP1DATA(0);
-                            REG_R1_SP_SIZE      <= VDPP1DATA(1);
-                            FF_R1_DISP_MODE     <= VDPP1DATA(4 DOWNTO 3);
-                            REG_R1_VSYNC_INT_EN <= VDPP1DATA(5);
-                            FF_R1_DISP_ON       <= VDPP1DATA(6);
-                        WHEN "00010" =>     -- #02
-                            FF_R2_PT_NAM_ADDR   <= VDPP1DATA( 6 DOWNTO 0);
-                        WHEN "00011" =>     -- #03
-                            REG_R10R3_COL_ADDR(7 DOWNTO 0) <= VDPP1DATA( 7 DOWNTO 0);
-                        WHEN "00100" =>     -- #04
-                            REG_R4_PT_GEN_ADDR  <= VDPP1DATA( 5 DOWNTO 0);
-                        WHEN "00101" =>     -- #05
-                            REG_R11R5_SP_ATR_ADDR(7 DOWNTO 0) <= VDPP1DATA;
-                        WHEN "00110" =>     -- #06
-                            REG_R6_SP_GEN_ADDR  <= VDPP1DATA( 5 DOWNTO 0);
-                        WHEN "00111" =>     -- #07
-                            REG_R7_FRAME_COL    <= VDPP1DATA( 7 DOWNTO 0 );
-                        WHEN "01000" =>     -- #08
-                            REG_R8_SP_OFF       <= VDPP1DATA(1);
-                            REG_R8_COL0_ON      <= VDPP1DATA(5);
-                        WHEN "01001" =>     -- #09
-                            REG_R9_PAL_MODE         <= VDPP1DATA(1);
-                            FF_R9_2PAGE_MODE        <= VDPP1DATA(2);
-                            REG_R9_INTERLACE_MODE   <= VDPP1DATA(3);
-                            REG_R9_Y_DOTS           <= VDPP1DATA(7);
-                        WHEN "01010" =>     -- #10
-                            REG_R10R3_COL_ADDR(10 DOWNTO 8) <= VDPP1DATA( 2 DOWNTO 0);
-                        WHEN "01011" =>     -- #11
-                            REG_R11R5_SP_ATR_ADDR( 9 DOWNTO 8) <= VDPP1DATA( 1 DOWNTO 0);
-                        WHEN "01100" =>     -- #12
-                            REG_R12_BLINK_MODE  <= VDPP1DATA;
-                        WHEN "01101" =>     -- #13
-                            REG_R13_BLINK_PERIOD    <= VDPP1DATA;
-                        WHEN "01110" =>     -- #14
-                            VDPVRAMACCESSADDRTMP( 16 DOWNTO 14 ) <= VDPP1DATA( 2 DOWNTO 0);
-                            VDPVRAMADDRSETREQ <= NOT VDPVRAMADDRSETACK;
-                        WHEN "01111" =>     -- #15
-                            VDPR15STATUSREGNUM <= VDPP1DATA( 3 DOWNTO 0);
-                        WHEN "10000" =>     -- #16
-                            VDPR16PALNUM <= VDPP1DATA( 3 DOWNTO 0 );
-                            VDPP2IS1STBYTE <= '1';
-                        WHEN "10001" =>     -- #17
-                            VDPR17REGNUM <= VDPP1DATA( 5 DOWNTO 0 );
-                            VDPR17INCREGNUM <= NOT VDPP1DATA(7);
-                        WHEN "10010" =>     -- #18
-                            REG_R18_ADJ     <= VDPP1DATA;
-                        WHEN "10011" =>     -- #19
-                            REG_R19_HSYNC_INT_LINE  <= VDPP1DATA;
-                        WHEN "10111" =>     -- #23
-                            REG_R23_VSTART_LINE     <= VDPP1DATA;
-                        WHEN "11001" =>     -- #25
-                            REG_R25_CMD <= VDPP1DATA(6);
-                            REG_R25_YAE <= VDPP1DATA(4);
-                            REG_R25_YJK <= VDPP1DATA(3);
-                            REG_R25_MSK <= VDPP1DATA(1);
-                            FF_R25_SP2 <= VDPP1DATA(0);
-                        WHEN "11010" =>     -- #26
-                            FF_R26_H_SCROLL <= VDPP1DATA( 5 DOWNTO 0 );
-                        WHEN "11011" =>     -- #27
-                            REG_R27_H_SCROLL <= VDPP1DATA( 2 DOWNTO 0 );
-                        WHEN OTHERS => NULL;
-                    END CASE;
-                ELSE
-                    -- REGISTERS FOR VDP COMMAND
-                    VDPCMDREGNUM <= VDPREGPTR(3 DOWNTO 0);
-                    VDPCMDREGDATA <= VDPP1DATA;
-                    VDPCMDREGWRREQ <= NOT VDPCMDREGWRACK;
-                END IF;
-            END IF;
+                VDPREGPTR <= (OTHERS => '0');
+                VDPVRAMWRREQ <= '0';
+                VDPVRAMRDREQ <= '0';
+                VDPVRAMADDRSETREQ <= '0';
+                VDPVRAMACCESSADDRTMP <= (OTHERS => '0');
+                VDPVRAMACCESSDATA <= (OTHERS => '0');
+                VDPR0DISPNUMX <= (OTHERS => '0');
 
+                REG_R0_HSYNC_INT_EN <= '0';
+                FF_R1_DISP_MODE <= (OTHERS => '0');
+                REG_R1_SP_SIZE <= '0';
+                REG_R1_SP_ZOOM <= '0';
+                REG_R1_VSYNC_INT_EN <= '0';
+                FF_R1_DISP_ON <= '0';
+                FF_R2_PT_NAM_ADDR <= (OTHERS => '0');
+                REG_R12_BLINK_MODE <= (OTHERS => '0');
+                REG_R13_BLINK_PERIOD <= (OTHERS => '0');
+                REG_R7_FRAME_COL <= (OTHERS => '0');
+                REG_R8_SP_OFF <= '1';
+                REG_R8_COL0_ON <= '0';
+                REG_R9_PAL_MODE <= FORCED_V_MODE;
+                FF_R9_2PAGE_MODE <= '0';
+                REG_R9_INTERLACE_MODE <= '0';
+                REG_R9_Y_DOTS <= '0';
+                VDPR15STATUSREGNUM <= (OTHERS => '0');
+                VDPR16PALNUM <= (OTHERS => '0');
+                VDPR17REGNUM <= (OTHERS => '0');
+                VDPR17INCREGNUM <= '0';
+                REG_R18_ADJ <= (OTHERS => '0');
+                REG_R19_HSYNC_INT_LINE <= (OTHERS => '0');
+                REG_R23_VSTART_LINE <= (OTHERS => '0');
+                REG_R25_CMD <= '0';
+                REG_R25_YAE <= '0';
+                REG_R25_YJK <= '0';
+                REG_R25_MSK <= '0';
+                FF_R25_SP2 <= '0';
+                FF_R26_H_SCROLL     <= (OTHERS => '0');
+                REG_R27_H_SCROLL    <= (OTHERS => '0');
+                VDPCMDREGNUM <= (OTHERS => '0');
+                VDPCMDREGDATA <= (OTHERS => '0');
+                VDPCMDREGWRREQ <= '0';
+                VDPCMDTRCLRREQ <= '0';
+
+                -- PALETTE
+                PALETTEDATARB_IN <= (OTHERS => '0');
+                PALETTEDATAG_IN  <= (OTHERS => '0');
+                FF_PALETTE_WR_REQ <= '0';
+                PALETTEWRNUM <= (OTHERS => '0');
+	    ELSE
+                IF (REQ = '1' AND WRT = '0') THEN
+                    -- READ REQUEST
+                    CASE ADR(1 DOWNTO 0) IS
+                    WHEN "00"       => -- PORT#0 (0x98): READ VRAM
+                        VDPVRAMRDREQ <= NOT VDPVRAMRDACK;
+                    WHEN "01"       => -- PORT#1 (0x99): READ STATUS REGISTER
+                        VDPP1IS1STBYTE <= '1';
+                        CASE VDPR15STATUSREGNUM IS
+                        WHEN "0000" => -- READ S#0
+                            FF_SPVDPS0RESETREQ <= NOT SPVDPS0RESETACK;
+                        WHEN "0001" => -- READ S#1
+                            NULL;
+                        WHEN "0101" => -- READ S#5
+                            SPVDPS5RESETREQ <= NOT SPVDPS5RESETACK;
+                        WHEN "0111" => -- READ S#7: THE COLOR REGISTER
+                            VDPCMDTRCLRREQ <= NOT VDPCMDTRCLRACK;
+                        WHEN OTHERS =>
+                            NULL;
+                        END CASE;
+                    WHEN OTHERS => -- PORT#3: NOT SUPPORTED IN READ MODE
+                        NULL;
+                    END CASE;
+
+                ELSIF (REQ = '1' AND WRT = '1') THEN
+                    -- WRITE REQUEST
+                    CASE ADR(1 DOWNTO 0) IS
+                        WHEN "00"       => -- PORT#0 (0x98): WRITE VRAM
+                            VDPVRAMACCESSDATA <= DBO;
+                            VDPVRAMWRREQ <= NOT VDPVRAMWRACK;
+
+                        WHEN "01"       => -- PORT#1 (0x99): REGISTER WRITE OR VRAM ADDR SETUP
+                            IF(VDPP1IS1STBYTE = '1') THEN
+                                -- IT IS THE FIRST BYTE; BUFFER IT
+                                VDPP1IS1STBYTE <= '0';
+                                VDPP1DATA      <= DBO;
+                            ELSE
+                                -- IT IS THE SECOND BYTE; PROCESS BOTH BYTES
+                                VDPP1IS1STBYTE <= '1';
+                                CASE DBO( 7 DOWNTO 6 ) IS
+                                    WHEN "01" =>    -- SET VRAM ACCESS ADDRESS(WRITE)
+                                        VDPVRAMACCESSADDRTMP( 7 DOWNTO 0 ) <= VDPP1DATA( 7 DOWNTO 0);
+                                        VDPVRAMACCESSADDRTMP(13 DOWNTO 8 ) <= DBO( 5 DOWNTO 0);
+                                        VDPVRAMADDRSETREQ <= NOT VDPVRAMADDRSETACK;
+                                    WHEN "00" =>    -- SET VRAM ACCESS ADDRESS(READ)
+                                        VDPVRAMACCESSADDRTMP( 7 DOWNTO 0 ) <= VDPP1DATA( 7 DOWNTO 0);
+                                        VDPVRAMACCESSADDRTMP(13 DOWNTO 8 ) <= DBO( 5 DOWNTO 0);
+                                        VDPVRAMADDRSETREQ <= NOT VDPVRAMADDRSETACK;
+                                        VDPVRAMRDREQ <= NOT VDPVRAMRDACK;
+                                    WHEN "10" =>    -- DIRECT REGISTER SELECTION
+                                        VDPREGPTR <= DBO( 5 DOWNTO 0);
+                                        VDPREGWRPULSE <= '1';
+                                    WHEN "11" =>    -- DIRECT REGISTER SELECTION ??
+                                        VDPREGPTR <= DBO( 5 DOWNTO 0);
+                                        VDPREGWRPULSE <= '1';
+                                    WHEN OTHERS =>
+                                        NULL;
+                                END CASE;
+                            END IF;
+
+                        WHEN "10"       => -- PORT#2: PALETTE WRITE
+                            IF(VDPP2IS1STBYTE = '1') THEN
+                                PALETTEDATARB_IN <= DBO;
+                                VDPP2IS1STBYTE <= '0';
+                            ELSE
+                                -- pbgÍRGBÌf[^ªµÁ½ÉêxÉ«·¦éB
+                                -- (À@Å®ìðmFµ½)
+                                PALETTEDATAG_IN <= DBO;
+                                PALETTEWRNUM <= VDPR16PALNUM;
+                                FF_PALETTE_WR_REQ <= NOT FF_PALETTE_WR_ACK;
+                                VDPP2IS1STBYTE <= '1';
+                                VDPR16PALNUM <= VDPR16PALNUM + 1;
+                            END IF;
+
+                        WHEN "11" => -- PORT#3: INDIRECT REGISTER WRITE
+                            IF( VDPR17REGNUM /= "010001" ) THEN
+                                -- REGISTER 17 CAN NOT BE MODIFIED. ALL OTHERS ARE OK
+                                VDPREGWRPULSE <= '1';
+                            END IF;
+                            VDPP1DATA <= DBO;
+                            VDPREGPTR <= VDPR17REGNUM;
+                            IF( VDPR17INCREGNUM = '1' ) THEN
+                                VDPR17REGNUM <= VDPR17REGNUM + 1;
+                            END IF;
+
+                        WHEN OTHERS =>
+                            NULL;
+                    END CASE;
+
+                ELSIF (VDPREGWRPULSE = '1') THEN
+                    -- WRITE TO REGISTER (IF PREVIOUSLY REQUESTED)
+                    VDPREGWRPULSE <= '0';
+                    IF ( VDPREGPTR(5) = '0') THEN
+                        -- IT IS A NOT A COMMAND ENGINE REGISTER:
+                        CASE VDPREGPTR(4 DOWNTO 0) IS
+                            WHEN "00000" =>     -- #00
+                                VDPR0DISPNUMX <= VDPP1DATA(3 DOWNTO 1);
+                                REG_R0_HSYNC_INT_EN <= VDPP1DATA(4);
+                            WHEN "00001" =>     -- #01
+                                REG_R1_SP_ZOOM      <= VDPP1DATA(0);
+                                REG_R1_SP_SIZE      <= VDPP1DATA(1);
+                                FF_R1_DISP_MODE     <= VDPP1DATA(4 DOWNTO 3);
+                                REG_R1_VSYNC_INT_EN <= VDPP1DATA(5);
+                                FF_R1_DISP_ON       <= VDPP1DATA(6);
+                            WHEN "00010" =>     -- #02
+                                FF_R2_PT_NAM_ADDR   <= VDPP1DATA( 6 DOWNTO 0);
+                            WHEN "00011" =>     -- #03
+                                REG_R10R3_COL_ADDR(7 DOWNTO 0) <= VDPP1DATA( 7 DOWNTO 0);
+                            WHEN "00100" =>     -- #04
+                                REG_R4_PT_GEN_ADDR  <= VDPP1DATA( 5 DOWNTO 0);
+                            WHEN "00101" =>     -- #05
+                                REG_R11R5_SP_ATR_ADDR(7 DOWNTO 0) <= VDPP1DATA;
+                            WHEN "00110" =>     -- #06
+                                REG_R6_SP_GEN_ADDR  <= VDPP1DATA( 5 DOWNTO 0);
+                            WHEN "00111" =>     -- #07
+                                REG_R7_FRAME_COL    <= VDPP1DATA( 7 DOWNTO 0 );
+                            WHEN "01000" =>     -- #08
+                                REG_R8_SP_OFF       <= VDPP1DATA(1);
+                                REG_R8_COL0_ON      <= VDPP1DATA(5);
+                            WHEN "01001" =>     -- #09
+                                REG_R9_PAL_MODE         <= VDPP1DATA(1);
+                                FF_R9_2PAGE_MODE        <= VDPP1DATA(2);
+                                REG_R9_INTERLACE_MODE   <= VDPP1DATA(3);
+                                REG_R9_Y_DOTS           <= VDPP1DATA(7);
+                            WHEN "01010" =>     -- #10
+                                REG_R10R3_COL_ADDR(10 DOWNTO 8) <= VDPP1DATA( 2 DOWNTO 0);
+                            WHEN "01011" =>     -- #11
+                                REG_R11R5_SP_ATR_ADDR( 9 DOWNTO 8) <= VDPP1DATA( 1 DOWNTO 0);
+                            WHEN "01100" =>     -- #12
+                                REG_R12_BLINK_MODE  <= VDPP1DATA;
+                            WHEN "01101" =>     -- #13
+                                REG_R13_BLINK_PERIOD    <= VDPP1DATA;
+                            WHEN "01110" =>     -- #14
+                                VDPVRAMACCESSADDRTMP( 16 DOWNTO 14 ) <= VDPP1DATA( 2 DOWNTO 0);
+                                VDPVRAMADDRSETREQ <= NOT VDPVRAMADDRSETACK;
+                            WHEN "01111" =>     -- #15
+                                VDPR15STATUSREGNUM <= VDPP1DATA( 3 DOWNTO 0);
+                            WHEN "10000" =>     -- #16
+                                VDPR16PALNUM <= VDPP1DATA( 3 DOWNTO 0 );
+                                VDPP2IS1STBYTE <= '1';
+                            WHEN "10001" =>     -- #17
+                                VDPR17REGNUM <= VDPP1DATA( 5 DOWNTO 0 );
+                                VDPR17INCREGNUM <= NOT VDPP1DATA(7);
+                            WHEN "10010" =>     -- #18
+                                REG_R18_ADJ     <= VDPP1DATA;
+                            WHEN "10011" =>     -- #19
+                                REG_R19_HSYNC_INT_LINE  <= VDPP1DATA;
+                            WHEN "10111" =>     -- #23
+                                REG_R23_VSTART_LINE     <= VDPP1DATA;
+                            WHEN "11001" =>     -- #25
+                                REG_R25_CMD <= VDPP1DATA(6);
+                                REG_R25_YAE <= VDPP1DATA(4);
+                                REG_R25_YJK <= VDPP1DATA(3);
+                                REG_R25_MSK <= VDPP1DATA(1);
+                                FF_R25_SP2 <= VDPP1DATA(0);
+                            WHEN "11010" =>     -- #26
+                                FF_R26_H_SCROLL <= VDPP1DATA( 5 DOWNTO 0 );
+                            WHEN "11011" =>     -- #27
+                                REG_R27_H_SCROLL <= VDPP1DATA( 2 DOWNTO 0 );
+                            WHEN OTHERS => NULL;
+                        END CASE;
+                    ELSE
+                        -- REGISTERS FOR VDP COMMAND
+                        VDPCMDREGNUM <= VDPREGPTR(3 DOWNTO 0);
+                        VDPCMDREGDATA <= VDPP1DATA;
+                        VDPCMDREGWRREQ <= NOT VDPCMDREGWRACK;
+                    END IF;
+                END IF;
+
+            END IF;
         END IF;
     END PROCESS;
 END RTL;
