@@ -71,23 +71,27 @@ begin
 
   begin
 
-    if (reset = '1') then
+    if (rising_edge(clk21m)) then
 
-      MapBank0   <= X"03";
-      MapBank1   <= X"02";
-      MapBank2   <= X"01";
-      MapBank3   <= X"00";
+      if (reset = '1') then
 
-    elsif (clk21m'event and clk21m = '1') then
+        MapBank0   <= X"03";
+        MapBank1   <= X"02";
+        MapBank2   <= X"01";
+        MapBank3   <= X"00";
 
-      -- I/O port access on FC-FFh ... Mapper bank register write
-      if (req = '1' and mem = '0' and wrt = '1') then
-        case adr(1 downto 0) is
-          when "00"   => MapBank0 <= dbo;
-          when "01"   => MapBank1 <= dbo;
-          when "10"   => MapBank2 <= dbo;
-          when others => MapBank3 <= dbo;
-        end case;
+      else
+
+        -- I/O port access on FC-FFh ... Mapper bank register write
+        if (req = '1' and mem = '0' and wrt = '1') then
+          case adr(1 downto 0) is
+            when "00"   => MapBank0 <= dbo;
+            when "01"   => MapBank1 <= dbo;
+            when "10"   => MapBank2 <= dbo;
+            when others => MapBank3 <= dbo;
+          end case;
+        end if;
+
       end if;
 
     end if;

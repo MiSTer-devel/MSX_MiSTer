@@ -161,20 +161,22 @@ BEGIN
     -- STATE
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF (RESET = '1') THEN
-            FF_SSTATE <= SSTATE_A;
-        ELSIF (CLK21M'EVENT AND CLK21M = '1') THEN
-            IF(     (VCOUNTERIN = 0) OR
-                    (VCOUNTERIN = 12) OR
-                    (VCOUNTERIN = W_STATE_A1_FULL) OR
-                    (VCOUNTERIN = W_STATE_A2_FULL) )THEN
+        IF (CLK21M'EVENT AND CLK21M = '1') THEN
+            IF (RESET = '1') THEN
                 FF_SSTATE <= SSTATE_A;
-            ELSIF(  (VCOUNTERIN = 6) OR
-                    (VCOUNTERIN = W_STATE_B_FULL) )THEN
-                FF_SSTATE <= SSTATE_B;
-            ELSIF(  (VCOUNTERIN = 18) OR
-                    (VCOUNTERIN = W_STATE_C_FULL) )THEN
-                FF_SSTATE <= SSTATE_C;
+	    ELSE
+                IF(     (VCOUNTERIN = 0) OR
+                        (VCOUNTERIN = 12) OR
+                        (VCOUNTERIN = W_STATE_A1_FULL) OR
+                        (VCOUNTERIN = W_STATE_A2_FULL) )THEN
+                    FF_SSTATE <= SSTATE_A;
+                ELSIF(  (VCOUNTERIN = 6) OR
+                        (VCOUNTERIN = W_STATE_B_FULL) )THEN
+                    FF_SSTATE <= SSTATE_B;
+                ELSIF(  (VCOUNTERIN = 18) OR
+                        (VCOUNTERIN = W_STATE_C_FULL) )THEN
+                    FF_SSTATE <= SSTATE_C;
+                END IF;
             END IF;
         END IF;
     END PROCESS;
@@ -182,26 +184,28 @@ BEGIN
     -- GENERATE H SYNC PULSE
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_HSYNC_N <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( FF_SSTATE = SSTATE_A )THEN
-                IF( (HCOUNTERIN = 1) OR (HCOUNTERIN = CLOCKS_PER_LINE/2+1) ) THEN
-                    FF_HSYNC_N <= '0';                       -- PULSE ON
-                ELSIF( (HCOUNTERIN = 51) OR (HCOUNTERIN = CLOCKS_PER_LINE/2+51) ) THEN
-                    FF_HSYNC_N <= '1';                       -- PULSE OFF
-                END IF;
-            ELSIF( FF_SSTATE = SSTATE_B )THEN
-                IF( (HCOUNTERIN = CLOCKS_PER_LINE-100+1 ) OR (HCOUNTERIN = CLOCKS_PER_LINE/2-100+1) ) THEN
-                    FF_HSYNC_N <= '0';                       -- PULSE ON
-                ELSIF( (HCOUNTERIN = 1) OR (HCOUNTERIN = CLOCKS_PER_LINE/2+1) ) THEN
-                    FF_HSYNC_N <= '1';                       -- PULSE OFF
-                END IF;
-            ELSIF( FF_SSTATE = SSTATE_C )THEN
-                IF( HCOUNTERIN = 1 )THEN
-                    FF_HSYNC_N <= '0';                       -- PULSE ON
-                ELSIF( HCOUNTERIN = 101 )THEN
-                    FF_HSYNC_N <= '1';                       -- PULSE OFF
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                FF_HSYNC_N <= '0';
+	    ELSE
+                IF( FF_SSTATE = SSTATE_A )THEN
+                    IF( (HCOUNTERIN = 1) OR (HCOUNTERIN = CLOCKS_PER_LINE/2+1) ) THEN
+                        FF_HSYNC_N <= '0';                       -- PULSE ON
+                    ELSIF( (HCOUNTERIN = 51) OR (HCOUNTERIN = CLOCKS_PER_LINE/2+51) ) THEN
+                        FF_HSYNC_N <= '1';                       -- PULSE OFF
+                    END IF;
+                ELSIF( FF_SSTATE = SSTATE_B )THEN
+                    IF( (HCOUNTERIN = CLOCKS_PER_LINE-100+1 ) OR (HCOUNTERIN = CLOCKS_PER_LINE/2-100+1) ) THEN
+                        FF_HSYNC_N <= '0';                       -- PULSE ON
+                    ELSIF( (HCOUNTERIN = 1) OR (HCOUNTERIN = CLOCKS_PER_LINE/2+1) ) THEN
+                        FF_HSYNC_N <= '1';                       -- PULSE OFF
+                    END IF;
+                ELSIF( FF_SSTATE = SSTATE_C )THEN
+                    IF( HCOUNTERIN = 1 )THEN
+                        FF_HSYNC_N <= '0';                       -- PULSE ON
+                    ELSIF( HCOUNTERIN = 101 )THEN
+                        FF_HSYNC_N <= '1';                       -- PULSE OFF
+                    END IF;
                 END IF;
             END IF;
         END IF;

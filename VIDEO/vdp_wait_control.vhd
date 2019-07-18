@@ -135,66 +135,66 @@ BEGIN
     PROCESS( RESET, CLK21M )
     BEGIN
         IF( CLK21M'EVENT AND CLK21M = '1' )THEN
-        IF( RESET = '1' )THEN
-            FF_WAIT_CNT <= (OTHERS => '0');
-            ELSE
-            IF( DRIVE = '1' )THEN
-                -- 50Hz (PAL)
-                IF( VDPR9PALMODE = '1' )THEN
-                    -- Display On
-                    IF( REG_R1_DISP_ON = '1' )THEN
-                        -- Sprite On
-                        IF( REG_R8_SP_OFF = '0' )THEN
-                            -- 212 Lines
-                            IF( REG_R9_Y_DOTS = '1' )THEN
-                                FF_WAIT_CNT <= ('0' & FF_WAIT_CNT(14 DOWNTO  0)) + C_WAIT_TABLE_501( CONV_INTEGER( VDP_COMMAND ) );
-                            -- 192 Lines
-                            ELSE
-                                FF_WAIT_CNT <= ('0' & FF_WAIT_CNT(14 DOWNTO  0)) + C_WAIT_TABLE_502( CONV_INTEGER( VDP_COMMAND ) );
-                            END IF;
-                        -- Sprite Off
-                        ELSE
-                            -- 212 Lines
-                            IF( REG_R9_Y_DOTS = '1' )THEN
-                                FF_WAIT_CNT <= ('0' & FF_WAIT_CNT(14 DOWNTO  0)) + C_WAIT_TABLE_503( CONV_INTEGER( VDP_COMMAND ) );
-                            -- 192 Lines
-                            ELSE
-                                FF_WAIT_CNT <= ('0' & FF_WAIT_CNT(14 DOWNTO  0)) + C_WAIT_TABLE_504( CONV_INTEGER( VDP_COMMAND ) );
-                            END IF;
-                        END IF;
-                    -- Display Off (Blank)
-                    ELSE
-                        FF_WAIT_CNT <= ('0' & FF_WAIT_CNT(14 DOWNTO  0)) + C_WAIT_TABLE_505( CONV_INTEGER( VDP_COMMAND ) );
-                    END IF;
-                -- 60Hz (NTSC)
+            IF( RESET = '1' )THEN
+                FF_WAIT_CNT <= (OTHERS => '0');
                 ELSE
-                    -- Display On
-                    IF( REG_R1_DISP_ON = '1' )THEN
-                        -- Sprite On
-                        IF( REG_R8_SP_OFF = '0' )THEN
-                            -- 212 Lines
-                            IF( REG_R9_Y_DOTS = '1' )THEN
-                                FF_WAIT_CNT <= ('0' & FF_WAIT_CNT(14 DOWNTO  0)) + C_WAIT_TABLE_601( CONV_INTEGER( VDP_COMMAND ) );
-                            -- 192 Lines
+                IF( DRIVE = '1' )THEN
+                    -- 50Hz (PAL)
+                    IF( VDPR9PALMODE = '1' )THEN
+                        -- Display On
+                        IF( REG_R1_DISP_ON = '1' )THEN
+                            -- Sprite On
+                            IF( REG_R8_SP_OFF = '0' )THEN
+                                -- 212 Lines
+                                IF( REG_R9_Y_DOTS = '1' )THEN
+                                    FF_WAIT_CNT <= ('0' & FF_WAIT_CNT(14 DOWNTO  0)) + C_WAIT_TABLE_501( CONV_INTEGER( VDP_COMMAND ) );
+                                -- 192 Lines
+                                ELSE
+                                    FF_WAIT_CNT <= ('0' & FF_WAIT_CNT(14 DOWNTO  0)) + C_WAIT_TABLE_502( CONV_INTEGER( VDP_COMMAND ) );
+                                END IF;
+                            -- Sprite Off
                             ELSE
-                                FF_WAIT_CNT <= ('0' & FF_WAIT_CNT(14 DOWNTO  0)) + C_WAIT_TABLE_602( CONV_INTEGER( VDP_COMMAND ) );
+                                -- 212 Lines
+                                IF( REG_R9_Y_DOTS = '1' )THEN
+                                    FF_WAIT_CNT <= ('0' & FF_WAIT_CNT(14 DOWNTO  0)) + C_WAIT_TABLE_503( CONV_INTEGER( VDP_COMMAND ) );
+                                -- 192 Lines
+                                ELSE
+                                    FF_WAIT_CNT <= ('0' & FF_WAIT_CNT(14 DOWNTO  0)) + C_WAIT_TABLE_504( CONV_INTEGER( VDP_COMMAND ) );
+                                END IF;
                             END IF;
-                        -- Sprite Off
+                        -- Display Off (Blank)
                         ELSE
-                            -- 212 Lines
-                            IF( REG_R9_Y_DOTS = '1' )THEN
-                                FF_WAIT_CNT <= ('0' & FF_WAIT_CNT(14 DOWNTO  0)) + C_WAIT_TABLE_603( CONV_INTEGER( VDP_COMMAND ) );
-                            -- 192 Lines
-                            ELSE
-                                FF_WAIT_CNT <= ('0' & FF_WAIT_CNT(14 DOWNTO  0)) + C_WAIT_TABLE_604( CONV_INTEGER( VDP_COMMAND ) );
-                            END IF;
+                            FF_WAIT_CNT <= ('0' & FF_WAIT_CNT(14 DOWNTO  0)) + C_WAIT_TABLE_505( CONV_INTEGER( VDP_COMMAND ) );
                         END IF;
-                    -- Display Off (Blank)
+                    -- 60Hz (NTSC)
                     ELSE
-                        FF_WAIT_CNT <= ('0' & FF_WAIT_CNT(14 DOWNTO  0)) + C_WAIT_TABLE_605( CONV_INTEGER( VDP_COMMAND ) );
+                        -- Display On
+                        IF( REG_R1_DISP_ON = '1' )THEN
+                            -- Sprite On
+                            IF( REG_R8_SP_OFF = '0' )THEN
+                                -- 212 Lines
+                                IF( REG_R9_Y_DOTS = '1' )THEN
+                                    FF_WAIT_CNT <= ('0' & FF_WAIT_CNT(14 DOWNTO  0)) + C_WAIT_TABLE_601( CONV_INTEGER( VDP_COMMAND ) );
+                                -- 192 Lines
+                                ELSE
+                                    FF_WAIT_CNT <= ('0' & FF_WAIT_CNT(14 DOWNTO  0)) + C_WAIT_TABLE_602( CONV_INTEGER( VDP_COMMAND ) );
+                                END IF;
+                            -- Sprite Off
+                            ELSE
+                                -- 212 Lines
+                                IF( REG_R9_Y_DOTS = '1' )THEN
+                                    FF_WAIT_CNT <= ('0' & FF_WAIT_CNT(14 DOWNTO  0)) + C_WAIT_TABLE_603( CONV_INTEGER( VDP_COMMAND ) );
+                                -- 192 Lines
+                                ELSE
+                                    FF_WAIT_CNT <= ('0' & FF_WAIT_CNT(14 DOWNTO  0)) + C_WAIT_TABLE_604( CONV_INTEGER( VDP_COMMAND ) );
+                                END IF;
+                            END IF;
+                        -- Display Off (Blank)
+                        ELSE
+                            FF_WAIT_CNT <= ('0' & FF_WAIT_CNT(14 DOWNTO  0)) + C_WAIT_TABLE_605( CONV_INTEGER( VDP_COMMAND ) );
+                        END IF;
                     END IF;
                 END IF;
-            END IF;
             END IF;
         END IF;
     END PROCESS;

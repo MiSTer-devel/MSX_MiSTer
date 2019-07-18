@@ -97,15 +97,17 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            FF_VSYNC_INT_N <= '1';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( CLR_VSYNC_INT = '1' )THEN
-                -- V-BLANKING INTERRUPT CLEAR
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
                 FF_VSYNC_INT_N <= '1';
-            ELSIF( W_VSYNC_INTR_TIMING = '1' AND V_BLANKING_START = '1' )THEN
-                -- V-BLANKING INTERRUPT REQUEST
-                FF_VSYNC_INT_N <= '0';
+	    ELSE
+                IF( CLR_VSYNC_INT = '1' )THEN
+                    -- V-BLANKING INTERRUPT CLEAR
+                    FF_VSYNC_INT_N <= '1';
+                ELSIF( W_VSYNC_INTR_TIMING = '1' AND V_BLANKING_START = '1' )THEN
+                    -- V-BLANKING INTERRUPT REQUEST
+                    FF_VSYNC_INT_N <= '0';
+                END IF;
             END IF;
         END IF;
     END PROCESS;
@@ -115,15 +117,17 @@ BEGIN
     --------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF (RESET = '1') THEN
-            FF_HSYNC_INT_N <= '1';
-        ELSIF (CLK21M'EVENT AND CLK21M = '1') THEN
-            IF( CLR_HSYNC_INT = '1' OR (W_VSYNC_INTR_TIMING = '1' AND V_BLANKING_START = '1') )THEN
-                -- H-BLANKING INTERRUPT CLEAR
+        IF (CLK21M'EVENT AND CLK21M = '1') THEN
+            IF (RESET = '1') THEN
                 FF_HSYNC_INT_N <= '1';
-            ELSIF( ACTIVE_LINE = '1' AND Y_CNT = REG_R19_HSYNC_INT_LINE )THEN
-                -- H-BLANKING INTERRUPT REQUEST
-                FF_HSYNC_INT_N <= '0';
+	    ELSE
+                IF( CLR_HSYNC_INT = '1' OR (W_VSYNC_INTR_TIMING = '1' AND V_BLANKING_START = '1') )THEN
+                    -- H-BLANKING INTERRUPT CLEAR
+                    FF_HSYNC_INT_N <= '1';
+                ELSIF( ACTIVE_LINE = '1' AND Y_CNT = REG_R19_HSYNC_INT_LINE )THEN
+                    -- H-BLANKING INTERRUPT REQUEST
+                    FF_HSYNC_INT_N <= '0';
+                END IF;
             END IF;
         END IF;
     END PROCESS;

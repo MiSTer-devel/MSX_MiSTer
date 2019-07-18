@@ -38,9 +38,9 @@ library ieee;
 
 entity scc_wave_mul is
     port(
-        a           : in    std_logic_vector(  7 downto 0 );    -- 8bit ÇQÇÃï‚êî
-        b           : in    std_logic_vector(  3 downto 0 );    -- 4bit ÉoÉCÉiÉä
-        c           : out   std_logic_vector( 11 downto 0 )     -- 12bit ÇQÇÃï‚êî
+        a           : in    std_logic_vector(  7 downto 0 );    -- 8bit ÔøΩQÔøΩÃï‚êî
+        b           : in    std_logic_vector(  3 downto 0 );    -- 4bit ÔøΩoÔøΩCÔøΩiÔøΩÔøΩ
+        c           : out   std_logic_vector( 11 downto 0 )     -- 12bit ÔøΩQÔøΩÃï‚êî
     );
 end scc_wave_mul;
 
@@ -58,9 +58,9 @@ library ieee;
 
 entity scc_mix_mul is
     port(
-        a           : in    std_logic_vector( 15 downto 0 );    -- 16bit ÇQÇÃï‚êî
-        b           : in    std_logic_vector(  2 downto 0 );    -- 3bit ÉoÉCÉiÉä
-        c           : out   std_logic_vector( 18 downto 0 )     -- 19bit ÇQÇÃï‚êî
+        a           : in    std_logic_vector( 15 downto 0 );    -- 16bit ÔøΩQÔøΩÃï‚êî
+        b           : in    std_logic_vector(  2 downto 0 );    -- 3bit ÔøΩoÔøΩCÔøΩiÔøΩÔøΩ
+        c           : out   std_logic_vector( 18 downto 0 )     -- 19bit ÔøΩQÔøΩÃï‚êî
     );
 end scc_mix_mul;
 
@@ -105,9 +105,9 @@ architecture rtl of scc_wave is
 
     component scc_wave_mul
         port(
-            a   : in    std_logic_vector(  7 downto 0 );    -- 8bit ÇQÇÃï‚êî
-            b   : in    std_logic_vector(  3 downto 0 );    -- 4bit ÉoÉCÉiÉä
-            c   : out   std_logic_vector( 11 downto 0 )     -- 12bit ÇQÇÃï‚êî
+            a   : in    std_logic_vector(  7 downto 0 );    -- 8bit ÔøΩQÔøΩÃï‚êî
+            b   : in    std_logic_vector(  3 downto 0 );    -- 4bit ÔøΩoÔøΩCÔøΩiÔøΩÔøΩ
+            c   : out   std_logic_vector( 11 downto 0 )     -- 12bit ÔøΩQÔøΩÃï‚êî
         );
     end component;
 
@@ -166,65 +166,69 @@ begin
     ----------------------------------------------------------------
     process(clk21m, reset)
     begin
-        if( reset = '1' )then
-            ff_req_dl       <= '0';
+        if (rising_edge(clk21m)) then
 
-            reg_freq_ch_a   <= (others => '0');
-            reg_freq_ch_b   <= (others => '0');
-            reg_freq_ch_c   <= (others => '0');
-            reg_freq_ch_d   <= (others => '0');
-            reg_freq_ch_e   <= (others => '0');
+            if( reset = '1' )then
+                ff_req_dl       <= '0';
 
-            reg_vol_ch_a    <= (others => '0');
-            reg_vol_ch_b    <= (others => '0');
-            reg_vol_ch_c    <= (others => '0');
-            reg_vol_ch_d    <= (others => '0');
-            reg_vol_ch_e    <= (others => '0');
+                reg_freq_ch_a   <= (others => '0');
+                reg_freq_ch_b   <= (others => '0');
+                reg_freq_ch_c   <= (others => '0');
+                reg_freq_ch_d   <= (others => '0');
+                reg_freq_ch_e   <= (others => '0');
 
-            reg_ch_sel      <= (others => '0');
-            reg_mode_sel    <= (others => '0');
+                reg_vol_ch_a    <= (others => '0');
+                reg_vol_ch_b    <= (others => '0');
+                reg_vol_ch_c    <= (others => '0');
+                reg_vol_ch_d    <= (others => '0');
+                reg_vol_ch_e    <= (others => '0');
 
-            ff_rst_ch_a     <= '0';
-            ff_rst_ch_b     <= '0';
-            ff_rst_ch_c     <= '0';
-            ff_rst_ch_d     <= '0';
-            ff_rst_ch_e     <= '0';
+                reg_ch_sel      <= (others => '0');
+                reg_mode_sel    <= (others => '0');
 
-        elsif (clk21m'event and clk21m = '1') then
-            -- mapped i/o port access on b8a0-b8afh (9880-988fh) ... register write
-            if( req = '1' and ff_req_dl = '0' and adr(7 downto 5) = "101" and wrt = '1' )then
-                case adr(3 downto 0) is
-                    when "0000" => reg_freq_ch_a(  7 downto 0 ) <= dbo( 7 downto 0 ); ff_rst_ch_a <= reg_mode_sel(5);
-                    when "0001" => reg_freq_ch_a( 11 downto 8 ) <= dbo( 3 downto 0 ); ff_rst_ch_a <= reg_mode_sel(5);
-                    when "0010" => reg_freq_ch_b(  7 downto 0 ) <= dbo( 7 downto 0 ); ff_rst_ch_b <= reg_mode_sel(5);
-                    when "0011" => reg_freq_ch_b( 11 downto 8 ) <= dbo( 3 downto 0 ); ff_rst_ch_b <= reg_mode_sel(5);
-                    when "0100" => reg_freq_ch_c(  7 downto 0 ) <= dbo( 7 downto 0 ); ff_rst_ch_c <= reg_mode_sel(5);
-                    when "0101" => reg_freq_ch_c( 11 downto 8 ) <= dbo( 3 downto 0 ); ff_rst_ch_c <= reg_mode_sel(5);
-                    when "0110" => reg_freq_ch_d(  7 downto 0 ) <= dbo( 7 downto 0 ); ff_rst_ch_d <= reg_mode_sel(5);
-                    when "0111" => reg_freq_ch_d( 11 downto 8 ) <= dbo( 3 downto 0 ); ff_rst_ch_d <= reg_mode_sel(5);
-                    when "1000" => reg_freq_ch_e(  7 downto 0 ) <= dbo( 7 downto 0 ); ff_rst_ch_e <= reg_mode_sel(5);
-                    when "1001" => reg_freq_ch_e( 11 downto 8 ) <= dbo( 3 downto 0 ); ff_rst_ch_e <= reg_mode_sel(5);
-                    when "1010" => reg_vol_ch_a( 3 downto 0 )   <= dbo( 3 downto 0 );
-                    when "1011" => reg_vol_ch_b( 3 downto 0 )   <= dbo( 3 downto 0 );
-                    when "1100" => reg_vol_ch_c( 3 downto 0 )   <= dbo( 3 downto 0 );
-                    when "1101" => reg_vol_ch_d( 3 downto 0 )   <= dbo( 3 downto 0 );
-                    when "1110" => reg_vol_ch_e( 3 downto 0 )   <= dbo( 3 downto 0 );
-                    when others => reg_ch_sel(   4 downto 0 )   <= dbo( 4 downto 0 );
-                end case;
-            elsif (clkena = '1') then
-                ff_rst_ch_a <= '0';
-                ff_rst_ch_b <= '0';
-                ff_rst_ch_c <= '0';
-                ff_rst_ch_d <= '0';
-                ff_rst_ch_e <= '0';
+                ff_rst_ch_a     <= '0';
+                ff_rst_ch_b     <= '0';
+                ff_rst_ch_c     <= '0';
+                ff_rst_ch_d     <= '0';
+                ff_rst_ch_e     <= '0';
+
+            else
+
+                -- mapped i/o port access on b8a0-b8afh (9880-988fh) ... register write
+                if( req = '1' and ff_req_dl = '0' and adr(7 downto 5) = "101" and wrt = '1' )then
+                    case adr(3 downto 0) is
+                        when "0000" => reg_freq_ch_a(  7 downto 0 ) <= dbo( 7 downto 0 ); ff_rst_ch_a <= reg_mode_sel(5);
+                        when "0001" => reg_freq_ch_a( 11 downto 8 ) <= dbo( 3 downto 0 ); ff_rst_ch_a <= reg_mode_sel(5);
+                        when "0010" => reg_freq_ch_b(  7 downto 0 ) <= dbo( 7 downto 0 ); ff_rst_ch_b <= reg_mode_sel(5);
+                        when "0011" => reg_freq_ch_b( 11 downto 8 ) <= dbo( 3 downto 0 ); ff_rst_ch_b <= reg_mode_sel(5);
+                        when "0100" => reg_freq_ch_c(  7 downto 0 ) <= dbo( 7 downto 0 ); ff_rst_ch_c <= reg_mode_sel(5);
+                        when "0101" => reg_freq_ch_c( 11 downto 8 ) <= dbo( 3 downto 0 ); ff_rst_ch_c <= reg_mode_sel(5);
+                        when "0110" => reg_freq_ch_d(  7 downto 0 ) <= dbo( 7 downto 0 ); ff_rst_ch_d <= reg_mode_sel(5);
+                        when "0111" => reg_freq_ch_d( 11 downto 8 ) <= dbo( 3 downto 0 ); ff_rst_ch_d <= reg_mode_sel(5);
+                        when "1000" => reg_freq_ch_e(  7 downto 0 ) <= dbo( 7 downto 0 ); ff_rst_ch_e <= reg_mode_sel(5);
+                        when "1001" => reg_freq_ch_e( 11 downto 8 ) <= dbo( 3 downto 0 ); ff_rst_ch_e <= reg_mode_sel(5);
+                        when "1010" => reg_vol_ch_a( 3 downto 0 )   <= dbo( 3 downto 0 );
+                        when "1011" => reg_vol_ch_b( 3 downto 0 )   <= dbo( 3 downto 0 );
+                        when "1100" => reg_vol_ch_c( 3 downto 0 )   <= dbo( 3 downto 0 );
+                        when "1101" => reg_vol_ch_d( 3 downto 0 )   <= dbo( 3 downto 0 );
+                        when "1110" => reg_vol_ch_e( 3 downto 0 )   <= dbo( 3 downto 0 );
+                        when others => reg_ch_sel(   4 downto 0 )   <= dbo( 4 downto 0 );
+                    end case;
+                elsif (clkena = '1') then
+                    ff_rst_ch_a <= '0';
+                    ff_rst_ch_b <= '0';
+                    ff_rst_ch_c <= '0';
+                    ff_rst_ch_d <= '0';
+                    ff_rst_ch_e <= '0';
+                end if;
+
+                -- mapped i/o port access on b8c0-b8dfh (98e0-98ffh) ... register write
+                if( req = '1' and wrt = '1' and adr(7 downto 5) = "110" )then
+                    reg_mode_sel <= dbo;
+                end if;
+
+                ff_req_dl <= req;
             end if;
-
-            -- mapped i/o port access on b8c0-b8dfh (98e0-98ffh) ... register write
-            if( req = '1' and wrt = '1' and adr(7 downto 5) = "110" )then
-                reg_mode_sel <= dbo;
-            end if;
-
-            ff_req_dl <= req;
         end if;
     end process;
 
@@ -243,71 +247,73 @@ begin
         variable ff_cnt_ch_d : std_logic_vector( 11 downto 0 );
         variable ff_cnt_ch_e : std_logic_vector( 11 downto 0 );
     begin
-        if (reset = '1') then
-            ff_cnt_ch_a := (others => '0');
-            ff_cnt_ch_b := (others => '0');
-            ff_cnt_ch_c := (others => '0');
-            ff_cnt_ch_d := (others => '0');
-            ff_cnt_ch_e := (others => '0');
+        if (rising_edge(clk21m)) then
+            if (reset = '1') then
+                ff_cnt_ch_a := (others => '0');
+                ff_cnt_ch_b := (others => '0');
+                ff_cnt_ch_c := (others => '0');
+                ff_cnt_ch_d := (others => '0');
+                ff_cnt_ch_e := (others => '0');
 
-            ff_ptr_ch_a <= (others => '0');
-            ff_ptr_ch_b <= (others => '0');
-            ff_ptr_ch_c <= (others => '0');
-            ff_ptr_ch_d <= (others => '0');
-            ff_ptr_ch_e <= (others => '0');
-        elsif (clk21m'event and clk21m = '1') then
-            if (clkena = '1') then
+                ff_ptr_ch_a <= (others => '0');
+                ff_ptr_ch_b <= (others => '0');
+                ff_ptr_ch_c <= (others => '0');
+                ff_ptr_ch_d <= (others => '0');
+                ff_ptr_ch_e <= (others => '0');
+            else
+                if (clkena = '1') then
 
-                if (reg_freq_ch_a(11 downto 3) = "000000000" or ff_rst_ch_a = '1') then
-                    ff_ptr_ch_a <= "00000";
-                    ff_cnt_ch_a := reg_freq_ch_a;
-                elsif (ff_cnt_ch_a = x"000") then
-                    ff_ptr_ch_a <= ff_ptr_ch_a + 1;
-                    ff_cnt_ch_a := reg_freq_ch_a;
-                else
-                    ff_cnt_ch_a := ff_cnt_ch_a - 1;
+                    if (reg_freq_ch_a(11 downto 3) = "000000000" or ff_rst_ch_a = '1') then
+                        ff_ptr_ch_a <= "00000";
+                        ff_cnt_ch_a := reg_freq_ch_a;
+                    elsif (ff_cnt_ch_a = x"000") then
+                        ff_ptr_ch_a <= ff_ptr_ch_a + 1;
+                        ff_cnt_ch_a := reg_freq_ch_a;
+                    else
+                        ff_cnt_ch_a := ff_cnt_ch_a - 1;
+                    end if;
+
+                    if (reg_freq_ch_b(11 downto 3) = "000000000" or ff_rst_ch_b = '1') then
+                        ff_ptr_ch_b <= "00000";
+                        ff_cnt_ch_b := reg_freq_ch_b;
+                    elsif (ff_cnt_ch_b = x"000") then
+                        ff_ptr_ch_b <= ff_ptr_ch_b + 1;
+                        ff_cnt_ch_b := reg_freq_ch_b;
+                    else
+                        ff_cnt_ch_b := ff_cnt_ch_b - 1;
+                    end if;
+
+                    if (reg_freq_ch_c(11 downto 3) = "000000000" or ff_rst_ch_c = '1') then
+                        ff_ptr_ch_c <= "00000";
+                        ff_cnt_ch_c := reg_freq_ch_c;
+                    elsif (ff_cnt_ch_c = x"000") then
+                        ff_ptr_ch_c <= ff_ptr_ch_c + 1;
+                        ff_cnt_ch_c := reg_freq_ch_c;
+                    else
+                        ff_cnt_ch_c := ff_cnt_ch_c - 1;
+                    end if;
+
+                    if (reg_freq_ch_d(11 downto 3) = "000000000" or ff_rst_ch_d = '1') then
+                        ff_ptr_ch_d <= "00000";
+                        ff_cnt_ch_d := reg_freq_ch_d;
+                    elsif (ff_cnt_ch_d = x"000") then
+                        ff_ptr_ch_d <= ff_ptr_ch_d + 1;
+                        ff_cnt_ch_d := reg_freq_ch_d;
+                    else
+                        ff_cnt_ch_d := ff_cnt_ch_d - 1;
+                    end if;
+
+                    if (reg_freq_ch_e(11 downto 3) = "000000000" or ff_rst_ch_e = '1') then
+                        ff_ptr_ch_e <= "00000";
+                        ff_cnt_ch_e := reg_freq_ch_e;
+                    elsif (ff_cnt_ch_e = x"000") then
+                        ff_ptr_ch_e <= ff_ptr_ch_e + 1;
+                        ff_cnt_ch_e := reg_freq_ch_e;
+                    else
+                        ff_cnt_ch_e := ff_cnt_ch_e - 1;
+                    end if;
+
                 end if;
-
-                if (reg_freq_ch_b(11 downto 3) = "000000000" or ff_rst_ch_b = '1') then
-                    ff_ptr_ch_b <= "00000";
-                    ff_cnt_ch_b := reg_freq_ch_b;
-                elsif (ff_cnt_ch_b = x"000") then
-                    ff_ptr_ch_b <= ff_ptr_ch_b + 1;
-                    ff_cnt_ch_b := reg_freq_ch_b;
-                else
-                    ff_cnt_ch_b := ff_cnt_ch_b - 1;
-                end if;
-
-                if (reg_freq_ch_c(11 downto 3) = "000000000" or ff_rst_ch_c = '1') then
-                    ff_ptr_ch_c <= "00000";
-                    ff_cnt_ch_c := reg_freq_ch_c;
-                elsif (ff_cnt_ch_c = x"000") then
-                    ff_ptr_ch_c <= ff_ptr_ch_c + 1;
-                    ff_cnt_ch_c := reg_freq_ch_c;
-                else
-                    ff_cnt_ch_c := ff_cnt_ch_c - 1;
-                end if;
-
-                if (reg_freq_ch_d(11 downto 3) = "000000000" or ff_rst_ch_d = '1') then
-                    ff_ptr_ch_d <= "00000";
-                    ff_cnt_ch_d := reg_freq_ch_d;
-                elsif (ff_cnt_ch_d = x"000") then
-                    ff_ptr_ch_d <= ff_ptr_ch_d + 1;
-                    ff_cnt_ch_d := reg_freq_ch_d;
-                else
-                    ff_cnt_ch_d := ff_cnt_ch_d - 1;
-                end if;
-
-                if (reg_freq_ch_e(11 downto 3) = "000000000" or ff_rst_ch_e = '1') then
-                    ff_ptr_ch_e <= "00000";
-                    ff_cnt_ch_e := reg_freq_ch_e;
-                elsif (ff_cnt_ch_e = x"000") then
-                    ff_ptr_ch_e <= ff_ptr_ch_e + 1;
-                    ff_cnt_ch_e := reg_freq_ch_e;
-                else
-                    ff_cnt_ch_e := ff_cnt_ch_e - 1;
-                end if;
-
             end if;
         end if;
     end process;
@@ -334,12 +340,14 @@ begin
     --  wave memory read
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            dbi <= (others => '1');
-        elsif( clk21m'event and clk21m = '1' )then
-            -- mapped i/o port access on b800-bfffh (9800-9fffh) ... wave memory read data
-            if( ff_wave_ce = '1' )then
-                dbi <= ram_dbi;
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                dbi <= (others => '1');
+            else
+                -- mapped i/o port access on b800-bfffh (9800-9fffh) ... wave memory read data
+                if( ff_wave_ce = '1' )then
+                    dbi <= ram_dbi;
+                end if;
             end if;
         end if;
     end process;
@@ -349,16 +357,18 @@ begin
     ----------------------------------------------------------------
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            ff_wave_ce      <= '0';
-            ff_wave_ce_dl   <= '0';
-            ff_wave_dat     <= (others => '0');
-            ff_ch_num_dl    <= (others => '0');
-        elsif( clk21m'event and clk21m = '1' )then
-            ff_wave_ce      <= w_wave_ce;
-            ff_wave_ce_dl   <= ff_wave_ce;
-            ff_wave_dat     <= ram_dbi;
-            ff_ch_num_dl    <= ff_ch_num;
+        if( rising_edge(clk21m) ) then
+            if( reset = '1' )then
+                ff_wave_ce      <= '0';
+                ff_wave_ce_dl   <= '0';
+                ff_wave_dat     <= (others => '0');
+                ff_ch_num_dl    <= (others => '0');
+            else
+                ff_wave_ce      <= w_wave_ce;
+                ff_wave_ce_dl   <= ff_wave_ce;
+                ff_wave_dat     <= ram_dbi;
+                ff_ch_num_dl    <= ff_ch_num;
+            end if;
         end if;
     end process;
 
@@ -389,13 +399,13 @@ begin
         reg_vol_ch_e        when "101",
         (others => '0') when others;
 
-    w_wave  <=  (w_ch_mask and ff_wave_dat);        -- 8bit ìÒÇÃï‚êî
+    w_wave  <=  (w_ch_mask and ff_wave_dat);        -- 8bit ÔøΩÔøΩÃï‚êî
 
     u_mul: scc_wave_mul
     port map (
-        a   => w_wave   ,   -- 8bit ìÒÇÃï‚êî
-        b   => w_ch_vol ,   -- 4bit ÉoÉCÉiÉäÅiïÑçÜñ≥ÇµÅj
-        c   => w_mul        -- 12bit ìÒÇÃï‚êî
+        a   => w_wave   ,   -- 8bit ÔøΩÔøΩÃï‚êî
+        b   => w_ch_vol ,   -- 4bit ÔøΩoÔøΩCÔøΩiÔøΩÔøΩÔøΩiÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩj
+        c   => w_mul        -- 12bit ÔøΩÔøΩÃï‚êî
     );
 
     -- -------------------------------------------------------------
@@ -432,18 +442,20 @@ begin
     --  ff_mix                        X a   X ab  X a-c X a-d X a-e       X 0   X a   X ab  X
     --  wave                                                              X a-e
     --                                                                     ~~~~~
-    --  wave ÇÕÅAff_wave_ce_dl = 0 and ff_ch_num_dl = 0 ÇÃÇ∆Ç´ ff_mix ÇéÊÇËçûÇﬁ
+    --  wave ÔøΩÕÅAff_wave_ce_dl = 0 and ff_ch_num_dl = 0 ÔøΩÃÇ∆ÇÔøΩ ff_mix ÔøΩÔøΩÔøΩÔøΩËçûÔøΩÔøΩ
     ----------------------------------------------------------------
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            ff_ch_num <= "000";
-        elsif( clk21m'event and clk21m = '1' )then
-            if( ff_wave_ce = '0' )then
-                if( ff_ch_num = "101" )then
-                    ff_ch_num <= "000";
-                else
-                    ff_ch_num <= ff_ch_num + 1;
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                ff_ch_num <= "000";
+            else
+                if( ff_wave_ce = '0' )then
+                    if( ff_ch_num = "101" )then
+                        ff_ch_num <= "000";
+                    else
+                        ff_ch_num <= ff_ch_num + 1;
+                    end if;
                 end if;
             end if;
         end if;
@@ -452,14 +464,16 @@ begin
     --  mixer
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            ff_mix  <= (others => '0');
-        elsif( clk21m'event and clk21m = '1' )then
-            if( ff_wave_ce_dl = '0' )then
-                if( ff_ch_num_dl = "000" )then
-                    ff_mix  <=  (others => '0');
-                else
-                    ff_mix  <=  (w_mul(11) & w_mul(11) & w_mul(11) & w_mul) + ff_mix;   -- 15bit ìÒÇÃï‚êî
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                ff_mix  <= (others => '0');
+            else
+                if( ff_wave_ce_dl = '0' )then
+                    if( ff_ch_num_dl = "000" )then
+                        ff_mix  <=  (others => '0');
+                    else
+                        ff_mix  <=  (w_mul(11) & w_mul(11) & w_mul(11) & w_mul) + ff_mix;   -- 15bit ÔøΩÔøΩÃï‚êî
+                    end if;
                 end if;
             end if;
         end if;
@@ -468,14 +482,16 @@ begin
     --  wave out
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            ff_wave <= (others => '0');
-        elsif( clk21m'event and clk21m = '1' )then
-            if( ff_wave_ce_dl = '0' )then
-                if( ff_ch_num_dl = "000" )then
-                    ff_wave <= ff_mix;  -- 15bit ìÒÇÃï‚êî
-                else
-                    --  hold
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                ff_wave <= (others => '0');
+            else
+                if( ff_wave_ce_dl = '0' )then
+                    if( ff_ch_num_dl = "000" )then
+                        ff_wave <= ff_mix;  -- 15bit ÔøΩÔøΩÃï‚êî
+                    else
+                        --  hold
+                    end if;
                 end if;
             end if;
         end if;

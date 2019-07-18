@@ -34,7 +34,7 @@
 -- Fixed kanjiptr2 counter
 --
 -- 05th, April, 2008 modified by t.hara
--- ƒŠƒtƒ@ƒNƒ^ƒŠƒ“ƒOB
+-- ï¿½ï¿½ï¿½tï¿½@ï¿½Nï¿½^ï¿½ï¿½ï¿½ï¿½ï¿½Oï¿½B
 --
 
 library ieee;
@@ -84,37 +84,43 @@ begin
     ----------------------------------------------------------------
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            ack <= '0';
-        elsif( clk21m'event and clk21m = '1' )then
-            if( wrt = '1' )then
-                ack <= req;
-            else
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
                 ack <= '0';
+	    else
+                if( wrt = '1' )then
+                    ack <= req;
+                else
+                    ack <= '0';
+                end if;
             end if;
         end if;
     end process;
 
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            kanjisel    <= '0';
-            updatereq   <= '0';
-        elsif( clk21m'event and clk21m = '1' )then
-            if( req = '1' and wrt = '0' and adr(0) = '1' )then
-                kanjisel    <= adr(1);
-                updatereq   <= not updateack;
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                kanjisel    <= '0';
+                updatereq   <= '0';
+	    else
+                if( req = '1' and wrt = '0' and adr(0) = '1' )then
+                    kanjisel    <= adr(1);
+                    updatereq   <= not updateack;
+                end if;
             end if;
         end if;
     end process;
 
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            updateack <= '0';
-        elsif( clk21m'event and clk21m = '1' )then
-            if( req = '0' and (updatereq /= updateack) )then
-                updateack <= not updateack;
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                updateack <= '0';
+	    else
+                if( req = '0' and (updatereq /= updateack) )then
+                    updateack <= not updateack;
+                end if;
             end if;
         end if;
     end process;
@@ -122,18 +128,20 @@ begin
     -- JIS1 decoding
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            kanjiptr1 <= (others => '0');
-        elsif( clk21m'event and clk21m = '1' )then
-            if( req = '1' and wrt = '1' and adr(1) = '0' )then
-                if( adr(0) = '0' )then
-                    kanjiptr1( 10 downto  5 ) <= dbo( 5 downto  0 );
-                else
-                    kanjiptr1( 16 downto 11 ) <= dbo( 5 downto  0 );
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                kanjiptr1 <= (others => '0');
+	    else
+                if( req = '1' and wrt = '1' and adr(1) = '0' )then
+                    if( adr(0) = '0' )then
+                        kanjiptr1( 10 downto  5 ) <= dbo( 5 downto  0 );
+                    else
+                        kanjiptr1( 16 downto 11 ) <= dbo( 5 downto  0 );
+                    end if;
+                    kanjiptr1(  4 downto  0 ) <= (others => '0');
+                elsif( req = '0' and (updatereq /= updateack) and kanjisel = '0' )then
+                    kanjiptr1(  4 downto  0 ) <= kanjiptr1( 4 downto  0 ) + 1;
                 end if;
-                kanjiptr1(  4 downto  0 ) <= (others => '0');
-            elsif( req = '0' and (updatereq /= updateack) and kanjisel = '0' )then
-                kanjiptr1(  4 downto  0 ) <= kanjiptr1( 4 downto  0 ) + 1;
             end if;
         end if;
     end process;
@@ -141,25 +149,27 @@ begin
     -- JIS2 decoding
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            kanjiptr2 <= (others => '0');
-        elsif( clk21m'event and clk21m = '1' )then
-            if( req = '1' and wrt = '1' and adr(1) = '1' )then
-                if( adr(0) = '0' )then
-                    kanjiptr2( 10 downto  5 ) <= dbo( 5 downto  0 );
-                else
-                    kanjiptr2( 16 downto 11 ) <= dbo( 5 downto  0 );
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                kanjiptr2 <= (others => '0');
+	    else
+                if( req = '1' and wrt = '1' and adr(1) = '1' )then
+                    if( adr(0) = '0' )then
+                        kanjiptr2( 10 downto  5 ) <= dbo( 5 downto  0 );
+                    else
+                        kanjiptr2( 16 downto 11 ) <= dbo( 5 downto  0 );
+                    end if;
+                    kanjiptr2(  4 downto  0 ) <= (others => '0');
+                elsif( req = '0' and (updatereq /= updateack) and kanjisel = '1' )then
+                    kanjiptr2(  4 downto  0 ) <= kanjiptr2( 4 downto  0 ) + 1;
                 end if;
-                kanjiptr2(  4 downto  0 ) <= (others => '0');
-            elsif( req = '0' and (updatereq /= updateack) and kanjisel = '1' )then
-                kanjiptr2(  4 downto  0 ) <= kanjiptr2( 4 downto  0 ) + 1;
             end if;
         end if;
     end process;
 
     process( clk21m )
     begin
-        if( clk21m'event and clk21m = '1' )then
+        if( rising_edge(clk21m) )then
             if( req = '0' and (updatereq /= updateack) )then
                 dbi <= ramdbi;
             end if;

@@ -1159,60 +1159,66 @@ BEGIN
     -- GENERATE BWINDOW
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            BWINDOW_X <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( H_CNT = 200 ) THEN
-                BWINDOW_X <= '1';
-            ELSIF( H_CNT = CLOCKS_PER_LINE-1-1 )THEN
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
                 BWINDOW_X <= '0';
+	    ELSE
+                IF( H_CNT = 200 ) THEN
+                    BWINDOW_X <= '1';
+                ELSIF( H_CNT = CLOCKS_PER_LINE-1-1 )THEN
+                    BWINDOW_X <= '0';
+                END IF;
             END IF;
         END IF;
     END PROCESS;
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            BWINDOW_Y <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( REG_R9_INTERLACE_MODE='0' ) THEN
-                -- NON-INTERLACE
-                -- 3+3+16 = 19
-                IF( (V_CNT = 20*2) OR
-                        ((V_CNT = 524+20*2) AND (VDPR9PALMODE = '0')) OR
-                        ((V_CNT = 626+20*2) AND (VDPR9PALMODE = '1')) ) THEN
-                    BWINDOW_Y <= '1';
-                ELSIF(  ((V_CNT = 524) AND (VDPR9PALMODE = '0')) OR
-                        ((V_CNT = 626) AND (VDPR9PALMODE = '1')) OR
-                         (V_CNT = 0) ) THEN
-                    BWINDOW_Y <= '0';
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                BWINDOW_Y <= '0';
+	    ELSE
+                IF( REG_R9_INTERLACE_MODE='0' ) THEN
+                    -- NON-INTERLACE
+                    -- 3+3+16 = 19
+                    IF( (V_CNT = 20*2) OR
+                            ((V_CNT = 524+20*2) AND (VDPR9PALMODE = '0')) OR
+                            ((V_CNT = 626+20*2) AND (VDPR9PALMODE = '1')) ) THEN
+                        BWINDOW_Y <= '1';
+                    ELSIF(  ((V_CNT = 524) AND (VDPR9PALMODE = '0')) OR
+                            ((V_CNT = 626) AND (VDPR9PALMODE = '1')) OR
+                             (V_CNT = 0) ) THEN
+                        BWINDOW_Y <= '0';
+                    END IF;
+                ELSE
+                    -- INTERLACE
+                    IF( (V_CNT = 20*2) OR
+                            -- +1 SHOULD BE NEEDED.
+                            -- BECAUSE ODD FIELD'S START IS DELAYED HALF LINE.
+                            -- SO THE START POSITION OF DISPLAY TIME SHOULD BE
+                            -- DELAYED MORE HALF LINE.
+                            ((V_CNT = 525+20*2 + 1) AND (VDPR9PALMODE = '0')) OR
+                            ((V_CNT = 625+20*2 + 1) AND (VDPR9PALMODE = '1')) ) THEN
+                        BWINDOW_Y <= '1';
+                    ELSIF(  ((V_CNT = 525) AND (VDPR9PALMODE = '0')) OR
+                            ((V_CNT = 625) AND (VDPR9PALMODE = '1')) OR
+                             (V_CNT = 0) ) THEN
+                        BWINDOW_Y <= '0';
+                    END IF;
                 END IF;
-            ELSE
-                -- INTERLACE
-                IF( (V_CNT = 20*2) OR
-                        -- +1 SHOULD BE NEEDED.
-                        -- BECAUSE ODD FIELD'S START IS DELAYED HALF LINE.
-                        -- SO THE START POSITION OF DISPLAY TIME SHOULD BE
-                        -- DELAYED MORE HALF LINE.
-                        ((V_CNT = 525+20*2 + 1) AND (VDPR9PALMODE = '0')) OR
-                        ((V_CNT = 625+20*2 + 1) AND (VDPR9PALMODE = '1')) ) THEN
-                    BWINDOW_Y <= '1';
-                ELSIF(  ((V_CNT = 525) AND (VDPR9PALMODE = '0')) OR
-                        ((V_CNT = 625) AND (VDPR9PALMODE = '1')) OR
-                         (V_CNT = 0) ) THEN
-                    BWINDOW_Y <= '0';
-                END IF;
-            END IF;
 
+            END IF;
         END IF;
     END PROCESS;
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            BWINDOW <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            BWINDOW <= BWINDOW_X AND BWINDOW_Y;
+        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( RESET = '1' )THEN
+                BWINDOW <= '0';
+	    ELSE
+                BWINDOW <= BWINDOW_X AND BWINDOW_Y;
+            END IF;
         END IF;
     END PROCESS;
 
@@ -1222,20 +1228,22 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            PREWINDOW_X <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( (H_CNT = ("00" & (OFFSET_X + LED_TV_X_NTSC - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00") + 4) & "10") AND REG_R25_YJK = '1' AND CENTERYJK_R25_N = '1' AND VDPR9PALMODE = '0') OR
-                (H_CNT = ("00" & (OFFSET_X + LED_TV_X_NTSC - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00")    ) & "10") AND (REG_R25_YJK = '0' OR CENTERYJK_R25_N = '0') AND VDPR9PALMODE = '0') OR
-                (H_CNT = ("00" & (OFFSET_X + LED_TV_X_PAL - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00") + 4) & "10") AND REG_R25_YJK = '1' AND CENTERYJK_R25_N = '1' AND VDPR9PALMODE = '1') OR
-                (H_CNT = ("00" & (OFFSET_X + LED_TV_X_PAL - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00")    ) & "10") AND (REG_R25_YJK = '0' OR CENTERYJK_R25_N = '0') AND VDPR9PALMODE = '1') )THEN
-                -- HOLD
-            ELSIF( H_CNT(1 DOWNTO 0) = "10") THEN
-                IF( PREDOTCOUNTER_X = "111111111" ) THEN
-                    -- JP: PREDOTCOUNTER_X �� -1����0�ɃJ�E���g�A�b�v���鎞��WINDOW��1�ɂ���
-                    PREWINDOW_X <= '1';
-                ELSIF( PREDOTCOUNTER_X = "011111111" ) THEN
-                    PREWINDOW_X <= '0';
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
+                PREWINDOW_X <= '0';
+	    ELSE
+                IF( (H_CNT = ("00" & (OFFSET_X + LED_TV_X_NTSC - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00") + 4) & "10") AND REG_R25_YJK = '1' AND CENTERYJK_R25_N = '1' AND VDPR9PALMODE = '0') OR
+                    (H_CNT = ("00" & (OFFSET_X + LED_TV_X_NTSC - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00")    ) & "10") AND (REG_R25_YJK = '0' OR CENTERYJK_R25_N = '0') AND VDPR9PALMODE = '0') OR
+                    (H_CNT = ("00" & (OFFSET_X + LED_TV_X_PAL - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00") + 4) & "10") AND REG_R25_YJK = '1' AND CENTERYJK_R25_N = '1' AND VDPR9PALMODE = '1') OR
+                    (H_CNT = ("00" & (OFFSET_X + LED_TV_X_PAL - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00")    ) & "10") AND (REG_R25_YJK = '0' OR CENTERYJK_R25_N = '0') AND VDPR9PALMODE = '1') )THEN
+                    -- HOLD
+                ELSIF( H_CNT(1 DOWNTO 0) = "10") THEN
+                    IF( PREDOTCOUNTER_X = "111111111" ) THEN
+                        -- JP: PREDOTCOUNTER_X �� -1����0�ɃJ�E���g�A�b�v���鎞��WINDOW��1�ɂ���
+                        PREWINDOW_X <= '1';
+                    ELSIF( PREDOTCOUNTER_X = "011111111" ) THEN
+                        PREWINDOW_X <= '0';
+                    END IF;
                 END IF;
             END IF;
         END IF;
@@ -1246,14 +1254,16 @@ BEGIN
     ------------------------------------------------------------------------------
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            VDPVRAMRDDATA   <= (OTHERS => '0');
-            VDPVRAMREADINGA <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( DOTSTATE = "01" )THEN
-                IF( VDPVRAMREADINGR /= VDPVRAMREADINGA ) THEN
-                    VDPVRAMRDDATA   <= PRAMDAT;
-                    VDPVRAMREADINGA <= NOT VDPVRAMREADINGA;
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
+                VDPVRAMRDDATA   <= (OTHERS => '0');
+                VDPVRAMREADINGA <= '0';
+	    ELSE
+                IF( DOTSTATE = "01" )THEN
+                    IF( VDPVRAMREADINGR /= VDPVRAMREADINGA ) THEN
+                        VDPVRAMRDDATA   <= PRAMDAT;
+                        VDPVRAMREADINGA <= NOT VDPVRAMREADINGA;
+                    END IF;
                 END IF;
             END IF;
         END IF;
@@ -1261,16 +1271,18 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RESET = '1' )THEN
-            VDPCMDVRAMRDDATA    <= (OTHERS => '0');
-            VDPCMDVRAMRDACK     <= '0';
-            VDPCMDVRAMREADINGA  <= '0';
-        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( DOTSTATE = "01" )THEN
-                IF( VDPCMDVRAMREADINGR /= VDPCMDVRAMREADINGA )THEN
-                    VDPCMDVRAMRDDATA    <= PRAMDAT;
-                    VDPCMDVRAMRDACK     <= NOT VDPCMDVRAMRDACK;
-                    VDPCMDVRAMREADINGA  <= NOT VDPCMDVRAMREADINGA;
+        IF( RISING_EDGE(CLK21M) )THEN
+            IF( RESET = '1' )THEN
+                VDPCMDVRAMRDDATA    <= (OTHERS => '0');
+                VDPCMDVRAMRDACK     <= '0';
+                VDPCMDVRAMREADINGA  <= '0';
+	    ELSE
+                IF( DOTSTATE = "01" )THEN
+                    IF( VDPCMDVRAMREADINGR /= VDPCMDVRAMREADINGA )THEN
+                        VDPCMDVRAMRDDATA    <= PRAMDAT;
+                        VDPCMDVRAMRDACK     <= NOT VDPCMDVRAMRDACK;
+                        VDPCMDVRAMREADINGA  <= NOT VDPCMDVRAMREADINGA;
+                    END IF;
                 END IF;
             END IF;
         END IF;
@@ -1280,199 +1292,202 @@ BEGIN
         VARIABLE VDPVRAMACCESSADDRV : STD_LOGIC_VECTOR( 16 DOWNTO 0 );
         VARIABLE VRAMACCESSSWITCH   : INTEGER RANGE 0 TO 7;
     BEGIN
-        IF (RESET = '1') THEN
+        IF (RISING_EDGE(CLK21M)) THEN
+            IF (RESET = '1') THEN
 
-            IRAMADR <= (OTHERS => '1');
-            PRAMDBO <= (OTHERS => '1');
-            PRAMOE_N <= '1';
-            PRAMWE_N <= '1';
+                IRAMADR <= (OTHERS => '1');
+                PRAMDBO <= (OTHERS => '1');
+                PRAMOE_N <= '1';
+                PRAMWE_N <= '1';
 
-            VDPVRAMREADINGR <= '0';
+                VDPVRAMREADINGR <= '0';
 
-            VDPVRAMRDACK <= '0';
-            VDPVRAMWRACK <= '0';
-            VDPVRAMADDRSETACK <= '0';
-            VDPVRAMACCESSADDR <= (OTHERS => '0');
+                VDPVRAMRDACK <= '0';
+                VDPVRAMWRACK <= '0';
+                VDPVRAMADDRSETACK <= '0';
+                VDPVRAMACCESSADDR <= (OTHERS => '0');
 
-            VDPCMDVRAMWRACK <= '0';
-            VDPCMDVRAMREADINGR <= '0';
-            VDP_COMMAND_DRIVE <= '0';
-        ELSIF (CLK21M'EVENT AND CLK21M = '1') THEN
+                VDPCMDVRAMWRACK <= '0';
+                VDPCMDVRAMREADINGR <= '0';
+                VDP_COMMAND_DRIVE <= '0';
 
-            ------------------------------------------
-            -- MAIN STATE
-            ------------------------------------------
-            --
-            -- VRAM ACCESS ARBITER.
-            --
-            -- VRAM�A�N�Z�X�^�C�~���O���AEIGHTDOTSTATE �ɂ���Đ��䂵�Ă���
-            IF( DOTSTATE = "10" ) THEN
-                IF( (PREWINDOW = '1') AND (REG_R1_DISP_ON = '1') AND
-                    ((EIGHTDOTSTATE="000") OR (EIGHTDOTSTATE="001") OR (EIGHTDOTSTATE="010") OR
-                     (EIGHTDOTSTATE="011") OR (EIGHTDOTSTATE="100")) ) THEN
-                    --  EIGHTDOTSTATE �� 0�`4 �ŁA�\�����̏ꍇ
-                    VRAMACCESSSWITCH := VRAM_ACCESS_DRAW;
-                ELSIF( (PREWINDOW = '1') AND (REG_R1_DISP_ON = '1') AND
-                        (TXVRAMREADEN = '1')) THEN
-                    --  EIGHTDOTSTATE �� 5�`7 �ŁA�\�����ŁA�e�L�X�g���[�h�̏ꍇ
-                    VRAMACCESSSWITCH := VRAM_ACCESS_DRAW;
-                ELSIF( (PREWINDOW_X = '1') AND (PREWINDOW_Y_SP = '1') AND (SPVRAMACCESSING = '1') AND
-                        (EIGHTDOTSTATE="101") AND (VDPMODETEXT1 = '0') AND (VDPMODETEXT2 = '0') ) THEN
-                    -- FOR SPRITE Y-TESTING
-                    VRAMACCESSSWITCH := VRAM_ACCESS_SPRT;
-                ELSIF( (PREWINDOW_X = '0') AND (PREWINDOW_Y_SP = '1') AND (SPVRAMACCESSING = '1') AND
-                        (VDPMODETEXT1 = '0') AND (VDPMODETEXT2 = '0') AND
+	    else
+
+                ------------------------------------------
+                -- MAIN STATE
+                ------------------------------------------
+                --
+                -- VRAM ACCESS ARBITER.
+                --
+                -- VRAM�A�N�Z�X�^�C�~���O���AEIGHTDOTSTATE �ɂ���Đ��䂵�Ă���
+                IF( DOTSTATE = "10" ) THEN
+                    IF( (PREWINDOW = '1') AND (REG_R1_DISP_ON = '1') AND
                         ((EIGHTDOTSTATE="000") OR (EIGHTDOTSTATE="001") OR (EIGHTDOTSTATE="010") OR
-                        (EIGHTDOTSTATE="011") OR (EIGHTDOTSTATE="100") OR (EIGHTDOTSTATE="101")) ) THEN
-                    -- FOR SPRITE PREPAREING
-                    VRAMACCESSSWITCH := VRAM_ACCESS_SPRT;
-                ELSIF( VDPVRAMWRREQ /= VDPVRAMWRACK )THEN
-                    -- VRAM WRITE REQUEST BY CPU
-                    VRAMACCESSSWITCH := VRAM_ACCESS_CPUW;
-                ELSIF( VDPVRAMRDREQ /= VDPVRAMRDACK )THEN
-                    -- VRAM READ REQUEST BY CPU
-                    VRAMACCESSSWITCH := VRAM_ACCESS_CPUR;
---              ELSIF( EIGHTDOTSTATE="111" )THEN
-                ELSE
-                    -- VDP COMMAND
-                    IF( VDP_COMMAND_ACTIVE = '1' )THEN
-                        IF( VDPCMDVRAMWRREQ /= VDPCMDVRAMWRACK )THEN
-                            VRAMACCESSSWITCH := VRAM_ACCESS_VDPW;
-                        ELSIF( VDPCMDVRAMRDREQ /= VDPCMDVRAMRDACK )THEN
-                            VRAMACCESSSWITCH := VRAM_ACCESS_VDPR;
+                         (EIGHTDOTSTATE="011") OR (EIGHTDOTSTATE="100")) ) THEN
+                        --  EIGHTDOTSTATE �� 0�`4 �ŁA�\�����̏ꍇ
+                        VRAMACCESSSWITCH := VRAM_ACCESS_DRAW;
+                    ELSIF( (PREWINDOW = '1') AND (REG_R1_DISP_ON = '1') AND
+                            (TXVRAMREADEN = '1')) THEN
+                        --  EIGHTDOTSTATE �� 5�`7 �ŁA�\�����ŁA�e�L�X�g���[�h�̏ꍇ
+                        VRAMACCESSSWITCH := VRAM_ACCESS_DRAW;
+                    ELSIF( (PREWINDOW_X = '1') AND (PREWINDOW_Y_SP = '1') AND (SPVRAMACCESSING = '1') AND
+                            (EIGHTDOTSTATE="101") AND (VDPMODETEXT1 = '0') AND (VDPMODETEXT2 = '0') ) THEN
+                        -- FOR SPRITE Y-TESTING
+                        VRAMACCESSSWITCH := VRAM_ACCESS_SPRT;
+                    ELSIF( (PREWINDOW_X = '0') AND (PREWINDOW_Y_SP = '1') AND (SPVRAMACCESSING = '1') AND
+                            (VDPMODETEXT1 = '0') AND (VDPMODETEXT2 = '0') AND
+                            ((EIGHTDOTSTATE="000") OR (EIGHTDOTSTATE="001") OR (EIGHTDOTSTATE="010") OR
+                            (EIGHTDOTSTATE="011") OR (EIGHTDOTSTATE="100") OR (EIGHTDOTSTATE="101")) ) THEN
+                        -- FOR SPRITE PREPAREING
+                        VRAMACCESSSWITCH := VRAM_ACCESS_SPRT;
+                    ELSIF( VDPVRAMWRREQ /= VDPVRAMWRACK )THEN
+                        -- VRAM WRITE REQUEST BY CPU
+                        VRAMACCESSSWITCH := VRAM_ACCESS_CPUW;
+                    ELSIF( VDPVRAMRDREQ /= VDPVRAMRDACK )THEN
+                        -- VRAM READ REQUEST BY CPU
+                        VRAMACCESSSWITCH := VRAM_ACCESS_CPUR;
+--                  ELSIF( EIGHTDOTSTATE="111" )THEN
+                    ELSE
+                        -- VDP COMMAND
+                        IF( VDP_COMMAND_ACTIVE = '1' )THEN
+                            IF( VDPCMDVRAMWRREQ /= VDPCMDVRAMWRACK )THEN
+                                VRAMACCESSSWITCH := VRAM_ACCESS_VDPW;
+                            ELSIF( VDPCMDVRAMRDREQ /= VDPCMDVRAMRDACK )THEN
+                                VRAMACCESSSWITCH := VRAM_ACCESS_VDPR;
+                            ELSE
+                                VRAMACCESSSWITCH := VRAM_ACCESS_VDPS;
+                            END IF;
                         ELSE
                             VRAMACCESSSWITCH := VRAM_ACCESS_VDPS;
                         END IF;
-                    ELSE
-                        VRAMACCESSSWITCH := VRAM_ACCESS_VDPS;
                     END IF;
-                END IF;
-            ELSE
-                VRAMACCESSSWITCH := VRAM_ACCESS_DRAW;
-            END IF;
-
-            IF( VRAMACCESSSWITCH = VRAM_ACCESS_VDPW OR
-                VRAMACCESSSWITCH = VRAM_ACCESS_VDPR OR
-                VRAMACCESSSWITCH = VRAM_ACCESS_VDPS )THEN
-                VDP_COMMAND_DRIVE <= '1';
-            ELSE
-                VDP_COMMAND_DRIVE <= '0';
-            END IF;
-
-            --
-            -- VRAM ACCESS ADDRESS SWITCH
-            --
-            IF( VRAMACCESSSWITCH = VRAM_ACCESS_CPUW )THEN
-                -- VRAM WRITE BY CPU
-                -- JP: GRAPHIC6,7�ł�VRAM���̃A�h���X�� RAM���̃A�h���X�̊֌W��
-                -- JP: ���̉��ʃ��[�h�ƈق��̂Œ���
-                IF( (VDPMODEGRAPHIC6 = '1') OR (VDPMODEGRAPHIC7 = '1') )THEN
-                    IRAMADR <= VDPVRAMACCESSADDR(0) & VDPVRAMACCESSADDR(16 DOWNTO 1);
                 ELSE
-                    IRAMADR <= VDPVRAMACCESSADDR;
-                END IF;
-                IF( (VDPMODETEXT1 = '1') OR (VDPMODEMULTI = '1') OR
-                    (VDPMODEGRAPHIC1 = '1') OR (VDPMODEGRAPHIC2 = '1') ) THEN
-                    VDPVRAMACCESSADDR(13 DOWNTO 0) <= VDPVRAMACCESSADDR(13 DOWNTO 0) + 1;
-                ELSE
-                    VDPVRAMACCESSADDR <= VDPVRAMACCESSADDR + 1;
-                END IF;
-                PRAMDBO <= VDPVRAMACCESSDATA;
-                PRAMOE_N <= '1';
-                PRAMWE_N <= '0';
-                VDPVRAMWRACK <= NOT VDPVRAMWRACK;
-            ELSIF( VRAMACCESSSWITCH = VRAM_ACCESS_CPUR ) THEN
-                -- VRAM READ BY CPU
-                IF( VDPVRAMADDRSETREQ /= VDPVRAMADDRSETACK ) THEN
-                    VDPVRAMACCESSADDRV := VDPVRAMACCESSADDRTMP;
-                    -- CLEAR VRAM ADDRESS SET REQUEST SIGNAL
-                    VDPVRAMADDRSETACK <= NOT VDPVRAMADDRSETACK;
-                ELSE
-                    VDPVRAMACCESSADDRV := VDPVRAMACCESSADDR;
+                    VRAMACCESSSWITCH := VRAM_ACCESS_DRAW;
                 END IF;
 
-                -- JP: GRAPHIC6,7�ł�VRAM���̃A�h���X�� RAM���̃A�h���X�̊֌W��
-                -- JP: ���̉��ʃ��[�h�ƈق��̂Œ���
-                IF( (VDPMODEGRAPHIC6 = '1') OR (VDPMODEGRAPHIC7 = '1') )THEN
-                    IRAMADR <= VDPVRAMACCESSADDRV(0) & VDPVRAMACCESSADDRV(16 DOWNTO 1);
+                IF( VRAMACCESSSWITCH = VRAM_ACCESS_VDPW OR
+                    VRAMACCESSSWITCH = VRAM_ACCESS_VDPR OR
+                    VRAMACCESSSWITCH = VRAM_ACCESS_VDPS )THEN
+                    VDP_COMMAND_DRIVE <= '1';
                 ELSE
-                    IRAMADR <= VDPVRAMACCESSADDRV;
+                    VDP_COMMAND_DRIVE <= '0';
                 END IF;
-                IF( (VDPMODETEXT1 = '1') OR (VDPMODEMULTI = '1') OR
-                    (VDPMODEGRAPHIC1 = '1') OR (VDPMODEGRAPHIC2 = '1') )THEN
-                    VDPVRAMACCESSADDR(13 DOWNTO 0) <= VDPVRAMACCESSADDRV(13 DOWNTO 0) + 1;
-                ELSE
-                    VDPVRAMACCESSADDR <= VDPVRAMACCESSADDRV + 1;
-                END IF;
-                PRAMDBO <= (OTHERS => '1');
-                PRAMOE_N <= '0';
-                PRAMWE_N <= '1';
-                VDPVRAMRDACK <= NOT VDPVRAMRDACK;
-                VDPVRAMREADINGR <= NOT VDPVRAMREADINGA;
-            ELSIF( VRAMACCESSSWITCH = VRAM_ACCESS_VDPW )THEN
-                -- VRAM WRITE BY VDP COMMAND
-                -- VDP COMMAND WRITE VRAM.
-                -- JP: GRAPHIC6,7�ł̓A�h���X�� RAM���̈ʒu�����̉��ʃ��[�h��
-                -- JP: �ق��̂Œ���
-                IF( (VDPMODEGRAPHIC6 = '1') OR (VDPMODEGRAPHIC7 = '1') )THEN
-                    IRAMADR <= VDPCMDVRAMACCESSADDR(0) & VDPCMDVRAMACCESSADDR(16 DOWNTO 1);
-                ELSE
-                    IRAMADR <= VDPCMDVRAMACCESSADDR;
-                END IF;
-                PRAMDBO <= VDPCMDVRAMWRDATA;
-                PRAMOE_N <= '1';
-                PRAMWE_N <= '0';
-                VDPCMDVRAMWRACK <= NOT VDPCMDVRAMWRACK;
-            ELSIF( VRAMACCESSSWITCH = VRAM_ACCESS_VDPR )THEN
-                -- VRAM READ BY VDP COMMAND
-                -- JP: GRAPHIC6,7�ł̓A�h���X�� RAM���̈ʒu�����̉��ʃ��[�h��
-                -- JP: �ق��̂Œ���
-                IF( (VDPMODEGRAPHIC6 = '1') OR (VDPMODEGRAPHIC7 = '1') )THEN
-                    IRAMADR <= VDPCMDVRAMACCESSADDR(0) & VDPCMDVRAMACCESSADDR(16 DOWNTO 1);
-                ELSE
-                    IRAMADR <= VDPCMDVRAMACCESSADDR;
-                END IF;
-                PRAMDBO <= (OTHERS => '1');
-                PRAMOE_N <= '0';
-                PRAMWE_N <= '1';
-                VDPCMDVRAMREADINGR <= NOT VDPCMDVRAMREADINGA;
-            ELSIF( VRAMACCESSSWITCH = VRAM_ACCESS_SPRT )THEN
-                -- VRAM READ BY SPRITE MODULE
-                IRAMADR <= PRAMADRSPRITE;
-                PRAMOE_N <= '0';
-                PRAMWE_N <= '1';
-                PRAMDBO <= (OTHERS => '1');
-            ELSE
-                -- VRAM_ACCESS_DRAW
-                -- VRAM READ FOR SCREEN IMAGE BUILDING
-                CASE DOTSTATE IS
-                    WHEN "10" =>
-                        PRAMDBO <= (OTHERS => '1' );
-                        PRAMOE_N <= '0';
-                        PRAMWE_N <= '1';
-                        IF( (VDPMODETEXT1 = '1') OR (VDPMODETEXT2 = '1') )THEN
-                            IRAMADR <= PRAMADRT12;
-                        ELSIF(  (VDPMODEGRAPHIC1 = '1') OR (VDPMODEGRAPHIC2 = '1') OR
-                                (VDPMODEGRAPHIC3 = '1') OR (VDPMODEMULTI = '1') )THEN
-                            IRAMADR <= PRAMADRG123M;
-                        ELSIF(  (VDPMODEGRAPHIC4 = '1') OR (VDPMODEGRAPHIC5 = '1') OR
-                                (VDPMODEGRAPHIC6 = '1') OR (VDPMODEGRAPHIC7 = '1') )THEN
-                            IRAMADR <= PRAMADRG4567;
-                        END IF;
-                    WHEN "01" =>
-                        PRAMDBO <= (OTHERS => '1' );
-                        PRAMOE_N <= '0';
-                        PRAMWE_N <= '1';
-                        IF( (VDPMODEGRAPHIC6 = '1') OR (VDPMODEGRAPHIC7 = '1') )THEN
-                            IRAMADR <= PRAMADRG4567;
-                        END IF;
-                    WHEN OTHERS =>
-                        NULL;
-                END CASE;
 
-                IF( (DOTSTATE = "11") AND (VDPVRAMADDRSETREQ /= VDPVRAMADDRSETACK) )THEN
-                    VDPVRAMACCESSADDR <= VDPVRAMACCESSADDRTMP;
-                    VDPVRAMADDRSETACK <= NOT VDPVRAMADDRSETACK;
+                --
+                -- VRAM ACCESS ADDRESS SWITCH
+                --
+                IF( VRAMACCESSSWITCH = VRAM_ACCESS_CPUW )THEN
+                    -- VRAM WRITE BY CPU
+                    -- JP: GRAPHIC6,7�ł�VRAM���̃A�h���X�� RAM���̃A�h���X�̊֌W��
+                    -- JP: ���̉��ʃ��[�h�ƈق��̂Œ���
+                    IF( (VDPMODEGRAPHIC6 = '1') OR (VDPMODEGRAPHIC7 = '1') )THEN
+                        IRAMADR <= VDPVRAMACCESSADDR(0) & VDPVRAMACCESSADDR(16 DOWNTO 1);
+                    ELSE
+                        IRAMADR <= VDPVRAMACCESSADDR;
+                    END IF;
+                    IF( (VDPMODETEXT1 = '1') OR (VDPMODEMULTI = '1') OR
+                        (VDPMODEGRAPHIC1 = '1') OR (VDPMODEGRAPHIC2 = '1') ) THEN
+                        VDPVRAMACCESSADDR(13 DOWNTO 0) <= VDPVRAMACCESSADDR(13 DOWNTO 0) + 1;
+                    ELSE
+                        VDPVRAMACCESSADDR <= VDPVRAMACCESSADDR + 1;
+                    END IF;
+                    PRAMDBO <= VDPVRAMACCESSDATA;
+                    PRAMOE_N <= '1';
+                    PRAMWE_N <= '0';
+                    VDPVRAMWRACK <= NOT VDPVRAMWRACK;
+                ELSIF( VRAMACCESSSWITCH = VRAM_ACCESS_CPUR ) THEN
+                    -- VRAM READ BY CPU
+                    IF( VDPVRAMADDRSETREQ /= VDPVRAMADDRSETACK ) THEN
+                        VDPVRAMACCESSADDRV := VDPVRAMACCESSADDRTMP;
+                        -- CLEAR VRAM ADDRESS SET REQUEST SIGNAL
+                        VDPVRAMADDRSETACK <= NOT VDPVRAMADDRSETACK;
+                    ELSE
+                        VDPVRAMACCESSADDRV := VDPVRAMACCESSADDR;
+                    END IF;
+
+                    -- JP: GRAPHIC6,7�ł�VRAM���̃A�h���X�� RAM���̃A�h���X�̊֌W��
+                    -- JP: ���̉��ʃ��[�h�ƈق��̂Œ���
+                    IF( (VDPMODEGRAPHIC6 = '1') OR (VDPMODEGRAPHIC7 = '1') )THEN
+                        IRAMADR <= VDPVRAMACCESSADDRV(0) & VDPVRAMACCESSADDRV(16 DOWNTO 1);
+                    ELSE
+                        IRAMADR <= VDPVRAMACCESSADDRV;
+                    END IF;
+                    IF( (VDPMODETEXT1 = '1') OR (VDPMODEMULTI = '1') OR
+                        (VDPMODEGRAPHIC1 = '1') OR (VDPMODEGRAPHIC2 = '1') )THEN
+                        VDPVRAMACCESSADDR(13 DOWNTO 0) <= VDPVRAMACCESSADDRV(13 DOWNTO 0) + 1;
+                    ELSE
+                        VDPVRAMACCESSADDR <= VDPVRAMACCESSADDRV + 1;
+                    END IF;
+                    PRAMDBO <= (OTHERS => '1');
+                    PRAMOE_N <= '0';
+                    PRAMWE_N <= '1';
+                    VDPVRAMRDACK <= NOT VDPVRAMRDACK;
+                    VDPVRAMREADINGR <= NOT VDPVRAMREADINGA;
+                ELSIF( VRAMACCESSSWITCH = VRAM_ACCESS_VDPW )THEN
+                    -- VRAM WRITE BY VDP COMMAND
+                    -- VDP COMMAND WRITE VRAM.
+                    -- JP: GRAPHIC6,7�ł̓A�h���X�� RAM���̈ʒu�����̉��ʃ��[�h��
+                    -- JP: �ق��̂Œ���
+                    IF( (VDPMODEGRAPHIC6 = '1') OR (VDPMODEGRAPHIC7 = '1') )THEN
+                        IRAMADR <= VDPCMDVRAMACCESSADDR(0) & VDPCMDVRAMACCESSADDR(16 DOWNTO 1);
+                    ELSE
+                        IRAMADR <= VDPCMDVRAMACCESSADDR;
+                    END IF;
+                    PRAMDBO <= VDPCMDVRAMWRDATA;
+                    PRAMOE_N <= '1';
+                    PRAMWE_N <= '0';
+                    VDPCMDVRAMWRACK <= NOT VDPCMDVRAMWRACK;
+                ELSIF( VRAMACCESSSWITCH = VRAM_ACCESS_VDPR )THEN
+                    -- VRAM READ BY VDP COMMAND
+                    -- JP: GRAPHIC6,7�ł̓A�h���X�� RAM���̈ʒu�����̉��ʃ��[�h��
+                    -- JP: �ق��̂Œ���
+                    IF( (VDPMODEGRAPHIC6 = '1') OR (VDPMODEGRAPHIC7 = '1') )THEN
+                        IRAMADR <= VDPCMDVRAMACCESSADDR(0) & VDPCMDVRAMACCESSADDR(16 DOWNTO 1);
+                    ELSE
+                        IRAMADR <= VDPCMDVRAMACCESSADDR;
+                    END IF;
+                    PRAMDBO <= (OTHERS => '1');
+                    PRAMOE_N <= '0';
+                    PRAMWE_N <= '1';
+                    VDPCMDVRAMREADINGR <= NOT VDPCMDVRAMREADINGA;
+                ELSIF( VRAMACCESSSWITCH = VRAM_ACCESS_SPRT )THEN
+                    -- VRAM READ BY SPRITE MODULE
+                    IRAMADR <= PRAMADRSPRITE;
+                    PRAMOE_N <= '0';
+                    PRAMWE_N <= '1';
+                    PRAMDBO <= (OTHERS => '1');
+                ELSE
+                    -- VRAM_ACCESS_DRAW
+                    -- VRAM READ FOR SCREEN IMAGE BUILDING
+                    CASE DOTSTATE IS
+                        WHEN "10" =>
+                            PRAMDBO <= (OTHERS => '1' );
+                            PRAMOE_N <= '0';
+                            PRAMWE_N <= '1';
+                            IF( (VDPMODETEXT1 = '1') OR (VDPMODETEXT2 = '1') )THEN
+                                IRAMADR <= PRAMADRT12;
+                            ELSIF(  (VDPMODEGRAPHIC1 = '1') OR (VDPMODEGRAPHIC2 = '1') OR
+                                    (VDPMODEGRAPHIC3 = '1') OR (VDPMODEMULTI = '1') )THEN
+                                IRAMADR <= PRAMADRG123M;
+                            ELSIF(  (VDPMODEGRAPHIC4 = '1') OR (VDPMODEGRAPHIC5 = '1') OR
+                                    (VDPMODEGRAPHIC6 = '1') OR (VDPMODEGRAPHIC7 = '1') )THEN
+                                IRAMADR <= PRAMADRG4567;
+                            END IF;
+                        WHEN "01" =>
+                            PRAMDBO <= (OTHERS => '1' );
+                            PRAMOE_N <= '0';
+                            PRAMWE_N <= '1';
+                            IF( (VDPMODEGRAPHIC6 = '1') OR (VDPMODEGRAPHIC7 = '1') )THEN
+                                IRAMADR <= PRAMADRG4567;
+                            END IF;
+                        WHEN OTHERS =>
+                            NULL;
+                    END CASE;
+
+                    IF( (DOTSTATE = "11") AND (VDPVRAMADDRSETREQ /= VDPVRAMADDRSETACK) )THEN
+                        VDPVRAMACCESSADDR <= VDPVRAMACCESSADDRTMP;
+                        VDPVRAMADDRSETACK <= NOT VDPVRAMADDRSETACK;
+                    END IF;
                 END IF;
             END IF;
         END IF;

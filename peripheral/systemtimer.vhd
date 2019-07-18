@@ -69,13 +69,15 @@ begin
 
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            ff_div_counter <=   (others => '0');
-        elsif( clk21m'event and clk21m = '1' )then
-            if( w_3_911usec = '1' )then
-                ff_div_counter <=   c_div_start_pt;
-            else
-                ff_div_counter <=   ff_div_counter - 1;
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                ff_div_counter <=   (others => '0');
+	    else
+                if( w_3_911usec = '1' )then
+                    ff_div_counter <=   c_div_start_pt;
+                else
+                    ff_div_counter <=   ff_div_counter - 1;
+                end if;
             end if;
         end if;
     end process;
@@ -85,13 +87,15 @@ begin
     ----------------------------------------------------------------
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            ff_freerun_counter <= (others => '0');
-        elsif( clk21m'event and clk21m = '1' )then
-            if( w_3_911usec = '1' )then
-                ff_freerun_counter <= ff_freerun_counter + 1;
-            else
-                -- hold
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                ff_freerun_counter <= (others => '0');
+	    else
+                if( w_3_911usec = '1' )then
+                    ff_freerun_counter <= ff_freerun_counter + 1;
+                else
+                    -- hold
+                end if;
             end if;
         end if;
     end process;
@@ -101,10 +105,12 @@ begin
     ----------------------------------------------------------------
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            ff_ack <= '0';
-        elsif( clk21m'event and clk21m = '1' )then
-            ff_ack <= req;
+        if( clk21m'event and clk21m = '1' )then
+            if( reset = '1' )then
+                ff_ack <= '0';
+	    else
+                ff_ack <= req;
+            end if;
         end if;
     end process;
 end rtl;

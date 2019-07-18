@@ -84,7 +84,7 @@ entity emsx_top is
         pDip            : in    std_logic_vector(  7 downto 0);     -- 0=On,    1=Off (default on shipment)
         pLed            : out   std_logic_vector(  7 downto 0);     -- 0=Off,   1=On  (green)
         pLedPwr         : out   std_logic;                          -- 0=Off,   1=On  (red)
-		  pR800           : in    std_logic;
+		pR800           : in    std_logic;
 
         -- Video, Audio/CMT ports
         pDac_VR         : out   std_logic_vector(  5 downto 0);     -- RGB_Red
@@ -496,8 +496,8 @@ architecture RTL of emsx_top is
     alias   MmcMode         : std_logic is MegaSD_ack;                      -- '0': disable SD/MMC  '1': enable SD/MMC
 
     -- Clock, Reset control signals
-    signal  cpuclk          : std_logic;
-    signal  cpuclk_n        : std_logic;
+    signal  cpucen          : std_logic;
+    signal  cpucen_n        : std_logic;
     signal  clkdiv          : std_logic_vector(  1 downto 0 );
     signal  ff_clksel       : std_logic;
     signal  ff_clksel5m_n   : std_logic;
@@ -515,14 +515,14 @@ architecture RTL of emsx_top is
     signal  logo_timeout    : std_logic_vector(  1 downto 0 );
 
     -- Turbo CPU clock enablers
-    signal  cpuclk_5m          : std_logic;
-    signal  cpuclk_5m_n        : std_logic;
-    signal  cpuclk_10m          : std_logic;
-    signal  cpuclk_10m_n        : std_logic;
+    signal  cpucen_5m          : std_logic;
+    signal  cpucen_5m_n        : std_logic;
+    signal  cpucen_10m          : std_logic;
+    signal  cpucen_10m_n        : std_logic;
 
     -- CPU clock enablers to use
-    signal  trueClk          : std_logic;
-    signal  trueClk_n        : std_logic;
+    signal  trueCen          : std_logic;
+    signal  trueCen_n        : std_logic;
 
     -- MSX cartridge slot control signals
     signal  BusDir          : std_logic;
@@ -767,72 +767,64 @@ begin
     process( reset, clk21m )
 	    variable div : std_logic := '0';
     begin
-        if( reset = '1' )then
-            cpuclk    <= '0';
-            cpuclk_n  <= '0';
-            div       := '0';
-        elsif( rising_edge(clk21m) )then
-            if( clkdiv3 = "10" )then
-	        if( div = '1' )then
-                    cpuclk   <= '1';
-                    cpuclk_n <= '0';
-		else
-                    cpuclk   <= '0';
-                    cpuclk_n <= '1';
-		end if;
-		div := not div;
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                cpucen    <= '0';
+                cpucen_n  <= '0';
+                div       := '0';
             else
-                cpuclk   <= '0';
-                cpuclk_n <= '0';
+                cpucen   <=     div and clkdiv3(1);
+                cpucen_n <= not div and clkdiv3(1);
+                if (clkdiv3(1) = '1') then
+                   div := not div;
+                end if;
             end if;
         end if;
     end process;
 
-    -- Turbo CPUCLK Enabler : 5.24MHz = 21.48MHz / 4
+    -- Turbo CPUCLK Enabler : 5.39MHz = 21.48MHz / 4
     process( reset, clk21m )
 	    variable div : std_logic_vector(1 downto 0);
     begin
-        if( reset = '1' )then
-            cpuclk_5m    <= '0';
-            cpuclk_5m_n  <= '0';
-	    div := "01";
-        elsif( rising_edge(clk21m) )then
-            if( div = "11" )then
-                cpuclk_5m   <= '1';
-                cpuclk_5m_n <= '0';
-            elsif( div = "01" )then
-                cpuclk_5m   <= '0';
-                cpuclk_5m_n <= '1';
-            else
-                cpuclk_5m   <= '0';
-                cpuclk_5m_n <= '0';
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                cpucen_5m    <= '0';
+                cpucen_5m_n  <= '0';
+                div := "01";
+	         else
+                cpucen_5m   <=     div(1) and div(0);
+                cpucen_5m_n <= not div(1) and div(0);
+                div := div + 1;
             end if;
-	    div := div + 1;
         end if;
     end process;
 
-    -- Turbo CPUCLK Enabler : 10.49MHz = 21.48MHz / 2
+    -- Turbo CPUCLK Enabler : 10.79MHz = 21.48MHz / 2
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            cpuclk_10m    <= '1';
-            cpuclk_10m_n  <= '0';
-        elsif( rising_edge(clk21m) )then
-            cpuclk_10m   <= not cpuclk_10m;
-            cpuclk_10m_n <= not cpuclk_10m_n;
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                cpucen_10m    <= '1';
+                cpucen_10m_n  <= '0';
+	         else
+                cpucen_10m   <= not cpucen_10m;
+                cpucen_10m_n <= not cpucen_10m_n;
+			   end if;
         end if;
     end process;
 
     -- Prescaler : 21.48MHz / 6
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            clkdiv3 <= "10";
-        elsif( rising_edge(clk21m) )then
-            if( clkdiv3 = "00" )then
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
                 clkdiv3 <= "10";
             else
-                clkdiv3 <=  clkdiv3 - 1;
+                if( clkdiv3 = "00" )then
+                    clkdiv3 <= "10";
+                else
+                    clkdiv3 <=  clkdiv3 - 1;
+                end if;
             end if;
         end if;
     end process;
@@ -840,14 +832,16 @@ begin
     -- hybrid clock start counter
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            hstartcount <=  (others => '0');
-        elsif( clk21m'event and clk21m = '1' )then
-            if( ff_clk21m_cnt( 16 downto 0 ) = "00000000000000000" )then
-                if( mmcena = '0' )then
-                    hstartcount <=  "111";                                              -- begin after 48ms
-                elsif( hstartcount /= "000" )then
-                    hstartcount <=  hstartcount - 1;
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                hstartcount <=  (others => '0');
+            else
+                if( ff_clk21m_cnt( 16 downto 0 ) = "00000000000000000" )then
+                    if( mmcena = '0' )then
+                        hstartcount <=  "111";                                              -- begin after 48ms
+                    elsif( hstartcount /= "000" )then
+                        hstartcount <=  hstartcount - 1;
+                    end if;
                 end if;
             end if;
         end if;
@@ -856,14 +850,16 @@ begin
     -- hybrid clock timeout counter
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            htoutcount  <=  (others => '0');
-        elsif( clk21m'event and clk21m = '1' )then
-            if( hstartcount = "000" or htoutcount /= "000" )then
-                if( mmcena = '1' )then
-                    htoutcount  <=  "111";                                              -- timeout after 96ms
-                elsif( ff_clk21m_cnt( 17 downto 0 ) = "000000000000000000" )then
-                    htoutcount  <=  htoutcount - 1;
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                htoutcount  <=  (others => '0');
+            else
+                if( hstartcount = "000" or htoutcount /= "000" )then
+                    if( mmcena = '1' )then
+                        htoutcount  <=  "111";                                              -- timeout after 96ms
+                    elsif( ff_clk21m_cnt( 17 downto 0 ) = "000000000000000000" )then
+                        htoutcount  <=  htoutcount - 1;
+                    end if;
                 end if;
             end if;
         end if;
@@ -872,13 +868,15 @@ begin
     -- hybrid clock enabler
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            hybridclk_n <=  '1';
-        elsif( clk21m'event and clk21m = '1' )then
-            if( htoutcount = "000" )then
-                hybridclk_n <= '1';
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                hybridclk_n <=  '1';
             else
-                hybridclk_n <= not tMegaSD;
+                if( htoutcount = "000" )then
+                    hybridclk_n <= '1';
+                else
+                    hybridclk_n <= not tMegaSD;
+                end if;
             end if;
         end if;
     end process;
@@ -908,7 +906,7 @@ begin
     begin
         if( memclk'event and memclk = '0' )then
             if( FirstBoot_n /= '1' or RstEna = '1' )then
-                if( trueClk = '0' and pSltWait_n = '0' )then
+                if( trueCen = '0' and pSltWait_n = '0' )then
                     if( ff_ldbios_n = '0' or logo_timeout = "00" )then                  -- ultra-fast bootstrap technology
                         ff_clksel5m_n   <=  '1';
                         ff_clksel       <=  '1';
@@ -932,7 +930,7 @@ begin
     -- virtual DIP-SW assignment (2/2)
     process( clk21m )
     begin
-        if( clk21m'event and clk21m = '1') then
+        if( rising_edge(clk21m) ) then
             if(SdPaus = '0' and ( FirstBoot_n /= '1' or RstEna = '1' ))then
                 if( w_10hz = '1' )then
                     CmtScro           <=  swioCmt;
@@ -950,12 +948,12 @@ begin
 	 Kmap <=  swioKmap when rising_edge(clk21m);
 
     -- cpu clock assignment
-    trueClk     <=  cpuclk_10m      when( ff_clksel = '1' and reset /= '1' )else                            -- 10.74 MHz
-                    cpuclk_5m       when( ff_clksel5m_n = '0' and reset /= '1' )else                        --  5.37 MHz
-                    cpuclk;                                                                                 --  3.58 MHz
-    trueClk_n   <=  cpuclk_10m_n    when( ff_clksel = '1' and reset /= '1' )else                            -- 10.74 MHz
-                    cpuclk_5m_n     when( ff_clksel5m_n = '0' and reset /= '1' )else                        --  5.37 MHz
-                    cpuclk_n;                                                                                 --  3.58 MHz
+    trueCen     <=  cpucen_10m      when( ff_clksel = '1' and reset /= '1' )else                            -- 10.74 MHz
+                    cpucen_5m       when( ff_clksel5m_n = '0' and reset /= '1' )else                        --  5.37 MHz
+                    cpucen;                                                                                 --  3.58 MHz
+    trueCen_n   <=  cpucen_10m_n    when( ff_clksel = '1' and reset /= '1' )else                            -- 10.74 MHz
+                    cpucen_5m_n     when( ff_clksel5m_n = '0' and reset /= '1' )else                        --  5.37 MHz
+                    cpucen_n;                                                                                 --  3.58 MHz
 
     ----------------------------------------------------------------
     -- Reset control
@@ -1030,10 +1028,12 @@ begin
     -- free run counter
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            ff_clk21m_cnt <= (others => '0');
-        elsif( clk21m'event and clk21m = '1' )then
-            ff_clk21m_cnt <= ff_clk21m_cnt + 1;
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                ff_clk21m_cnt <= (others => '0');
+	    else
+                ff_clk21m_cnt <= ff_clk21m_cnt + 1;
+            end if;
         end if;
     end process;
 
@@ -1078,13 +1078,15 @@ begin
     -- green level counter
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            GreenLv_cnt <= "0000";
-        elsif( clk21m'event and clk21m = '1' )then
-            if( GreenLvEna = '1' )then
-                GreenLv_cnt <= "1111";
-            elsif( w_10hz = '1' and GreenLv_cnt /= "0000" )then
-                GreenLv_cnt <= GreenLv_cnt - 1;         -- 1600ms
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                GreenLv_cnt <= "0000";
+	    else
+                if( GreenLvEna = '1' )then
+                    GreenLv_cnt <= "1111";
+                elsif( w_10hz = '1' and GreenLv_cnt /= "0000" )then
+                    GreenLv_cnt <= GreenLv_cnt - 1;         -- 1600ms
+                end if;
             end if;
         end if;
     end process;
@@ -1092,19 +1094,21 @@ begin
     -- green level assignment
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            GreenLv <= (others => '0');
-        elsif( clk21m'event and clk21m = '1' )then
-            case LevCtrl is
-            when "111"  =>  GreenLv <=  "1111111";
-            when "110"  =>  GreenLv <=  "0111111";
-            when "101"  =>  GreenLv <=  "0011111";
-            when "100"  =>  GreenLv <=  "0001111";
-            when "011"  =>  GreenLv <=  "0000111";
-            when "010"  =>  GreenLv <=  "0000011";
-            when "001"  =>  GreenLv <=  "0000001";
-            when others =>  GreenLv <=  "0000000";
-            end case;
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                GreenLv <= (others => '0');
+	    else
+                case LevCtrl is
+                when "111"  =>  GreenLv <=  "1111111";
+                when "110"  =>  GreenLv <=  "0111111";
+                when "101"  =>  GreenLv <=  "0011111";
+                when "100"  =>  GreenLv <=  "0001111";
+                when "011"  =>  GreenLv <=  "0000111";
+                when "010"  =>  GreenLv <=  "0000011";
+                when "001"  =>  GreenLv <=  "0000001";
+                when others =>  GreenLv <=  "0000000";
+                end case;
+            end if;
         end if;
     end process;
 
@@ -1115,13 +1119,15 @@ begin
     --
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            ff_rst_seq <= "00";
-        elsif( clk21m'event and clk21m = '1' )then
-            if( w_10hz = '1' )then
-                ff_rst_seq <= ff_rst_seq(0) & (not ff_rst_seq(1));
-            else
-                --  hold
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                ff_rst_seq <= "00";
+	    else
+                if( w_10hz = '1' )then
+                    ff_rst_seq <= ff_rst_seq(0) & (not ff_rst_seq(1));
+                else
+                    --  hold
+                end if;
             end if;
         end if;
     end process;
@@ -1129,26 +1135,28 @@ begin
     -- power LED
     process( reset, clk21m, ZemmixNeo )
     begin
-        if( reset = '1' )then
-            pLedPwr <= clk21m or ZemmixNeo;                 -- lights test holding the hard reset
-        elsif( clk21m'event and clk21m = '1' )then
-            if( SdPaus = '1' )then
-                if( PausFlash = '1' and ZemmixNeo = '0' )then
-                    pLedPwr <= FadedRed;                    -- Pause        is Flash + Faded Red
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                pLedPwr <= clk21m or ZemmixNeo;                 -- lights test holding the hard reset
+	    else
+                if( SdPaus = '1' )then
+                    if( PausFlash = '1' and ZemmixNeo = '0' )then
+                        pLedPwr <= FadedRed;                    -- Pause        is Flash + Faded Red
+                    else
+                        pLedPwr <= '0';
+                    end if;
+                -- Lights On/Off toggle
+                elsif( Red_sta = '1' and Paus = '0' and GreenLv_cnt = "0000" )then
+--              elsif( ff_clksel5m_n = '0' )then                -- test for tMegaSD
+                    if( ZemmixNeo = '1' )then
+                        pLedPwr <= '1';                         -- On
+                    else
+                        pLedPwr <= FadedRed;                    -- 5.37MHz On   is Faded Red only
+                    end if;
                 else
-                    pLedPwr <= '0';
+--                  pLedPwr <= logo_timeout(0);                 -- test of logo speed limiter
+                    pLedPwr <= '0';                             -- Off / Blink
                 end if;
-            -- Lights On/Off toggle
-            elsif( Red_sta = '1' and Paus = '0' and GreenLv_cnt = "0000" )then
---          elsif( ff_clksel5m_n = '0' )then                -- test for tMegaSD
-                if( ZemmixNeo = '1' )then
-                    pLedPwr <= '1';                         -- On
-                else
-                    pLedPwr <= FadedRed;                    -- 5.37MHz On   is Faded Red only
-                end if;
-            else
---              pLedPwr <= logo_timeout(0);                 -- test of logo speed limiter
-                pLedPwr <= '0';                             -- Off / Blink
             end if;
         end if;
     end process;
@@ -1156,14 +1164,16 @@ begin
     -- reset enabler
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            RstEna <= '0';
-        elsif( clk21m'event and clk21m = '1' )then
-            if( ff_rst_seq = "11" and warmRESET /= '1' )then
-                RstEna      <= '1';                         -- RstEna change to 1 after 200ms from power on
-                FirstBoot_n <= '1';
-            else
-                --  hold
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                RstEna <= '0';
+	    else
+                if( ff_rst_seq = "11" and warmRESET /= '1' )then
+                    RstEna      <= '1';                         -- RstEna change to 1 after 200ms from power on
+                    FirstBoot_n <= '1';
+                else
+                    --  hold
+                end if;
             end if;
         end if;
     end process;
@@ -1282,7 +1292,7 @@ begin
     ----------------------------------------------------------------
     -- Z80 CPU wait control
     ----------------------------------------------------------------
-    process( clk21m, trueClk, reset )
+    process( clk21m, trueCen, reset )
 
         variable iCpuM1_n   : std_logic;                                -- slack 1.759ns
         variable jSltMerq_n : std_logic;
@@ -1291,49 +1301,52 @@ begin
 
     begin
 
-        if( reset = '1' )then
-            iCpuM1_n    := '1';
-            jSltIorq_n  := '1';
-            jSltMerq_n  := '1';
-            count       := "0000";
-            pSltWait_n  <= '1';
+        if( rising_edge(clk21m) and trueCen = '1' )then
 
-        elsif( rising_edge(clk21m) and trueClk = '1' )then
+            if( reset = '1' )then
+                iCpuM1_n    := '1';
+                jSltIorq_n  := '1';
+                jSltMerq_n  := '1';
+                count       := "0000";
+                pSltWait_n  <= '1';
 
-            if( pSltMerq_n = '0' and jSltMerq_n = '1' )then
-                if( ff_clksel = '1' )then
-                    count := CustomSpeed;                               -- 8 MHz until 4 MHz
-                elsif( ff_clksel5m_n = '0' and (iSltScc1 = '1' or iSltScc2 = '1') )then
-                    count := "0001";
+	    else
+
+                if( pSltMerq_n = '0' and jSltMerq_n = '1' )then
+                    if( ff_clksel = '1' )then
+                        count := CustomSpeed;                               -- 8 MHz until 4 MHz
+                    elsif( ff_clksel5m_n = '0' and (iSltScc1 = '1' or iSltScc2 = '1') )then
+                        count := "0001";
+                    end if;
+                elsif( pSltIorq_n = '0' and jSltIorq_n = '1' )then          -- wait for external bus
+                    if( ff_clksel = '1' )then
+                        count := "0011";
+                    elsif( ff_clksel5m_n = '0' )then
+                        count := "0110";
+                    end if;
+                elsif( count /= "0000" )then                                -- countdown timer
+                    count := count - 1;
                 end if;
-            elsif( pSltIorq_n = '0' and jSltIorq_n = '1' )then          -- wait for external bus
-                if( ff_clksel = '1' )then
-                    count := "0011";
-                elsif( ff_clksel5m_n = '0' )then
-                    count := "0110";
+
+                if( CpuM1_n = '0' and iCpuM1_n = '1' )then
+                    pSltWait_n <= '0';
+                elsif( count /= "0000" )then
+                    pSltWait_n <= '0';
+                elsif( (ff_clksel = '1' or ff_clksel5m_n = '0') and OpllReq = '1' and OpllAck = '0' )then
+                    pSltWait_n <= '0';
+                elsif( ErmReq = '1' and adr(15 downto 13) = "010" and MmcAct = '1' )then
+                    pSltWait_n <= '0';
+--              elsif (SdPaus = '1') then                                   -- dismissed dangerous function
+--                  pSltWait_n <= '0';
+                else
+                    pSltWait_n <= '1';
                 end if;
-            elsif( count /= "0000" )then                                -- countdown timer
-                count := count - 1;
+
+                iCpuM1_n    := CpuM1_n;
+                jSltIorq_n  := pSltIorq_n;
+                jSltMerq_n  := pSltMerq_n;
+
             end if;
-
-            if( CpuM1_n = '0' and iCpuM1_n = '1' )then
-                pSltWait_n <= '0';
-            elsif( count /= "0000" )then
-                pSltWait_n <= '0';
-            elsif( (ff_clksel = '1' or ff_clksel5m_n = '0') and OpllReq = '1' and OpllAck = '0' )then
-                pSltWait_n <= '0';
-            elsif( ErmReq = '1' and adr(15 downto 13) = "010" and MmcAct = '1' )then
-                pSltWait_n <= '0';
---          elsif (SdPaus = '1') then                                   -- dismissed dangerous function
---              pSltWait_n <= '0';
-            else
-                pSltWait_n <= '1';
-            end if;
-
-            iCpuM1_n    := CpuM1_n;
-            jSltIorq_n  := pSltIorq_n;
-            jSltMerq_n  := pSltMerq_n;
-
         end if;
 
     end process;
@@ -1347,81 +1360,84 @@ begin
 
     begin
 
-        if( reset = '1' )then
+        if( rising_edge(clk21m) )then
 
-            iSltRfsh_n      <= '1';
-            iSltMerq_n      <= '1';
-            iSltIorq_n      <= '1';
-            xSltRd_n        <= '1';
-            xSltWr_n        <= '1';
-            iSltAdr         <= (others => '1');
-            iSltDat         <= (others => '1');
+            if( reset = '1' )then
 
-            iack            <= '0';
+                iSltRfsh_n      <= '1';
+                iSltMerq_n      <= '1';
+                iSltIorq_n      <= '1';
+                xSltRd_n        <= '1';
+                xSltWr_n        <= '1';
+                iSltAdr         <= (others => '1');
+                iSltDat         <= (others => '1');
 
-            dlydbi          <= (others => '1');
-            ExpDec          := '0';
+                iack            <= '0';
 
-        elsif( clk21m'event and clk21m = '1' )then
+                dlydbi          <= (others => '1');
+                ExpDec          := '0';
 
-            -- MSX slot signals
-            iSltRfsh_n      <= pSltRfsh_n;
-            iSltMerq_n      <= pSltMerq_n;
-            iSltIorq_n      <= pSltIorq_n;
-            xSltRd_n        <= pSltRd_n;
-            xSltWr_n        <= pSltWr_n;
-            iSltAdr         <= pSltAdr;
-            iSltDat         <= cpu_do;
-
-            if (iSltMerq_n  = '1' and iSltIorq_n = '1') then
-                iack <= '0';
-            elsif( ack = '1' )then
-                iack <= '1';
-            end if;
-
-            -- input assignments for internal devices
-            if( mem = '1' and ExpDec = '1' )then
-                dlydbi <= ExpDbi;
-            elsif( mem = '1' and iSltBot = '1' )then                                            -- IPL-ROM
-                dlydbi <= RomDbi;
-            elsif( mem = '1' and iSltErm = '1' and MmcEna = '1' )then                           -- MegaSD
-                dlydbi <= MmcDbi;
-            elsif( mem = '0' and adr(  7 downto 2 ) = "100110" )then                            -- VDP (V9938/V9958)
-                dlydbi <= VdpDbi;
-            elsif( mem = '0' and adr(  7 downto 2 ) = "101000" )then                            -- PSG (AY-3-8910)
-                dlydbi <= PsgDbi;
-            elsif( mem = '0' and adr(  7 downto 2 ) = "101010" )then                            -- PPI (8255)
-                dlydbi <= PpiDbi;
-            elsif( mem = '0' and adr(  7 downto 2 ) = "110110" and JIS2_ena = '1' )then         -- Kanji-data (JIS1+JIS2)
-                dlydbi <= KanDbi;
-            elsif( mem = '0' and adr(  7 downto 1 ) = "1101100" )then                           -- Kanji-data (JIS1 only)
-                dlydbi <= KanDbi;
-            elsif( mem = '0' and adr(  7 downto 2 ) = "111111" and FullRAM = '0' )then          -- Memory-mapper 2048 kB
-                dlydbi <= '1' & MapDbi(  6 downto 0 );
-            elsif( mem = '0' and adr(  7 downto 2 ) = "111111" )then                            -- Memory-mapper 4096 kB
-                dlydbi <= MapDbi;
-            elsif( mem = '0' and adr(  7 downto 1 ) = "1011010" )then                           -- RTC (RP-5C01)
-                dlydbi <= RtcDbi;
-            elsif( mem = '0' and adr(  7 downto 1 ) = "1110011" )then                           -- System timer (S1990)
-                dlydbi <= systim_dbi;
-            elsif( mem = '0' and adr(  7 downto 4 ) = "0100" and io40_n /= "11111111" )then     -- Switched I/O ports
-                dlydbi <= swio_dbi;
-            elsif( mem = '0' and adr(  7 downto 0 ) = "10100111" and portF4_mode = '1' )then    -- Pause R800 (read only)
-                dlydbi <= (others => '0');
-            elsif( mem = '0' and adr(  7 downto 0 ) = "11110100" and portF4_mode = '1' )then    -- Port F4 normal (Z80 mode)
-                dlydbi <= portF4_bit7 & "0000000";
-            elsif( mem = '0' and adr(  7 downto 0 ) = "11110100" )then                          -- Port F4 inverted
-                dlydbi <= portF4_bit7 & "1111111";
             else
-                dlydbi <= (others => '1');
-            end if;
 
-            if( adr = X"FFFF" )then
-                ExpDec := '1';
-            else
-                ExpDec := '0';
-            end if;
+                -- MSX slot signals
+                iSltRfsh_n      <= pSltRfsh_n;
+                iSltMerq_n      <= pSltMerq_n;
+                iSltIorq_n      <= pSltIorq_n;
+                xSltRd_n        <= pSltRd_n;
+                xSltWr_n        <= pSltWr_n;
+                iSltAdr         <= pSltAdr;
+                iSltDat         <= cpu_do;
 
+                if (iSltMerq_n  = '1' and iSltIorq_n = '1') then
+                    iack <= '0';
+                elsif( ack = '1' )then
+                    iack <= '1';
+                end if;
+
+                -- input assignments for internal devices
+                if( mem = '1' and ExpDec = '1' )then
+                    dlydbi <= ExpDbi;
+                elsif( mem = '1' and iSltBot = '1' )then                                            -- IPL-ROM
+                    dlydbi <= RomDbi;
+                elsif( mem = '1' and iSltErm = '1' and MmcEna = '1' )then                           -- MegaSD
+                    dlydbi <= MmcDbi;
+                elsif( mem = '0' and adr(  7 downto 2 ) = "100110" )then                            -- VDP (V9938/V9958)
+                    dlydbi <= VdpDbi;
+                elsif( mem = '0' and adr(  7 downto 2 ) = "101000" )then                            -- PSG (AY-3-8910)
+                    dlydbi <= PsgDbi;
+                elsif( mem = '0' and adr(  7 downto 2 ) = "101010" )then                            -- PPI (8255)
+                    dlydbi <= PpiDbi;
+                elsif( mem = '0' and adr(  7 downto 2 ) = "110110" and JIS2_ena = '1' )then         -- Kanji-data (JIS1+JIS2)
+                    dlydbi <= KanDbi;
+                elsif( mem = '0' and adr(  7 downto 1 ) = "1101100" )then                           -- Kanji-data (JIS1 only)
+                    dlydbi <= KanDbi;
+                elsif( mem = '0' and adr(  7 downto 2 ) = "111111" and FullRAM = '0' )then          -- Memory-mapper 2048 kB
+                    dlydbi <= '1' & MapDbi(  6 downto 0 );
+                elsif( mem = '0' and adr(  7 downto 2 ) = "111111" )then                            -- Memory-mapper 4096 kB
+                    dlydbi <= MapDbi;
+                elsif( mem = '0' and adr(  7 downto 1 ) = "1011010" )then                           -- RTC (RP-5C01)
+                    dlydbi <= RtcDbi;
+                elsif( mem = '0' and adr(  7 downto 1 ) = "1110011" )then                           -- System timer (S1990)
+                    dlydbi <= systim_dbi;
+                elsif( mem = '0' and adr(  7 downto 4 ) = "0100" and io40_n /= "11111111" )then     -- Switched I/O ports
+                    dlydbi <= swio_dbi;
+                elsif( mem = '0' and adr(  7 downto 0 ) = "10100111" and portF4_mode = '1' )then    -- Pause R800 (read only)
+                    dlydbi <= (others => '0');
+                elsif( mem = '0' and adr(  7 downto 0 ) = "11110100" and portF4_mode = '1' )then    -- Port F4 normal (Z80 mode)
+                    dlydbi <= portF4_bit7 & "0000000";
+                elsif( mem = '0' and adr(  7 downto 0 ) = "11110100" )then                          -- Port F4 inverted
+                    dlydbi <= portF4_bit7 & "1111111";
+                else
+                    dlydbi <= (others => '1');
+                end if;
+
+                if( adr = X"FFFF" )then
+                    ExpDec := '1';
+                else
+                    ExpDec := '0';
+                end if;
+
+            end if;
         end if;
 
     end process;
@@ -1431,46 +1447,49 @@ begin
 
     begin
 
-        if( reset = '1' )then
+        if( rising_edge(clk21m) )then
 
-            jSltScc1    <= '0';
-            jSltScc2    <= '0';
-            jSltMem     <= '0';
+            if( reset = '1' )then
 
-            wrt <= '0';
+                jSltScc1    <= '0';
+                jSltScc2    <= '0';
+                jSltMem     <= '0';
 
-        elsif( clk21m'event and clk21m = '0' )then
+                wrt <= '0';
 
-            if( mem = '1' and iSltScc1 = '1' )then
-                jSltScc1 <= '1';
             else
-                jSltScc1 <= '0';
-            end if;
 
-            if( mem = '1' and iSltScc2 = '1' )then
-                jSltScc2 <= '1';
-            else
-                jSltScc2 <= '0';
-            end if;
-
-            if( mem = '1' and iSltErm = '1' )then
-                if( MmcEna = '1' and adr(15 downto 13) = "010" )then
-                    jSltMem <= '0';
-                elsif( MmcMode = '1' or ff_ldbios_n = '0' )then         -- enable SD/MMC drive
-                    jSltMem <= '1';
-                else                                                    -- disable SD/MMC drive
-                    jSltMem <= '0';
+                if( mem = '1' and iSltScc1 = '1' )then
+                    jSltScc1 <= '1';
+                else
+                    jSltScc1 <= '0';
                 end if;
-            elsif( mem = '1' and (iSltMap = '1' or rom_main = '1' or rom_opll = '1' or rom_extd = '1' or rom_xbas = '1' or rom_free = '1')) then
-                    jSltMem <= '1';
-            else
-                    jSltMem <= '0';
-            end if;
 
-            if( req = '0' )then
-                wrt <= not pSltWr_n;                                    -- 1=write, 0=read
-            end if;
+                if( mem = '1' and iSltScc2 = '1' )then
+                    jSltScc2 <= '1';
+                else
+                    jSltScc2 <= '0';
+                end if;
 
+                if( mem = '1' and iSltErm = '1' )then
+                    if( MmcEna = '1' and adr(15 downto 13) = "010" )then
+                        jSltMem <= '0';
+                    elsif( MmcMode = '1' or ff_ldbios_n = '0' )then         -- enable SD/MMC drive
+                        jSltMem <= '1';
+                    else                                                    -- disable SD/MMC drive
+                        jSltMem <= '0';
+                    end if;
+                elsif( mem = '1' and (iSltMap = '1' or rom_main = '1' or rom_opll = '1' or rom_extd = '1' or rom_xbas = '1' or rom_free = '1')) then
+                        jSltMem <= '1';
+                else
+                        jSltMem <= '0';
+                end if;
+
+                if( req = '0' )then
+                    wrt <= not pSltWr_n;                                    -- 1=write, 0=read
+                end if;
+
+            end if;
         end if;
 
     end process;
@@ -1500,11 +1519,13 @@ begin
     ----------------------------------------------------------------
     process( clk21m, pColdReset )
     begin
-        if(pColdReset = '1') then
-            portF4_bit7 <= '0';
-        elsif( clk21m'event and clk21m = '1' )then
-            if( portF4_req = '1' and wrt = '1' )then
-                portF4_bit7 <= dbo(7);
+        if( rising_edge(clk21m) )then
+            if(pColdReset = '1') then
+                portF4_bit7 <= '0';
+	    else
+                if( portF4_req = '1' and wrt = '1' )then
+                    portF4_bit7 <= dbo(7);
+                end if;
             end if;
         end if;
     end process;
@@ -1514,29 +1535,31 @@ begin
     ----------------------------------------------------------------
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            PpiPortA    <= "11111111";          -- primary slot : page 0 => boot-rom, page 1/2 => ese-mmc, page 3 => mapper
-            PpiPortC    <= (others => '0');
-            ff_ldbios_n <= '0';                 -- OCM-BIOS is ready to be loaded
-        elsif( clk21m'event and clk21m = '1' )then
-            -- I/O port access on A8-ABh ... PPI(8255) access
-            if( PpiReq = '1' )then
-                if( wrt = '1' and adr(1 downto 0) = "00" )then
-                    PpiPortA    <= dbo;
-                    ff_ldbios_n <= '1';         -- OCM-BIOS is done!
-                elsif( wrt = '1' and adr(1 downto 0) = "10" )then
-                    PpiPortC  <= dbo;
-                elsif( wrt = '1' and adr(1 downto 0) = "11" and dbo(7) = '0' )then
-                    case dbo(3 downto 1) is
-                        when "000"  => PpiPortC(0) <= dbo(0); -- key_matrix Y(0)
-                        when "001"  => PpiPortC(1) <= dbo(0); -- key_matrix Y(1)
-                        when "010"  => PpiPortC(2) <= dbo(0); -- key_matrix Y(2)
-                        when "011"  => PpiPortC(3) <= dbo(0); -- key_matrix Y(3)
-                        when "100"  => PpiPortC(4) <= dbo(0); -- cassete motor on (0=On,1=Off)
-                        when "101"  => PpiPortC(5) <= dbo(0); -- cassete audio out
-                        when "110"  => PpiPortC(6) <= dbo(0); -- CAPS lamp (0=On,1=Off)
-                        when others => PpiPortC(7) <= dbo(0); -- 1 bit sound port
-                    end case;
+        if( clk21m'event and clk21m = '1' )then
+            if( reset = '1' )then
+                PpiPortA    <= "11111111";          -- primary slot : page 0 => boot-rom, page 1/2 => ese-mmc, page 3 => mapper
+                PpiPortC    <= (others => '0');
+                ff_ldbios_n <= '0';                 -- OCM-BIOS is ready to be loaded
+	    else
+                -- I/O port access on A8-ABh ... PPI(8255) access
+                if( PpiReq = '1' )then
+                    if( wrt = '1' and adr(1 downto 0) = "00" )then
+                        PpiPortA    <= dbo;
+                        ff_ldbios_n <= '1';         -- OCM-BIOS is done!
+                    elsif( wrt = '1' and adr(1 downto 0) = "10" )then
+                        PpiPortC  <= dbo;
+                    elsif( wrt = '1' and adr(1 downto 0) = "11" and dbo(7) = '0' )then
+                        case dbo(3 downto 1) is
+                            when "000"  => PpiPortC(0) <= dbo(0); -- key_matrix Y(0)
+                            when "001"  => PpiPortC(1) <= dbo(0); -- key_matrix Y(1)
+                            when "010"  => PpiPortC(2) <= dbo(0); -- key_matrix Y(2)
+                            when "011"  => PpiPortC(3) <= dbo(0); -- key_matrix Y(3)
+                            when "100"  => PpiPortC(4) <= dbo(0); -- cassete motor on (0=On,1=Off)
+                            when "101"  => PpiPortC(5) <= dbo(0); -- cassete audio out
+                            when "110"  => PpiPortC(6) <= dbo(0); -- CAPS lamp (0=On,1=Off)
+                            when others => PpiPortC(7) <= dbo(0); -- 1 bit sound port
+                        end case;
+                    end if;
                 end if;
             end if;
         end if;
@@ -1557,16 +1580,18 @@ begin
     -- slot #0
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            ExpSlot0 <= (others => '0');
-        elsif( clk21m'event and clk21m = '1' )then
-            -- Memory mapped I/O port access on FFFFh ... expansion slot register (master mode)
-            if( req = '1' and iSltMerq_n = '0' and wrt = '1' and adr = X"FFFF" )then
-                if( PpiPortA(7 downto 6) = "00" )then
-                    if( Slot0Mode = '1' )then
-                    ExpSlot0 <= dbo;
-                    else
-                        ExpSlot0 <= (others => '0');
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                ExpSlot0 <= (others => '0');
+	    else
+                -- Memory mapped I/O port access on FFFFh ... expansion slot register (master mode)
+                if( req = '1' and iSltMerq_n = '0' and wrt = '1' and adr = X"FFFF" )then
+                    if( PpiPortA(7 downto 6) = "00" )then
+                        if( Slot0Mode = '1' )then
+                            ExpSlot0 <= dbo;
+                        else
+                            ExpSlot0 <= (others => '0');
+                        end if;
                     end if;
                 end if;
             end if;
@@ -1576,13 +1601,15 @@ begin
     -- slot #3
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            ExpSlot3 <= "00101011";             -- primary slot : page 0 => ipl-rom, page 1/2 => megasd, page 3 => mapper
-        elsif( clk21m'event and clk21m = '1' )then
-            -- Memory mapped I/O port access on FFFFh ... expansion slot register (master mode)
-            if( req = '1' and iSltMerq_n = '0' and wrt = '1' and adr = X"FFFF" )then
-                if( PpiPortA(7 downto 6) = "11" )then
-                    ExpSlot3 <= dbo;
+        if( rising_edge(clk21m) )then
+            if( reset = '1' )then
+                ExpSlot3 <= "00101011";             -- primary slot : page 0 => ipl-rom, page 1/2 => megasd, page 3 => mapper
+            else
+                -- Memory mapped I/O port access on FFFFh ... expansion slot register (master mode)
+                if( req = '1' and iSltMerq_n = '0' and wrt = '1' and adr = X"FFFF" )then
+                    if( PpiPortA(7 downto 6) = "11" )then
+                        ExpSlot3 <= dbo;
+                    end if;
                 end if;
             end if;
         end if;
@@ -1720,7 +1747,7 @@ begin
 
     process (clk21m)
     begin
-        if( clk21m'event and clk21m = '1' )then
+        if( rising_edge(clk21m) )then
             pDac_VR   <= VideoR;
             pDac_VG   <= VideoG;
             pDac_VB   <= VideoB;
@@ -1739,12 +1766,14 @@ begin
     -- | SHI | --   | PgUp | PgDn | F9  | F10 | F11 | F12 |
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            vFkeys  <= (others => '0');         -- Sync to oFkeys
-        elsif( clk21m'event and clk21m = '1' )then
-          if( FirstBoot_n /= '1' or RstEna = '1' )then
-            vFkeys  <=  Fkeys;
-          end if;
+        if( clk21m'event and clk21m = '1' )then
+            if( reset = '1' )then
+                vFkeys  <= (others => '0');         -- Sync to oFkeys
+	    else
+              if( FirstBoot_n /= '1' or RstEna = '1' )then
+                vFkeys  <=  Fkeys;
+              end if;
+            end if;
         end if;
     end process;
 
@@ -2060,18 +2089,20 @@ begin
 
     process( reset, clk21m )
     begin
-        if( reset = '1' )then
-            RamAck <= '0';
-        elsif( clk21m'event and clk21m = '1' )then
-            if( RamReq = '0' )then
+        if( clk21m'event and clk21m = '1' )then
+            if( reset = '1' )then
                 RamAck <= '0';
-            elsif( VideoDLClk = '0' and VideoDHClk = '1' )then
-                RamAck <= '1';
+	         else
+                if( RamReq = '0' )then
+                    RamAck <= '0';
+                elsif( VideoDLClk = '0' and VideoDHClk = '1' )then
+                    RamAck <= '1';
+                end if;
+	    			
+	    			if( VideoDLClk = '0' ) then
+	    				vram_page <= vram_slot_ids;
+	    			end if;
             end if;
-				
-				if( VideoDLClk = '0' ) then
-					vram_page <= vram_slot_ids;
-				end if;
         end if;
     end process;
 
@@ -2097,8 +2128,8 @@ begin
             RESET_n     => ((pSltRst_n or RstKeyLock) and swioRESET_n),
             R800_mode   => pR800,
             CLK         => clk21m,
-            CEN_p       => trueClk,
-            CEN_n       => trueClk_n,
+            CEN_p       => trueCen,
+            CEN_n       => trueCen_n,
             WAIT_n      => pSltWait_n,
             INT_n       => pSltInt_n,
             NMI_n       => '1',
@@ -2120,24 +2151,24 @@ begin
         port map(clk21m, adr, RomDbi);
 
     U03 : megasd
-        port map(clk21m, reset, cpuclk, ErmReq, open, wrt, adr, open, dbo,
+        port map(clk21m, reset, cpucen, ErmReq, open, wrt, adr, open, dbo,
                         ErmRam, ErmWrt, ErmAdr, RamDbi, open,
                         MmcDbi, MmcEna, MmcAct, mmc_sck, mmc_cs, mmc_mosi, mmc_miso,
                         open, open, open, open, '0');
 
     U05 : mapper
-        port map(clk21m, reset, cpuclk, MapReq, open, mem, wrt, adr, MapDbi, dbo,
+        port map(clk21m, reset, cpucen, MapReq, open, mem, wrt, adr, MapDbi, dbo,
                         MapRam, MapWrt, MapAdr, RamDbi, open);
 
     U06 : work.eseps2
-        port map(clk21m, reset, cpuclk, Kmap, Paus, Scro, Reso, Fkeys,
+        port map(clk21m, reset, cpucen, Kmap, Paus, Scro, Reso, Fkeys,
                         ps2_key, PpiPortC, PpiPortB);
 
     U07 : rtc
         port map(clk21m, reset, rtc_setup, rtc_time, w_10Hz, RtcReq, open, wrt, adr, RtcDbi, dbo);
 
     U08 : kanji
-        port map(clk21m, reset, cpuclk, KanReq, open, wrt, adr, KanDbi, dbo,
+        port map(clk21m, reset, cpucen, KanReq, open, wrt, adr, KanDbi, dbo,
                         KanRom, KanAdr, RamDbi, open);
 
     -- V9958 MSX2+/tR VDP
@@ -2148,22 +2179,22 @@ begin
                         VideoDHClk, VideoDLClk, Reso_v, ntsc_pal_type, forced_v_mode, legacy_vga);
 
     U30 : psg
-        port map(clk21m, reset, cpuclk, PsgReq, open, wrt, adr, PsgDbi, dbo,
+        port map(clk21m, reset, cpucen, PsgReq, open, wrt, adr, PsgDbi, dbo,
                         pJoyA, pStrA, pJoyB, pStrB, open, '0', w_key_mode, PsgAmp);
 
     U31_1 : megaram
-        port map(clk21m, reset, cpuclk, Scc1Req, Scc1Ack, wrt, adr, Scc1Dbi, dbo,
+        port map(clk21m, reset, cpucen, Scc1Req, Scc1Ack, wrt, adr, Scc1Dbi, dbo,
                         Scc1Ram, Scc1Wrt, Scc1Adr, RamDbi, open, Scc1Type, Scc1AmpL, open);
 
     Scc1Type <= "00"    when( Slot1Mode = '0' )else
                 "10";
 
     U31_2 : megaram
-        port map(clk21m, reset, cpuclk, Scc2Req, Scc2Ack, wrt, adr, Scc2Dbi, dbo,
+        port map(clk21m, reset, cpucen, Scc2Req, Scc2Ack, wrt, adr, Scc2Dbi, dbo,
                         Scc2Ram, Scc2Wrt, Scc2Adr, RamDbi, open, Slot2Mode, Scc2AmpL, open);
 
     U32 : eseopll
-        port map(clk21m, reset, cpuclk, OpllEnaWait, OpllReq, OpllAck, wrt, adr, dbo, pAudioOPLL);
+        port map(clk21m, reset, cpucen, OpllEnaWait, OpllReq, OpllAck, wrt, adr, dbo, pAudioOPLL);
 
     OpllEnaWait     <=  '1' when( ff_clksel = '1' or ff_clksel5m_n = '0' )else
                         '0';
