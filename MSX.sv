@@ -135,6 +135,7 @@ localparam CONF_STR = {
 	"MSX;;",
 	"-;",
 	"S,VHD;",
+	"OE,Reset after Mount,No,Yes;",
 	"-;",
 	"O9,Aspect ratio,4:3,16:9;",
 	"O23,Scanlines,No,25%,50%,75%;",
@@ -173,7 +174,7 @@ pll pll
 );
 
 wire cold_reset = RESET | status[0] | ~initReset_n;
-wire reset = cold_reset | buttons[1] | status[10];
+wire reset = cold_reset | buttons[1] | status[10] | (status[14] && img_mounted);
 
 reg initReset_n = 0;
 always @(posedge clk_sys) begin
