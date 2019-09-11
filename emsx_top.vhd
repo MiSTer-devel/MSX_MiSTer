@@ -699,7 +699,7 @@ architecture RTL of emsx_top is
     signal  SdrUdq          : std_logic;
     signal  SdrLdq          : std_logic;
     signal  SdrAdr          : std_logic_vector( 12 downto 0 );
-    signal  SdrDat          : std_logic_vector( 15 downto 0 );
+    signal  SdrDat          : std_logic_vector( 7 downto 0 );
     signal  SdPaus          : std_logic := '0';
 
     constant SdrCmd_de      : std_logic_vector(  3 downto 0 ) := "1111";    -- deselect
@@ -1986,22 +1986,15 @@ begin
     process( memclk )
     begin
         if( memclk'event and memclk = '1' )then
-            if( ff_sdr_seq = "010" )then
-                if( SdrSta(2) = '1' )then
-                    if( SdrSta(0) = '0' )then
-                        SdrDat <= (others => 'Z');
-                    else
-                        if( RstSeq(4 downto 3) /= "11" )then
-                            SdrDat <= (others => '0');
-                        elsif( VideoDLClk = '0' )then
-                            SdrDat <= dbo & dbo;                    -- "101"(cpu write)
-                        else
-                            SdrDat <= VrmDbo & VrmDbo;              -- "111"(vdp write)
-                        end if;
-                    end if;
+            SdrDat <= (others => 'Z');
+            if( ff_sdr_seq = "010" and SdrSta(2) = '1' and SdrSta(0) = '1' )then
+                if( RstSeq(4 downto 3) /= "11" )then
+                    SdrDat <= (others => '0');
+                elsif( VideoDLClk = '0' )then
+                    SdrDat <= dbo;         -- "101"(cpu write)
+                else
+                    SdrDat <= VrmDbo;      -- "111"(vdp write)
                 end if;
-            else
-                SdrDat <= (others => 'Z');
             end if;
         end if;
     end process;
@@ -2118,7 +2111,7 @@ begin
     pMemBa0     <= '0';
 
     pMemAdr     <= SdrAdr;
-    pMemDat     <= SdrDat;
+    pMemDat     <= SdrDat & SdrDat;
 
     ----------------------------------------------------------------
     -- Connect components
