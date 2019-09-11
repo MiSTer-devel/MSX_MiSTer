@@ -276,7 +276,7 @@ wire de,vs,hs;
 reg [7:0] ro,go,bo;
 reg deo,vso,hso;
 
-assign CLK_VIDEO = clk_sys;
+assign CLK_VIDEO = clk_mem;
 assign CE_PIXEL  = ce_pix;
 assign VGA_DE = deo;
 assign VGA_VS = vso;
@@ -285,10 +285,13 @@ assign VGA_SL = status[3:2];
 assign VGA_F1 = 0;
 
 reg ce_pix = 0;
-always @(posedge clk_sys) begin
+always @(posedge clk_mem) begin
+	reg [2:0] div;
+	
+	div <= div + 1'd1;
 
-	if(scandoubler) ce_pix <= 1;
-	else ce_pix <= ~ce_pix;
+	if(scandoubler) ce_pix <= !div[1:0];
+	else ce_pix <= !div;
 
 	if(ce_pix) begin
 		VGA_R <= {r,r[5:4]};

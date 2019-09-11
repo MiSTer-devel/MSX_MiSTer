@@ -145,7 +145,7 @@ BEGIN
         IF( RISING_EDGE(CLK21M) )THEN
             IF( RESET = '1' )THEN
                 FF_H_CNT <= (OTHERS => '0');
-	    else
+            ELSE
                 IF( W_H_CNT_END = '1' )THEN
                     FF_H_CNT <= (OTHERS => '0' );
                 ELSE
@@ -175,7 +175,7 @@ BEGIN
         IF( RISING_EDGE(CLK21M) )THEN
             IF( RESET = '1' )THEN
                 FF_V_CNT_IN_FIELD   <= (OTHERS => '0');
-	    else
+            ELSE
                 IF( (W_H_CNT_HALF OR W_H_CNT_END) = '1' )THEN
                     IF( W_FIELD_END = '1' )THEN
                         FF_V_CNT_IN_FIELD <= (OTHERS => '0');
@@ -195,7 +195,7 @@ BEGIN
         IF( RISING_EDGE(CLK21M) )THEN
             IF( RESET = '1' )THEN
                 FF_FIELD <= '0';
-	    else
+            ELSE
                 -- GENERATE FF_FIELD SIGNAL
                 IF( (W_H_CNT_HALF OR W_H_CNT_END) = '1' )THEN
                     IF( W_FIELD_END = '1' )THEN
@@ -214,7 +214,7 @@ BEGIN
         IF( RISING_EDGE(CLK21M) )THEN
             IF( RESET = '1' )THEN
                 FF_V_CNT_IN_FRAME   <= (OTHERS => '0');
-	    ELSE
+            ELSE
                 IF( (W_H_CNT_HALF OR W_H_CNT_END) = '1' )THEN
                     IF( W_FIELD_END = '1' AND FF_FIELD = '1' )THEN
                         FF_V_CNT_IN_FRAME   <= (OTHERS => '0');
@@ -238,7 +238,7 @@ BEGIN
         IF( RISING_EDGE(CLK21M) )THEN
             IF( RESET = '1' )THEN
                 FF_H_BLANK <= '0';
-	    ELSE
+            ELSE
                 IF( W_H_BLANK_START = '1' )THEN
                     FF_H_BLANK <= '1';
                 ELSIF( W_H_BLANK_END = '1' )THEN
@@ -272,7 +272,7 @@ BEGIN
         IF( RISING_EDGE(CLK21M) )THEN
             IF( RESET = '1' )THEN
                 FF_V_BLANK <= '0';
-	    ELSE
+            ELSE
                 IF( W_H_BLANK_END = '1' )THEN
                     IF( W_V_BLANKING_END = '1' )THEN
                         FF_V_BLANK <= '0';

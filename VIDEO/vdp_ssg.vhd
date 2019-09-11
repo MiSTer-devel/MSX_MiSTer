@@ -6,25 +6,25 @@
 --  All rights reserved.
 --                                     http://www.ohnaka.jp/ese-vdp/
 --
---  {\tgEFA¨æÑ{\tgEFAÉîÃ¢Äì¬³ê½h¶¨ÍAÈºÌðð
---  ½·êÉÀèAÄÐz¨æÑgpªÂ³êÜ·B
+--  Â{Â\ÂtÂgÂEÂFÂAÂÂ¨ÂÃ¦ÂÃÂ{Â\ÂtÂgÂEÂFÂAÂÃÂÃ®ÂÃÂÂ¢ÂÃÂÃ¬ÂÂ¬ÂÂ³ÂÃªÂÂ½ÂhÂÂ¶ÂÂ¨ÂÃÂAÂÃÂÂºÂÃÂÃ°ÂÂÂÃ°
+--  ÂÂÂÂ½ÂÂ·ÂÃªÂÂÂÃÂÃÂÃ¨ÂAÂÃÂÃÂzÂÂ¨ÂÃ¦ÂÃÂgÂpÂÂªÂÂÂÃÂÂ³ÂÃªÂÃÂÂ·ÂB
 --
---  1.\[XR[h`®ÅÄÐz·éêAãLÌì \¦A{ðêA¨æÑºL
---    ÆÓðð»ÌÜÜÌ`ÅÛ·é±ÆB
---  2.oCi`®ÅÄÐz·éêAÐz¨Ét®ÌhLgÌ¿ÉAãLÌ
---    ì \¦A{ðêA¨æÑºLÆÓððÜßé±ÆB
---  3.ÊÉæéOÌÂÈµÉA{\tgEFAðÌA¨æÑ¤ÆIÈ»iâ®
---    ÉgpµÈ¢±ÆB
+--  1.Â\Â[ÂXÂRÂ[ÂhÂ`ÂÂ®ÂÃÂÃÂÃÂzÂÂ·ÂÃ©ÂÃªÂÂÂAÂÃ£ÂLÂÃÂÂÂÃ¬ÂÂ Â\ÂÂ¦ÂAÂ{ÂÃ°ÂÂÂÃªÂÂÂAÂÂ¨ÂÃ¦ÂÃÂÂºÂL
+--    ÂÃÂÃÂÃ°ÂÂÂÃ°ÂÂ»ÂÃÂÃÂÃÂÃÂ`ÂÃÂÃÂÂÂÂ·ÂÃ©ÂÂ±ÂÃÂB
+--  2.ÂoÂCÂiÂÂÂ`ÂÂ®ÂÃÂÃÂÃÂzÂÂ·ÂÃ©ÂÃªÂÂÂAÂÃÂzÂÂ¨ÂÃÂtÂÂ®ÂÃÂhÂLÂÂÂÂÂÂÂgÂÂÂÃÂÂÂÂ¿ÂÃÂAÂÃ£ÂLÂÃ
+--    ÂÂÂÃ¬ÂÂ Â\ÂÂ¦ÂAÂ{ÂÃ°ÂÂÂÃªÂÂÂAÂÂ¨ÂÃ¦ÂÃÂÂºÂLÂÃÂÃÂÃ°ÂÂÂÃ°ÂÃÂÃÂÃ©ÂÂ±ÂÃÂB
+--  3.ÂÂÂÃÂÃÂÃ¦ÂÃ©ÂÂÂOÂÃÂÂÂÃÂÃÂÂµÂÃÂAÂ{Â\ÂtÂgÂEÂFÂAÂÃ°ÂÃÂÂÂAÂÂ¨ÂÃ¦ÂÃÂÂ¤ÂÃÂIÂÃÂÂ»ÂiÂÃ¢ÂÂÂÂ®
+--    ÂÃÂgÂpÂÂµÂÃÂÂ¢ÂÂ±ÂÃÂB
 --
---  {\tgEFAÍAì ÒÉæÁÄu»óÌÜÜvñ³êÄ¢Ü·Bì ÒÍA
---  ÁèÚIÖÌK«ÌÛØA¤i«ÌÛØAÜ½»êÉÀè³êÈ¢A¢©Èé¾¦
---  Iàµ­ÍÃÙÈÛØÓCà¢Ü¹ñBì ÒÍARÌ¢©ñðâí¸A¹Q
---  ­¶Ì´ö¢©ñðâí¸A©ÂÓCÌªª_ñÅ é©µiÓCÅ é©iß¸
---  »Ì¼Ìjs@s×Å é©ðâí¸A¼É»Ìæ¤È¹Qª­¶·éÂ\«ðmç
---  ³êÄ¢½ÆµÄàA{\tgEFAÌgpÉæÁÄ­¶µ½iãÖiÜ½ÍãpT
---  [rXÌ²BAgpÌr¸Af[^Ìr¸AvÌr¸AÆ±ÌfàÜßAÜ½»
---  êÉÀè³êÈ¢j¼Ú¹QAÔÚ¹QAô­IÈ¹QAÁÊ¹QA¦±I¹QAÜ
---  ½ÍÊ¹QÉÂ¢ÄAêØÓCðíÈ¢àÌÆµÜ·B
+--  Â{Â\ÂtÂgÂEÂFÂAÂÃÂAÂÂÂÃ¬ÂÂ ÂÃÂÃÂÃ¦ÂÃÂÃÂuÂÂ»ÂÃ³ÂÃÂÃÂÃÂvÂÃ±ÂÂÂÂ³ÂÃªÂÃÂÂ¢ÂÃÂÂ·ÂBÂÂÂÃ¬ÂÂ ÂÃÂÃÂA
+--  ÂÃÂÃ¨ÂÃÂIÂÃÂÃÂKÂÂÂÂ«ÂÃÂÃÂÃÂAÂÂ¤ÂiÂÂ«ÂÃÂÃÂÃÂAÂÃÂÂ½ÂÂ»ÂÃªÂÃÂÃÂÃ¨ÂÂ³ÂÃªÂÃÂÂ¢ÂAÂÂ¢ÂÂ©ÂÃÂÃ©ÂÂ¾ÂÂ¦
+--  ÂIÂÃ ÂÂµÂÂ­ÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂCÂÃ ÂÂÂÂ¢ÂÃÂÂ¹ÂÃ±ÂBÂÂÂÃ¬ÂÂ ÂÃÂÃÂAÂÂÂRÂÃÂÂ¢ÂÂ©ÂÃ±ÂÃ°ÂÃ¢ÂÃ­ÂÂ¸ÂAÂÂ¹ÂQ
+--  ÂÂ­ÂÂ¶ÂÃÂÂ´ÂÃ¶ÂÂ¢ÂÂ©ÂÃ±ÂÃ°ÂÃ¢ÂÃ­ÂÂ¸ÂAÂÂ©ÂÃÂÃÂCÂÃÂÂªÂÂÂÂªÂ_ÂÃ±ÂÃÂÂ ÂÃ©ÂÂ©ÂÂµÂiÂÃÂCÂÃÂÂ ÂÃ©ÂÂ©ÂiÂÃÂÂ¸
+--  ÂÂ»ÂÃÂÂ¼ÂÃÂjÂsÂ@ÂsÂÃÂÃÂÂ ÂÃ©ÂÂ©ÂÃ°ÂÃ¢ÂÃ­ÂÂ¸ÂAÂÂ¼ÂÃÂÂ»ÂÃÂÃ¦ÂÂ¤ÂÃÂÂ¹ÂQÂÂªÂÂ­ÂÂ¶ÂÂ·ÂÃ©ÂÃÂ\ÂÂ«ÂÃ°ÂmÂÃ§
+--  ÂÂ³ÂÃªÂÃÂÂ¢ÂÂ½ÂÃÂÂµÂÃÂÃ ÂAÂ{Â\ÂtÂgÂEÂFÂAÂÃÂgÂpÂÃÂÃ¦ÂÃÂÃÂÂ­ÂÂ¶ÂÂµÂÂ½ÂiÂÃ£ÂÃÂiÂÃÂÂ½ÂÃÂÃ£ÂpÂT
+--  Â[ÂrÂXÂÃÂÂ²ÂBÂAÂgÂpÂÃÂrÂÂ¸ÂAÂfÂ[Â^ÂÃÂrÂÂ¸ÂAÂÂÂvÂÃÂrÂÂ¸ÂAÂÃÂÂ±ÂÃÂÂÂfÂÃ ÂÃÂÃÂAÂÃÂÂ½ÂÂ»
+--  ÂÃªÂÃÂÃÂÃ¨ÂÂ³ÂÃªÂÃÂÂ¢ÂjÂÂ¼ÂÃÂÂ¹ÂQÂAÂÃÂÃÂÂ¹ÂQÂAÂÃ´ÂÂ­ÂIÂÃÂÂ¹ÂQÂAÂÃÂÃÂÂ¹ÂQÂAÂÂ¦ÂÂ±ÂIÂÂ¹ÂQÂAÂÃ
+--  ÂÂ½ÂÃÂÂÂÃÂÂ¹ÂQÂÃÂÃÂÂ¢ÂÃÂAÂÃªÂÃÂÃÂCÂÃ°ÂÂÂÃ­ÂÃÂÂ¢ÂÃ ÂÃÂÃÂÂµÂÃÂÂ·ÂB
 --
 --  Note that above Japanese version license is the formal document.
 --  The following translation is only for reference.
@@ -57,7 +57,7 @@
 --
 -------------------------------------------------------------------------------
 --  30th,March,2008
---  JP: VDP.VHD ©çª£ by t.hara
+--  JP: VDP.VHD ÂÂ©ÂÃ§ÂÂªÂÂ£ by t.hara
 --
 
 LIBRARY IEEE;
@@ -204,7 +204,7 @@ BEGIN
                 FF_DOTSTATE     <= "00";
                 FF_VIDEO_DH_CLK <= '0';
                 FF_VIDEO_DL_CLK <= '0';
-	    ELSE
+            ELSE
                 IF( W_H_CNT = CLOCKS_PER_LINE-1 )THEN
                     FF_DOTSTATE     <= "00";
                     FF_VIDEO_DH_CLK <= '1';
@@ -243,7 +243,7 @@ BEGIN
         IF( RISING_EDGE(CLK21M) )THEN
             IF( RESET = '1' )THEN
                 FF_EIGHTDOTSTATE <= "000";
-	    ELSE
+            ELSE
                 IF( W_H_CNT(1 DOWNTO 0) = "11" )THEN
                     IF( FF_PRE_X_CNT = 0 )THEN
                         FF_EIGHTDOTSTATE <= "000";
@@ -266,7 +266,7 @@ BEGIN
         IF( RISING_EDGE(CLK21M) )THEN
             IF( RESET = '1' )THEN
                 FF_PRE_X_CNT_START1 <= (OTHERS => '0');
-	    ELSE
+            ELSE
                 FF_PRE_X_CNT_START1 <= (W_PRE_X_CNT_START0(4) & W_PRE_X_CNT_START0) - ("000" & REG_R27_H_SCROLL);   -- (-23...-1)
             END IF;
         END IF;
@@ -280,7 +280,7 @@ BEGIN
         IF( RISING_EDGE(CLK21M) )THEN
             IF( RESET = '1' )THEN
                 FF_PRE_X_CNT <= (OTHERS =>'0');
-	    ELSE
+            ELSE
                 IF( (W_H_CNT = ("00" & (OFFSET_X + LED_TV_X_NTSC - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00") + 4) & "10") AND REG_R25_YJK = '1' AND CENTERYJK_R25_N = '1' AND VDPR9PALMODE = '0') OR
                     (W_H_CNT = ("00" & (OFFSET_X + LED_TV_X_NTSC - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00")    ) & "10") AND (REG_R25_YJK = '0' OR CENTERYJK_R25_N = '0') AND VDPR9PALMODE = '0') OR
                     (W_H_CNT = ("00" & (OFFSET_X + LED_TV_X_PAL - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00") + 4) & "10") AND REG_R25_YJK = '1' AND CENTERYJK_R25_N = '1' AND VDPR9PALMODE = '1') OR
@@ -298,7 +298,7 @@ BEGIN
         IF( RISING_EDGE(CLK21M) )THEN
             IF( RESET = '1' )THEN
                 FF_X_CNT <= (OTHERS =>'0');
-	    ELSE
+            ELSE
                 IF( (W_H_CNT = ("00" & (OFFSET_X + LED_TV_X_NTSC - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00") + 4) & "10") AND REG_R25_YJK = '1' AND CENTERYJK_R25_N = '1' AND VDPR9PALMODE = '0') OR
                     (W_H_CNT = ("00" & (OFFSET_X + LED_TV_X_NTSC - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00")    ) & "10") AND (REG_R25_YJK = '0' OR CENTERYJK_R25_N = '0') AND VDPR9PALMODE = '0') OR
                     (W_H_CNT = ("00" & (OFFSET_X + LED_TV_X_PAL - ((REG_R25_MSK AND (NOT CENTERYJK_R25_N)) & "00") + 4) & "10") AND REG_R25_YJK = '1' AND CENTERYJK_R25_N = '1' AND VDPR9PALMODE = '1') OR
@@ -306,7 +306,7 @@ BEGIN
                     -- HOLD
                 ELSIF( W_H_CNT(1 DOWNTO 0) = "10") THEN
                     IF( FF_PRE_X_CNT = "111111111" )THEN
-                        -- JP: FF_PRE_X_CNT �� -1����0�ɃJ�E���g�A�b�v���鎞��FF_X_CNT��-8�ɂ���
+                        -- JP: FF_PRE_X_CNT ª -1©ç0ÉJEgAbv·éÉFF_X_CNTð-8É·é
                         FF_X_CNT <= "111111000";        -- -8
                     ELSE
                         FF_X_CNT <= FF_X_CNT + 1;
@@ -324,7 +324,7 @@ BEGIN
         IF( CLK21M'EVENT AND CLK21M = '1' )THEN
             IF( RESET = '1' )THEN
                 IVIDEOVS_N <= '1';
-	    ELSE
+            ELSE
                 IF( W_V_CNT_IN_FIELD = 6 )THEN
                     -- SSTATE = SSTATE_B
                     IVIDEOVS_N <= '0';
@@ -368,7 +368,7 @@ BEGIN
         IF( RISING_EDGE(CLK21M) )THEN
             IF( RESET = '1' )THEN
                 FF_WINDOW_X <= '0';
-	    ELSE
+            ELSE
                 -- MAIN WINDOW
                 IF( W_H_CNT( 1 DOWNTO 0) = "01" AND FF_X_CNT = W_LEFT_MASK ) THEN
                     -- WHEN DOTCOUNTER_X = 0
@@ -399,10 +399,9 @@ BEGIN
                 FF_PRE_Y_CNT        <= (OTHERS =>'0');
                 FF_MONITOR_LINE     <= (OTHERS =>'0');
                 PREWINDOW_Y         <= '0';
-	    ELSE
-
+            ELSE
                 IF( W_HSYNC = '1' )THEN
-                    -- JP: PREWINDOW_X�� 1�ɂȂ�^�C�~���O�Ɠ����^�C�~���O��Y���W�̌v�Z
+                    -- JP: PREWINDOW_Xª 1ÉÈé^C~OÆ¯¶^C~OÅYÀWÌvZ
                     IF(  W_V_BLANKING_END = '1' )THEN
                         IF(    REG_R9_Y_DOTS = '0' AND VDPR9PALMODE = '0' )THEN
                             PREDOTCOUNTERYPSTART := "111100110";    -- TOP BORDER LINES = -26

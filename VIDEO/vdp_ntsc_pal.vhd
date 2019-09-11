@@ -6,25 +6,25 @@
 --  All rights reserved.
 --                                     http://www.ohnaka.jp/ese-vdp/
 --
---  �{�\�t�g�E�F�A����і{�\�t�g�E�F�A�Ɋ�Â��č쐬���ꂽ�h�����́A�ȉ��̏�����
---  �������ꍇ�Ɍ���A�ĔЕz����юg�p��������܂��B
+--  {\tgEFA¨æÑ{\tgEFAÉîÃ¢Äì¬³ê½h¶¨ÍAÈºÌðð
+--  ½·êÉÀèAÄÐz¨æÑgpªÂ³êÜ·B
 --
---  1.�\�[�X�R�[�h�`���ōĔЕz����ꍇ�A��L�̒��쌠�\���A�{�����ꗗ�A����щ��L
---    �Ɛӏ��������̂܂܂̌`�ŕێ����邱�ƁB
---  2.�o�C�i���`���ōĔЕz����ꍇ�A�Еz���ɕt���̃h�L�������g���̎����ɁA��L��
---    ���쌠�\���A�{�����ꗗ�A����щ��L�Ɛӏ������܂߂邱�ƁB
---  3.���ʂɂ�鎖�O�̋��Ȃ��ɁA�{�\�t�g�E�F�A��̔��A����я��ƓI�Ȑ��i�⊈��
---    �Ɏg�p���Ȃ����ƁB
+--  1.\[XR[h`®ÅÄÐz·éêAãLÌì \¦A{ðêA¨æÑºL
+--    ÆÓðð»ÌÜÜÌ`ÅÛ·é±ÆB
+--  2.oCi`®ÅÄÐz·éêAÐz¨Ét®ÌhLgÌ¿ÉAãLÌ
+--    ì \¦A{ðêA¨æÑºLÆÓððÜßé±ÆB
+--  3.ÊÉæéOÌÂÈµÉA{\tgEFAðÌA¨æÑ¤ÆIÈ»iâ®
+--    ÉgpµÈ¢±ÆB
 --
---  �{�\�t�g�E�F�A�́A���쌠�҂ɂ���āu����̂܂܁v�񋟂���Ă��܂��B���쌠�҂́A
---  ����ړI�ւ̓K�����̕ۏ؁A���i���̕ۏ؁A�܂�����Ɍ��肳��Ȃ��A�����Ȃ閾��
---  �I�������͈ÖقȕۏؐӔC�������܂���B���쌠�҂́A���R�̂�������킸�A���Q
---  �����̌�����������킸�A���ӔC�̍������_��ł��邩���i�ӔC�ł��邩�i�ߎ�
---  ���̑��́j�s�@�s�ׂł��邩���킸�A���ɂ��̂悤�ȑ��Q����������\����m��
---  ����Ă����Ƃ��Ă��A�{�\�t�g�E�F�A�̎g�p�ɂ���Ĕ��������i��֕i�܂��͑�p�T
---  �[�r�X�̒��B�A�g�p�̑r���A�f�[�^�̑r���A���v�̑r���A�Ɩ��̒��f���܂߁A�܂���
---  ��Ɍ��肳��Ȃ��j���ڑ��Q�A�Ԑڑ��Q�A�����I�ȑ��Q�A���ʑ��Q�A�����I���Q�A��
---  ���͌��ʑ��Q�ɂ��āA��ؐӔC�𕉂�Ȃ����̂Ƃ��܂��B
+--  {\tgEFAÍAì ÒÉæÁÄu»óÌÜÜvñ³êÄ¢Ü·Bì ÒÍA
+--  ÁèÚIÖÌK«ÌÛØA¤i«ÌÛØAÜ½»êÉÀè³êÈ¢A¢©Èé¾¦
+--  Iàµ­ÍÃÙÈÛØÓCà¢Ü¹ñBì ÒÍARÌ¢©ñðâí¸A¹Q
+--  ­¶Ì´ö¢©ñðâí¸A©ÂÓCÌªª_ñÅ é©µiÓCÅ é©iß¸
+--  »Ì¼Ìjs@s×Å é©ðâí¸A¼É»Ìæ¤È¹Qª­¶·éÂ\«ðmç
+--  ³êÄ¢½ÆµÄàA{\tgEFAÌgpÉæÁÄ­¶µ½iãÖiÜ½ÍãpT
+--  [rXÌ²BAgpÌr¸Af[^Ìr¸AvÌr¸AÆ±ÌfàÜßAÜ½»
+--  êÉÀè³êÈ¢j¼Ú¹QAÔÚ¹QAô­IÈ¹QAÁÊ¹QA¦±I¹QAÜ
+--  ½ÍÊ¹QÉÂ¢ÄAêØÓCðíÈ¢àÌÆµÜ·B
 --
 --  Note that above Japanese version license is the formal document.
 --  The following translation is only for reference.
@@ -58,13 +58,13 @@
 -------------------------------------------------------------------------------
 -- Memo
 --   Japanese comment lines are starts with "JP:".
---   JP: ���{��̃R�����g�s�� JP:�𓪂ɕt���鎖�ɂ���
+--   JP: ú{êÌRgsÍ JP:ðªÉt¯éÉ·é
 --
 -------------------------------------------------------------------------------
 -- Revision History
 --
 -- 13th,October,2003 created by Kunihiko Ohnaka
--- JP: VDP�̃R�A�̎����ƕ\���f�o�C�X�ւ̏o�͂�ʃ\�[�X�ɂ����D
+-- JP: VDPÌRAÌÀÆ\¦foCXÖÌoÍðÊ\[XÉµ½D
 --
 -- ?th,August,2006 modified by Kunihiko Ohnaka
 --   - Move the equalization pulse generator from
@@ -75,17 +75,17 @@
 --   - Add the document part below.
 --
 -- 23th,March,2008 modified by t.hara
--- JP: ���t�@�N�^�����O, NTSC �� PAL �̃^�C�~���O������H�𓝍�
+-- JP: t@N^O, NTSC Æ PAL Ì^C~O¶¬ñHð
 --
 -------------------------------------------------------------------------------
 -- Document
 --
--- JP: ESE-VDP�R�A(vdp.vhd)�����������r�f�I�M�����ANTSC/PAL��
--- JP: �^�C�~���O�ɍ����������M������щf���M���ɕϊ����܂��B
--- JP: ESE-VDP�R�A��NTSC���[�h���� NTSC/PAL�̃^�C�~���O�ŉf��
--- JP: �M���␂�������M���𐶐����邽�߁A�{���W���[���ł�
--- JP: ���������M���ɓ����p���X��}�����鏈���������s����
--- JP: ���܂��B
+-- JP: ESE-VDPRA(vdp.vhd)ª¶¬µ½rfIMðANTSC/PALÌ
+-- JP: ^C~OÉÁ½¯úM¨æÑfMÉÏ·µÜ·B
+-- JP: ESE-VDPRAÍNTSC[hÍ NTSC/PALÌ^C~OÅf
+-- JP: Mâ¼¯úMð¶¬·é½ßA{W[ÅÍ
+-- JP: ½¯úMÉ¿pXð}ü·é¾¯ðsÁÄ
+-- JP: ¢Ü·B
 --
 
 LIBRARY IEEE;
@@ -164,7 +164,7 @@ BEGIN
         IF (CLK21M'EVENT AND CLK21M = '1') THEN
             IF (RESET = '1') THEN
                 FF_SSTATE <= SSTATE_A;
-	    ELSE
+            ELSE
                 IF(     (VCOUNTERIN = 0) OR
                         (VCOUNTERIN = 12) OR
                         (VCOUNTERIN = W_STATE_A1_FULL) OR
@@ -187,26 +187,29 @@ BEGIN
         IF( CLK21M'EVENT AND CLK21M = '1' )THEN
             IF( RESET = '1' )THEN
                 FF_HSYNC_N <= '0';
-	    ELSE
-                IF( FF_SSTATE = SSTATE_A )THEN
-                    IF( (HCOUNTERIN = 1) OR (HCOUNTERIN = CLOCKS_PER_LINE/2+1) ) THEN
-                        FF_HSYNC_N <= '0';                       -- PULSE ON
-                    ELSIF( (HCOUNTERIN = 51) OR (HCOUNTERIN = CLOCKS_PER_LINE/2+51) ) THEN
-                        FF_HSYNC_N <= '1';                       -- PULSE OFF
-                    END IF;
-                ELSIF( FF_SSTATE = SSTATE_B )THEN
-                    IF( (HCOUNTERIN = CLOCKS_PER_LINE-100+1 ) OR (HCOUNTERIN = CLOCKS_PER_LINE/2-100+1) ) THEN
-                        FF_HSYNC_N <= '0';                       -- PULSE ON
-                    ELSIF( (HCOUNTERIN = 1) OR (HCOUNTERIN = CLOCKS_PER_LINE/2+1) ) THEN
-                        FF_HSYNC_N <= '1';                       -- PULSE OFF
-                    END IF;
-                ELSIF( FF_SSTATE = SSTATE_C )THEN
+            ELSE
+--                IF( FF_SSTATE = SSTATE_A )THEN
+--                    IF( (HCOUNTERIN = 1) OR (HCOUNTERIN = CLOCKS_PER_LINE/2+1) ) THEN
+--                        FF_HSYNC_N <= '0';                       -- PULSE ON
+--                        VIDEOVSOUT_N <= VIDEOVSIN_N;
+--                    ELSIF( (HCOUNTERIN = 51) OR (HCOUNTERIN = CLOCKS_PER_LINE/2+51) ) THEN
+--                        FF_HSYNC_N <= '1';                       -- PULSE OFF
+--                    END IF;
+--                ELSIF( FF_SSTATE = SSTATE_B )THEN
+--                    IF( (HCOUNTERIN = CLOCKS_PER_LINE-100+1 ) OR (HCOUNTERIN = CLOCKS_PER_LINE/2-100+1) ) THEN
+--                        FF_HSYNC_N <= '0';                       -- PULSE ON
+--                        VIDEOVSOUT_N <= VIDEOVSIN_N;
+--                    ELSIF( (HCOUNTERIN = 1) OR (HCOUNTERIN = CLOCKS_PER_LINE/2+1) ) THEN
+--                        FF_HSYNC_N <= '1';                       -- PULSE OFF
+--                    END IF;
+--                ELSIF( FF_SSTATE = SSTATE_C )THEN
                     IF( HCOUNTERIN = 1 )THEN
                         FF_HSYNC_N <= '0';                       -- PULSE ON
+--                        VIDEOVSOUT_N <= VIDEOVSIN_N;
                     ELSIF( HCOUNTERIN = 101 )THEN
                         FF_HSYNC_N <= '1';                       -- PULSE OFF
                     END IF;
-                END IF;
+--                END IF;
             END IF;
         END IF;
     END PROCESS;
