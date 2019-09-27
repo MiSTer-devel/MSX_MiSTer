@@ -297,7 +297,8 @@ always @(posedge clk_mem) begin
 		VGA_R <= {r,r[5:4]};
 		VGA_G <= {g,g[5:4]};
 		VGA_B <= {b,b[5:4]};
-		{deo,vso,hso} <= {de,vs,hs};
+		{deo,hso} <= {de,hs};
+		if(~hso & hs) vso <= vs;
 	end
 end
 
