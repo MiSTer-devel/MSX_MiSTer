@@ -84,7 +84,7 @@ entity emsx_top is
         pDip            : in    std_logic_vector(  7 downto 0);     -- 0=On,    1=Off (default on shipment)
         pLed            : out   std_logic_vector(  7 downto 0);     -- 0=Off,   1=On  (green)
         pLedPwr         : out   std_logic;                          -- 0=Off,   1=On  (red)
-		pR800           : in    std_logic;
+        pR800           : in    std_logic;
 
         -- Video, Audio/CMT ports
         pDac_VR         : out   std_logic_vector(  5 downto 0);     -- RGB_Red
@@ -643,6 +643,7 @@ architecture RTL of emsx_top is
     signal  VdpAdr          : std_logic_vector( 16 downto 0 );
     signal  VrmDbo          : std_logic_vector(  7 downto 0 );
     signal  VrmDbi          : std_logic_vector( 15 downto 0 );
+    signal  MemDbi          : std_logic_vector( 15 downto 0 );
     signal  pVdpInt_n       : std_logic;
     signal  ntsc_pal_type   : std_logic;
     signal  forced_v_mode   : std_logic;
@@ -693,24 +694,19 @@ architecture RTL of emsx_top is
 
     -- SD-RAM control signals
     signal  SdrSta          : std_logic_vector(  2 downto 0 );
-    signal  SdrCmd          : std_logic_vector(  3 downto 0 );
+    signal  SdrCmd          : std_logic_vector(  2 downto 0 );
     signal  SdrBa0          : std_logic;
     signal  SdrBa1          : std_logic;
-    signal  SdrUdq          : std_logic;
-    signal  SdrLdq          : std_logic;
     signal  SdrAdr          : std_logic_vector( 12 downto 0 );
-    signal  SdrDat          : std_logic_vector( 7 downto 0 );
     signal  SdPaus          : std_logic := '0';
 
-    constant SdrCmd_de      : std_logic_vector(  3 downto 0 ) := "1111";    -- deselect
-    constant SdrCmd_pr      : std_logic_vector(  3 downto 0 ) := "0010";    -- precharge all
-    constant SdrCmd_re      : std_logic_vector(  3 downto 0 ) := "0001";    -- refresh
-    constant SdrCmd_ms      : std_logic_vector(  3 downto 0 ) := "0000";    -- mode regiser set
-
-    constant SdrCmd_xx      : std_logic_vector(  3 downto 0 ) := "0111";    -- no operation
-    constant SdrCmd_ac      : std_logic_vector(  3 downto 0 ) := "0011";    -- activate
-    constant SdrCmd_rd      : std_logic_vector(  3 downto 0 ) := "0101";    -- read
-    constant SdrCmd_wr      : std_logic_vector(  3 downto 0 ) := "0100";    -- write
+    constant SdrCmd_pr      : std_logic_vector(  2 downto 0 ) := "010";    -- precharge all
+    constant SdrCmd_re      : std_logic_vector(  2 downto 0 ) := "001";    -- refresh
+    constant SdrCmd_ms      : std_logic_vector(  2 downto 0 ) := "000";    -- mode regiser set
+    constant SdrCmd_xx      : std_logic_vector(  2 downto 0 ) := "111";    -- no operation
+    constant SdrCmd_ac      : std_logic_vector(  2 downto 0 ) := "011";    -- activate
+    constant SdrCmd_rd      : std_logic_vector(  2 downto 0 ) := "101";    -- read
+    constant SdrCmd_wr      : std_logic_vector(  2 downto 0 ) := "100";    -- write
 
     -- Clock divider
     signal  clkdiv3         : std_logic_vector(  1 downto 0 );
@@ -1862,7 +1858,7 @@ begin
                     --  Normal memory access mode
                     SdrSta(2) <= '1';                                               -- read/write cpu/vdp
                 end if;
-            elsif( ff_sdr_seq = "001" and SdrSta(2) = '1' and RstSeq(4 downto 3) = "11" )then
+            elsif( ff_sdr_seq = "000" and SdrSta(2) = '1' and RstSeq(4 downto 3) = "11" )then
                 SdrSta(1) <= VideoDLClk;                                            -- 0:cpu, 1:vdp
                 if( VideoDLClk = '0' )then
                     SdrSta(0) <= w_wrt_req;         -- for cpu
@@ -1890,8 +1886,6 @@ begin
                         SdrCmd <= SdrCmd_ms;
                     end if;
                 when "001" =>
-                    SdrCmd <= SdrCmd_xx;
-                when "010" =>
                     if( SdrSta(2) = '1' )then
                         if( SdrSta(0) = '0' )then
                             SdrCmd <= SdrCmd_rd;            -- "100"(cpu read) / "110"(vdp read)
@@ -1899,42 +1893,8 @@ begin
                             SdrCmd <= SdrCmd_wr;            -- "101"(cpu write) / "111"(vdp write)
                         end if;
                     end if;
-                when "011" =>
-                    SdrCmd <= SdrCmd_xx;
-                when others =>
-                    null;
-            end case;
-        end if;
-    end process;
-
-    process( memclk )
-    begin
-        if( memclk'event and memclk = '1' )then
-            case ff_sdr_seq is
-                when "000" =>
-                    SdrUdq <= '1';
-                    SdrLdq <= '1';
                 when "010" =>
-                    if( SdrSta(2) = '1' )then
-                        if( SdrSta(0) = '0' )then
-                            SdrUdq <= '0';
-                            SdrLdq <= '0';
-                        else
-                            if( RstSeq(4 downto 3) /= "11" )then
-                                SdrUdq <= '0';
-                                SdrLdq <= '0';
-                            elsif( VideoDLClk = '0' )then
-                                SdrUdq <= not CpuAdr(0);
-                                SdrLdq <= CpuAdr(0);
-                            else
-                                SdrUdq <= not VdpAdr(16);
-                                SdrLdq <= VdpAdr(16);
-                            end if;
-                        end if;
-                    end if;
-                when "011" =>
-                    SdrUdq <= '1';
-                    SdrLdq <= '1';
+                    SdrCmd <= SdrCmd_xx;
                 when others =>
                     null;
             end case;
@@ -1958,8 +1918,25 @@ begin
                             SdrAdr <= VdpAdr(12 downto 0);      -- vdp read/write
                         end if;
                     end if;
-                when "010" =>
-                    SdrAdr(12 downto 9) <= "0010";                                      -- A10=1 => enable auto precharge
+                when "001" =>
+                    SdrAdr(10 downto 9) <= "10";                                      -- A10=1 => enable auto precharge
+                    if( SdrSta(2) = '1' )then
+                        if( SdrSta(0) = '0' )then
+                            SdrAdr(12) <= '0';
+                            SdrAdr(11) <= '0';
+                        else
+                            if( RstSeq(4 downto 3) /= "11" )then
+                                SdrAdr(12) <= '0';
+                                SdrAdr(11) <= '0';
+                            elsif( VideoDLClk = '0' )then
+                                SdrAdr(12) <= not CpuAdr(0);
+                                SdrAdr(11) <= CpuAdr(0);
+                            else
+                                SdrAdr(12) <= not VdpAdr(16);
+                                SdrAdr(11) <= VdpAdr(16);
+                            end if;
+                        end if;
+                    end if;
                     if( RstSeq(4 downto 2) = "010" )then
                         SdrAdr(8 downto 0) <= "111" & "000" & ClrAdr(15 downto 13);     -- clear VRAM (128 kB)        => start adr 700000h
                     elsif( RstSeq(4 downto 2) = "011" )then
@@ -1986,14 +1963,14 @@ begin
     process( memclk )
     begin
         if( memclk'event and memclk = '1' )then
-            SdrDat <= (others => 'Z');
-            if( ff_sdr_seq = "010" and SdrSta(2) = '1' and SdrSta(0) = '1' )then
+            pMemDat <= (others => 'Z');
+            if( ff_sdr_seq = "001" and SdrSta(2) = '1' and SdrSta(0) = '1' )then
                 if( RstSeq(4 downto 3) /= "11" )then
-                    SdrDat <= (others => '0');
+                    pMemDat <= (others => '0');
                 elsif( VideoDLClk = '0' )then
-                    SdrDat <= dbo;         -- "101"(cpu write)
+                    pMemDat <= dbo & dbo;         -- "101"(cpu write)
                 else
-                    SdrDat <= VrmDbo;      -- "111"(vdp write)
+                    pMemDat <= VrmDbo & VrmDbo;   -- "111"(vdp write)
                 end if;
             end if;
         end if;
@@ -2003,12 +1980,21 @@ begin
     process( memclk )
     begin
         if( memclk'event and memclk = '1' )then
-            if( ff_sdr_seq = "010" )then
+            if( ff_sdr_seq = "001" )then
                 if( RstSeq(4 downto 3) /= "11" )then
                     ClrAdr <= (others => '0');
                 else
                     ClrAdr <= ClrAdr + 1;
                 end if;
+            end if;
+        end if;
+    end process;
+
+    process( memclk )
+    begin
+        if( memclk'event and memclk = '1' )then
+            if( ff_sdr_seq = "100" )then
+                MemDbi <= pMemDat( 15 downto 0 );
             end if;
         end if;
     end process;
@@ -2020,9 +2006,9 @@ begin
             if( ff_sdr_seq = "101" )then
                 if( SdrSta = "100" )then        -- read cpu
                     if( CpuAdr(0) = '0' )then
-                        RamDbi  <= pMemDat(  7 downto 0 );
+                        RamDbi  <= MemDbi(  7 downto 0 );
                     else
-                        RamDbi  <= pMemDat( 15 downto 8 );
+                        RamDbi  <= MemDbi( 15 downto 8 );
                     end if;
                 end if;
             end if;
@@ -2035,7 +2021,7 @@ begin
         if( memclk'event and memclk = '1' )then
             if( ff_sdr_seq = "101" )then
                 if( SdrSta = "110" )then        -- read vdp
-                    VrmDbi  <= pMemDat( 15 downto 0 );
+                    VrmDbi  <= MemDbi( 15 downto 0 );
                 end if;
             end if;
         end if;
@@ -2100,18 +2086,17 @@ begin
     end process;
 
     pMemCke     <= '1';
-    pMemCs_n    <= SdrCmd(3);
+    pMemCs_n    <= '0';
     pMemRas_n   <= SdrCmd(2);
     pMemCas_n   <= SdrCmd(1);
     pMemWe_n    <= SdrCmd(0);
 
-    pMemUdq     <= SdrUdq;
-    pMemLdq     <= SdrLdq;
+    pMemUdq     <= SdrAdr(12);
+    pMemLdq     <= SdrAdr(11);
     pMemBa1     <= '0';
     pMemBa0     <= '0';
 
     pMemAdr     <= SdrAdr;
-    pMemDat     <= SdrDat & SdrDat;
 
     ----------------------------------------------------------------
     -- Connect components

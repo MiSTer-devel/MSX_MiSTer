@@ -174,8 +174,7 @@ pll pll
 	.refclk(CLK_50M),
 	.rst(0),
 	.outclk_0(clk_mem),
-	.outclk_1(SDRAM_CLK),
-	.outclk_2(clk_sys),
+	.outclk_1(clk_sys),
 	.locked(locked)
 );
 
@@ -302,11 +301,6 @@ always @(posedge clk_mem) begin
 	end
 end
 
-wire [12:0] sdram_a;
-assign SDRAM_A[12:11] = (~SDRAM_nCS & ~SDRAM_nRAS & ~(SDRAM_nCAS ^ SDRAM_nWE)) ? sdram_a[12:11] : {SDRAM_DQMH,SDRAM_DQML};
-assign SDRAM_A[10:0]  = sdram_a[10:0];
-assign SDRAM_CKE      = 1;
-
 emsx_top emsx
 (
 	.clk21m(clk_sys),
@@ -322,8 +316,9 @@ emsx_top emsx
 	.pMemLdq(SDRAM_DQML),
 	.pMemBa1(SDRAM_BA[1]),
 	.pMemBa0(SDRAM_BA[0]),
-	.pMemAdr(sdram_a),
+	.pMemAdr(SDRAM_A),
 	.pMemDat(SDRAM_DQ),
+	.pMemCke(SDRAM_CKE),
 
 	.ps2_key(ps2_key),
 	.pCaps(ps2_caps_led),
@@ -357,6 +352,31 @@ emsx_top emsx
 	.pAudioPSG(audioPSG),   //10bits unsigned
 	.pAudioOPLL(audioOPLL), //14bits signed
 	.pAudioPCM(audioPCM)    //16bits signed
+);
+
+altddio_out
+#(
+	.extend_oe_disable("OFF"),
+	.intended_device_family("Cyclone V"),
+	.invert_output("OFF"),
+	.lpm_hint("UNUSED"),
+	.lpm_type("altddio_out"),
+	.oe_reg("UNREGISTERED"),
+	.power_up_high("OFF"),
+	.width(1)
+)
+sdramclk_ddr
+(
+	.datain_h(1'b0),
+	.datain_l(1'b1),
+	.outclock(clk_mem),
+	.dataout(SDRAM_CLK),
+	.aclr(1'b0),
+	.aset(1'b0),
+	.oe(1'b1),
+	.outclocken(1'b1),
+	.sclr(1'b0),
+	.sset(1'b0)
 );
 
 wire [5:0] mdata;
