@@ -59,7 +59,9 @@ entity emsx_top is
         pMemBa1         : out   std_logic;                          -- SD-RAM Bank select address 1
         pMemBa0         : out   std_logic;                          -- SD-RAM Bank select address 0
         pMemAdr         : out   std_logic_vector( 12 downto 0 );    -- SD-RAM Address
-        pMemDat         : inout std_logic_vector( 15 downto 0 );    -- SD-RAM Data
+        pMemDatIn       : in    std_logic_vector( 15 downto 0 );    -- SD-RAM Data
+        pMemDatOut      : out   std_logic_vector(  7 downto 0 );    -- SD-RAM Data
+        pMemDatEn       : out   std_logic;
 
         -- PS/2 keyboard ports
         ps2_key         : in    std_logic_vector( 10 downto 0);
@@ -1960,19 +1962,20 @@ begin
         end if;
     end process;
 
-    process( memclk )
+    process( ff_sdr_seq, SdrSta, RstSeq, VideoDLClk, dbo, VrmDbo )
     begin
-        if( memclk'event and memclk = '1' )then
-            pMemDat <= (others => 'Z');
-            if( ff_sdr_seq = "001" and SdrSta(2) = '1' and SdrSta(0) = '1' )then
-                if( RstSeq(4 downto 3) /= "11" )then
-                    pMemDat <= (others => '0');
-                elsif( VideoDLClk = '0' )then
-                    pMemDat <= dbo & dbo;         -- "101"(cpu write)
-                else
-                    pMemDat <= VrmDbo & VrmDbo;   -- "111"(vdp write)
-                end if;
-            end if;
+        pMemDatEn <= '0';
+        pMemDatOut <= (others => '0');
+        if( ff_sdr_seq = "001" and SdrSta(2) = '1' and SdrSta(0) = '1' )then
+             if( RstSeq(4 downto 3) /= "11" )then
+                 pMemDatEn <= '1';
+             elsif( VideoDLClk = '0' )then
+                 pMemDatEn <= '1';
+                 pMemDatOut <= dbo;      -- "101"(cpu write)
+             else
+                 pMemDatEn <= '1';
+                 pMemDatOut <= VrmDbo;   -- "111"(vdp write)
+             end if;
         end if;
     end process;
 
@@ -1994,7 +1997,7 @@ begin
     begin
         if( memclk'event and memclk = '1' )then
             if( ff_sdr_seq = "100" )then
-                MemDbi <= pMemDat( 15 downto 0 );
+                MemDbi <= pMemDatIn( 15 downto 0 );
             end if;
         end if;
     end process;

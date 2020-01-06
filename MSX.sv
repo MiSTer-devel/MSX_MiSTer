@@ -301,6 +301,17 @@ always @(posedge clk_mem) begin
 	end
 end
 
+wire [7:0]  sdr_dat;
+wire        sdr_dat_en;
+reg  [15:0] sdram_dq;
+
+assign SDRAM_DQ = sdram_dq;
+
+always @(posedge clk_mem) begin
+	sdram_dq <= 16'bZ;
+	if(sdr_dat_en) sdram_dq <= {sdr_dat, sdr_dat};
+end
+
 emsx_top emsx
 (
 	.clk21m(clk_sys),
@@ -317,7 +328,9 @@ emsx_top emsx
 	.pMemBa1(SDRAM_BA[1]),
 	.pMemBa0(SDRAM_BA[0]),
 	.pMemAdr(SDRAM_A),
-	.pMemDat(SDRAM_DQ),
+	.pMemDatIn(SDRAM_DQ),
+	.pMemDatOut(sdr_dat),
+	.pMemDatEn(sdr_dat_en),
 	.pMemCke(SDRAM_CKE),
 
 	.ps2_key(ps2_key),
