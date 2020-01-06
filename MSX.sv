@@ -139,7 +139,6 @@ assign VIDEO_ARY = status[9] ? 8'd9  : 8'd3;
 `include "build_id.v"
 localparam CONF_STR = {
 	"MSX;;",
-	"-;",
 	"S,VHD;",
 	"OE,Reset after Mount,No,Yes;",
 	"-;",
@@ -217,6 +216,7 @@ wire        sd_ack_conf;
 wire [15:0] joy_0 = status[13] ? joy_B : joy_A;
 wire [15:0] joy_1 = status[13] ? joy_A : joy_B;
 
+wire [21:0] gamma_bus;
 
 hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 (
@@ -231,6 +231,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 	.buttons(buttons),
 	.status(status),
 	.forced_scandoubler(forced_scandoubler),
+	.gamma_bus(gamma_bus),
 
 	.RTC(rtc),
 
@@ -277,9 +278,6 @@ reg deo,vso,hso;
 
 assign CLK_VIDEO = clk_mem;
 assign CE_PIXEL  = ce_pix;
-assign VGA_DE = deo;
-assign VGA_VS = vso;
-assign VGA_HS = hso;
 assign VGA_SL = status[3:2];
 assign VGA_F1 = 0;
 
@@ -293,13 +291,30 @@ always @(posedge clk_mem) begin
 	else ce_pix <= !div;
 
 	if(ce_pix) begin
-		VGA_R <= {r,r[5:4]};
-		VGA_G <= {g,g[5:4]};
-		VGA_B <= {b,b[5:4]};
+		ro <= {r,r[5:4]};
+		go <= {g,g[5:4]};
+		bo <= {b,b[5:4]};
 		{deo,hso} <= {de,hs};
 		if(~hso & hs) vso <= vs;
 	end
 end
+
+gamma_fast gamma
+(
+	.clk_vid(CLK_VIDEO),
+	.ce_pix(ce_pix),
+	.gamma_bus(gamma_bus),
+	.HSync(hso),
+	.VSync(vso),
+	.DE(deo),
+	.RGB_in({ro,go,bo}),
+
+	.HSync_out(VGA_HS),
+	.VSync_out(VGA_VS),
+	.DE_out(VGA_DE),
+	.RGB_out({VGA_R,VGA_G,VGA_B})
+);
+
 
 wire [7:0]  sdr_dat;
 wire        sdr_dat_en;
