@@ -1860,7 +1860,7 @@ begin
                     --  Normal memory access mode
                     SdrSta(2) <= '1';                                               -- read/write cpu/vdp
                 end if;
-            elsif( ff_sdr_seq = "000" and SdrSta(2) = '1' and RstSeq(4 downto 3) = "11" )then
+            elsif( ff_sdr_seq = "001" and SdrSta(2) = '1' and RstSeq(4 downto 3) = "11" )then
                 SdrSta(1) <= VideoDLClk;                                            -- 0:cpu, 1:vdp
                 if( VideoDLClk = '0' )then
                     SdrSta(0) <= w_wrt_req;         -- for cpu
@@ -1888,6 +1888,8 @@ begin
                         SdrCmd <= SdrCmd_ms;
                     end if;
                 when "001" =>
+                    SdrCmd <= SdrCmd_xx;
+                when "010" =>
                     if( SdrSta(2) = '1' )then
                         if( SdrSta(0) = '0' )then
                             SdrCmd <= SdrCmd_rd;            -- "100"(cpu read) / "110"(vdp read)
@@ -1895,7 +1897,7 @@ begin
                             SdrCmd <= SdrCmd_wr;            -- "101"(cpu write) / "111"(vdp write)
                         end if;
                     end if;
-                when "010" =>
+                when "011" =>
                     SdrCmd <= SdrCmd_xx;
                 when others =>
                     null;
@@ -1920,7 +1922,7 @@ begin
                             SdrAdr <= VdpAdr(12 downto 0);      -- vdp read/write
                         end if;
                     end if;
-                when "001" =>
+                when "010" =>
                     SdrAdr(10 downto 9) <= "10";                                      -- A10=1 => enable auto precharge
                     if( SdrSta(2) = '1' )then
                         if( SdrSta(0) = '0' )then
@@ -1966,7 +1968,7 @@ begin
     begin
         pMemDatEn <= '0';
         pMemDatOut <= (others => '0');
-        if( ff_sdr_seq = "001" and SdrSta(2) = '1' and SdrSta(0) = '1' )then
+        if( ff_sdr_seq = "010" and SdrSta(2) = '1' and SdrSta(0) = '1' )then
              if( RstSeq(4 downto 3) /= "11" )then
                  pMemDatEn <= '1';
              elsif( VideoDLClk = '0' )then
@@ -1983,7 +1985,7 @@ begin
     process( memclk )
     begin
         if( memclk'event and memclk = '1' )then
-            if( ff_sdr_seq = "001" )then
+            if( ff_sdr_seq = "010" )then
                 if( RstSeq(4 downto 3) /= "11" )then
                     ClrAdr <= (others => '0');
                 else
@@ -1996,7 +1998,7 @@ begin
     process( memclk )
     begin
         if( memclk'event and memclk = '1' )then
-            if( ff_sdr_seq = "100" )then
+            if( ff_sdr_seq = "101" )then
                 MemDbi <= pMemDatIn( 15 downto 0 );
             end if;
         end if;
@@ -2006,7 +2008,7 @@ begin
     process( memclk )
     begin
         if( memclk'event and memclk = '1' )then
-            if( ff_sdr_seq = "101" )then
+            if( ff_sdr_seq = "110" )then
                 if( SdrSta = "100" )then        -- read cpu
                     if( CpuAdr(0) = '0' )then
                         RamDbi  <= MemDbi(  7 downto 0 );
@@ -2022,7 +2024,7 @@ begin
     process( memclk )
     begin
         if( memclk'event and memclk = '1' )then
-            if( ff_sdr_seq = "101" )then
+            if( ff_sdr_seq = "110" )then
                 if( SdrSta = "110" )then        -- read vdp
                     VrmDbi  <= MemDbi( 15 downto 0 );
                 end if;
