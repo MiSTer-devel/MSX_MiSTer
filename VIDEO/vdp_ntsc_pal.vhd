@@ -129,57 +129,57 @@ ARCHITECTURE RTL OF VDP_NTSC_PAL IS
 BEGIN
 
     -- MODE
-    W_MODE  <= PALMODE & INTERLACEMODE;
-    WITH( W_MODE )SELECT W_STATE_A1_FULL <=
-        "01000001100"   WHEN "00",  -- 524
-        "01000001101"   WHEN "01",  -- 525
-        "01001110010"   WHEN "10",  -- 626
-        "01001110001"   WHEN "11",  -- 625
-        (OTHERS => 'X') WHEN OTHERS;
-
-    WITH( W_MODE )SELECT W_STATE_A2_FULL <=
-        "01000011000"   WHEN "00",  -- 524+12
-        "01000011001"   WHEN "01",  -- 525+12
-        "01001111110"   WHEN "10",  -- 626+12
-        "01001111101"   WHEN "11",  -- 625+12
-        (OTHERS => 'X') WHEN OTHERS;
-
-    WITH( W_MODE )SELECT W_STATE_B_FULL <=
-        "01000010010"   WHEN "00",  -- 524+6
-        "01000010011"   WHEN "01",  -- 525+6
-        "01001111000"   WHEN "10",  -- 626+6
-        "01001110111"   WHEN "11",  -- 625+6
-        (OTHERS => 'X') WHEN OTHERS;
-
-    WITH( W_MODE )SELECT W_STATE_C_FULL <=
-        "01000011110"   WHEN "00",  -- 524+18
-        "01000011111"   WHEN "01",  -- 525+18
-        "01010000100"   WHEN "10",  -- 626+18
-        "01010000011"   WHEN "11",  -- 625+18
-        (OTHERS => 'X') WHEN OTHERS;
+--    W_MODE  <= PALMODE & INTERLACEMODE;
+--    WITH( W_MODE )SELECT W_STATE_A1_FULL <=
+--        "01000001100"   WHEN "00",  -- 524
+--        "01000001101"   WHEN "01",  -- 525
+--        "01001110010"   WHEN "10",  -- 626
+--        "01001110001"   WHEN "11",  -- 625
+--        (OTHERS => 'X') WHEN OTHERS;
+--
+--    WITH( W_MODE )SELECT W_STATE_A2_FULL <=
+--        "01000011000"   WHEN "00",  -- 524+12
+--        "01000011001"   WHEN "01",  -- 525+12
+--        "01001111110"   WHEN "10",  -- 626+12
+--        "01001111101"   WHEN "11",  -- 625+12
+--        (OTHERS => 'X') WHEN OTHERS;
+--
+--    WITH( W_MODE )SELECT W_STATE_B_FULL <=
+--        "01000010010"   WHEN "00",  -- 524+6
+--        "01000010011"   WHEN "01",  -- 525+6
+--        "01001111000"   WHEN "10",  -- 626+6
+--        "01001110111"   WHEN "11",  -- 625+6
+--        (OTHERS => 'X') WHEN OTHERS;
+--
+--    WITH( W_MODE )SELECT W_STATE_C_FULL <=
+--        "01000011110"   WHEN "00",  -- 524+18
+--        "01000011111"   WHEN "01",  -- 525+18
+--        "01010000100"   WHEN "10",  -- 626+18
+--        "01010000011"   WHEN "11",  -- 625+18
+--        (OTHERS => 'X') WHEN OTHERS;
 
     -- STATE
-    PROCESS( RESET, CLK21M )
-    BEGIN
-        IF (CLK21M'EVENT AND CLK21M = '1') THEN
-            IF (RESET = '1') THEN
-                FF_SSTATE <= SSTATE_A;
-            ELSE
-                IF(     (VCOUNTERIN = 0) OR
-                        (VCOUNTERIN = 12) OR
-                        (VCOUNTERIN = W_STATE_A1_FULL) OR
-                        (VCOUNTERIN = W_STATE_A2_FULL) )THEN
-                    FF_SSTATE <= SSTATE_A;
-                ELSIF(  (VCOUNTERIN = 6) OR
-                        (VCOUNTERIN = W_STATE_B_FULL) )THEN
-                    FF_SSTATE <= SSTATE_B;
-                ELSIF(  (VCOUNTERIN = 18) OR
-                        (VCOUNTERIN = W_STATE_C_FULL) )THEN
-                    FF_SSTATE <= SSTATE_C;
-                END IF;
-            END IF;
-        END IF;
-    END PROCESS;
+--    PROCESS( RESET, CLK21M )
+--    BEGIN
+--        IF (CLK21M'EVENT AND CLK21M = '1') THEN
+--            IF (RESET = '1') THEN
+--                FF_SSTATE <= SSTATE_A;
+--            ELSE
+--                IF(     (VCOUNTERIN = 0) OR
+--                        (VCOUNTERIN = 12) OR
+--                        (VCOUNTERIN = W_STATE_A1_FULL) OR
+--                        (VCOUNTERIN = W_STATE_A2_FULL) )THEN
+--                    FF_SSTATE <= SSTATE_A;
+--                ELSIF(  (VCOUNTERIN = 6) OR
+--                        (VCOUNTERIN = W_STATE_B_FULL) )THEN
+--                    FF_SSTATE <= SSTATE_B;
+--                ELSIF(  (VCOUNTERIN = 18) OR
+--                        (VCOUNTERIN = W_STATE_C_FULL) )THEN
+--                    FF_SSTATE <= SSTATE_C;
+--                END IF;
+--            END IF;
+--        END IF;
+--    END PROCESS;
 
     -- GENERATE H SYNC PULSE
     PROCESS( RESET, CLK21M )

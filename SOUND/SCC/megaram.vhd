@@ -65,21 +65,6 @@ end megaram;
 
 architecture rtl of megaram is
 
-    component scc_wave
-        port(
-            clk21m  : in    std_logic;
-            reset   : in    std_logic;
-            clkena  : in    std_logic;
-            req     : in    std_logic;
-            ack     : out   std_logic;
-            wrt     : in    std_logic;
-            adr     : in    std_logic_vector( 7 downto 0);
-            dbi     : out   std_logic_vector( 7 downto 0);
-            dbo     : in    std_logic_vector( 7 downto 0);
-            wave    : out   std_logic_vector(14 downto 0)
-        );
-    end component;
-
     signal SccSel       : std_logic_vector( 1 downto 0);
     signal Dec1FFE      : std_logic;
     signal DecSccA      : std_logic;
@@ -308,7 +293,7 @@ begin
     ----------------------------------------------------------------
     -- Connect components
     ----------------------------------------------------------------
-    SccCh : scc_wave
+    SccCh : work.scc_wave
     port map(
         clk21m  => clk21m       ,
         reset   => reset        ,

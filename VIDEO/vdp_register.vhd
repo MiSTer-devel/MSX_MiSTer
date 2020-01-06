@@ -185,15 +185,6 @@ ENTITY VDP_REGISTER IS
 END VDP_REGISTER;
 
 ARCHITECTURE RTL OF VDP_REGISTER IS
-    COMPONENT RAM
-        PORT(
-            ADR     : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            CLK     : IN    STD_LOGIC;
-            WE      : IN    STD_LOGIC;
-            DBO     : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            DBI     : OUT   STD_LOGIC_VECTOR(  7 DOWNTO 0 )
-        );
-    END COMPONENT;
 
     SIGNAL FF_ACK                   : STD_LOGIC;
 
@@ -356,7 +347,7 @@ BEGIN
         END IF;
     END PROCESS;
 
-    U_PALETTEMEMRB: RAM
+    U_PALETTEMEMRB: work.RAM
     PORT MAP(
         ADR         => PALETTEADDR,
         CLK         => CLK21M,
@@ -365,7 +356,7 @@ BEGIN
         DBI         => PALETTEDATARB_OUT
     );
 
-    U_PALETTEMEMG: RAM
+    U_PALETTEMEMG: work.RAM
     PORT MAP(
         ADR         => PALETTEADDR,
         CLK         => CLK21M,

@@ -6,26 +6,6 @@
 --  All rights reserved.
 --                                     http://www.ohnaka.jp/ese-vdp/
 --
---  ï¿½{ï¿½\ï¿½tï¿½gï¿½Eï¿½Fï¿½Aï¿½ï¿½ï¿½ï¿½ï¿½Ñ–{ï¿½\ï¿½tï¿½gï¿½Eï¿½Fï¿½Aï¿½ÉŠï¿½ï¿½Ã‚ï¿½ï¿½Äì¬ï¿½ï¿½ï¿½ê‚½ï¿½hï¿½ï¿½ï¿½ï¿½ï¿½ÍAï¿½È‰ï¿½ï¿½Ìï¿½ï¿½
---  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ê‡ï¿½ÉŒï¿½ï¿½ï¿½Aï¿½Ä”Ð•zï¿½ï¿½ï¿½ï¿½ï¿½ÑŽgï¿½pï¿½ï¿½ï¿½ï¿½ï¿½Â‚ï¿½ï¿½ï¿½ï¿½Ü‚ï¿½ï¿½B
---
---  1.ï¿½\ï¿½[ï¿½Xï¿½Rï¿½[ï¿½hï¿½`ï¿½ï¿½ï¿½ÅÄ”Ð•zï¿½ï¿½ï¿½ï¿½ï¿½ê‡ï¿½Aï¿½ï¿½ï¿½Lï¿½Ì’ï¿½ï¿½ìŒ ï¿½\ï¿½ï¿½ï¿½Aï¿½{ï¿½ï¿½ê——ï¿½Aï¿½ï¿½ï¿½ï¿½ï¿½Ñ‰ï¿½ï¿½L
---    ï¿½ÆÓï¿½ï¿½Ì‚Ü‚Ü‚ÌŒ`ï¿½Å•ÛŽï¿½ï¿½ï¿½ï¿½é‚±ï¿½ÆB
---  2.ï¿½oï¿½Cï¿½iï¿½ï¿½ï¿½`ï¿½ï¿½ï¿½ÅÄ”Ð•zï¿½ï¿½ï¿½ï¿½ï¿½ê‡ï¿½Aï¿½Ð•zï¿½ï¿½ï¿½É•tï¿½ï¿½ï¿½Ìƒhï¿½Lï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½gï¿½ï¿½ï¿½ÌŽï¿½ï¿½ï¿½ï¿½ÉAï¿½ï¿½ï¿½Lï¿½ï¿½
---    ï¿½ï¿½ï¿½ìŒ ï¿½\ï¿½ï¿½ï¿½Aï¿½{ï¿½ï¿½ê——ï¿½Aï¿½ï¿½ï¿½ï¿½ï¿½Ñ‰ï¿½ï¿½Lï¿½ÆÓï¿½ï¿½ï¿½Ü‚ß‚é‚±ï¿½ÆB
---  3.ï¿½ï¿½ï¿½Ê‚É‚ï¿½ï¿½éŽ–ï¿½Oï¿½Ì‹ï¿½ï¿½Â‚È‚ï¿½ï¿½ÉAï¿½{ï¿½\ï¿½tï¿½gï¿½Eï¿½Fï¿½Aï¿½ï¿½ï¿½Ì”ï¿½ï¿½Aï¿½ï¿½ï¿½ï¿½ï¿½Ñï¿½ï¿½Æ“Iï¿½Èï¿½ï¿½iï¿½âŠˆï¿½ï¿½
---    ï¿½ÉŽgï¿½pï¿½ï¿½ï¿½È‚ï¿½ï¿½ï¿½ï¿½ÆB
---
---  ï¿½{ï¿½\ï¿½tï¿½gï¿½Eï¿½Fï¿½Aï¿½ÍAï¿½ï¿½ï¿½ìŒ ï¿½Ò‚É‚ï¿½ï¿½ï¿½Äuï¿½ï¿½ï¿½ï¿½ï¿½Ì‚Ü‚Üvï¿½ñ‹Ÿ‚ï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½Ü‚ï¿½ï¿½Bï¿½ï¿½ï¿½ìŒ ï¿½Ò‚ÍA
---  ï¿½ï¿½ï¿½ï¿½Ú“Iï¿½Ö‚Ì“Kï¿½ï¿½ï¿½ï¿½ï¿½Ì•ÛØAï¿½ï¿½ï¿½iï¿½ï¿½ï¿½Ì•ÛØAï¿½Ü‚ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÉŒï¿½è‚³ï¿½ï¿½ï¿½È‚ï¿½ï¿½Aï¿½ï¿½ï¿½ï¿½ï¿½È‚é–¾ï¿½ï¿½
---  ï¿½Iï¿½ï¿½ï¿½ï¿½ï¿½ÍˆÃ–Ù‚È•ÛØÓ”Cï¿½ï¿½ï¿½ï¿½ï¿½Ü‚ï¿½ï¿½ï¿½ï¿½Bï¿½ï¿½ï¿½ìŒ ï¿½Ò‚ÍAï¿½ï¿½ï¿½Rï¿½Ì‚ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½í‚¸ï¿½Aï¿½ï¿½ï¿½Q
---  ï¿½ï¿½ï¿½ï¿½ï¿½ÌŒï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½í‚¸ï¿½Aï¿½ï¿½ï¿½ÂÓ”Cï¿½Ìï¿½ï¿½ï¿½ï¿½ï¿½ï¿½_ï¿½ï¿½ï¿½Å‚ï¿½ï¿½é‚©ï¿½ï¿½ï¿½iï¿½Ó”Cï¿½Å‚ï¿½ï¿½é‚©ï¿½iï¿½ßŽï¿½
---  ï¿½ï¿½ï¿½Ì‘ï¿½ï¿½Ìjï¿½sï¿½@ï¿½sï¿½×‚Å‚ï¿½ï¿½é‚©ï¿½ï¿½ï¿½ï¿½ï¿½í‚¸ï¿½Aï¿½ï¿½ï¿½É‚ï¿½ï¿½Ì‚æ‚¤ï¿½È‘ï¿½ï¿½Qï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â”\ï¿½ï¿½ï¿½ï¿½ï¿½mï¿½ï¿½
---  ï¿½ï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ï¿½ï¿½Æ‚ï¿½ï¿½Ä‚ï¿½ï¿½Aï¿½{ï¿½\ï¿½tï¿½gï¿½Eï¿½Fï¿½Aï¿½ÌŽgï¿½pï¿½É‚ï¿½ï¿½ï¿½Ä”ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½iï¿½ï¿½ï¿½Ö•iï¿½Ü‚ï¿½ï¿½Í‘ï¿½ï¿½pï¿½T
---  ï¿½[ï¿½rï¿½Xï¿½Ì’ï¿½ï¿½Bï¿½Aï¿½gï¿½pï¿½Ì‘rï¿½ï¿½ï¿½Aï¿½fï¿½[ï¿½^ï¿½Ì‘rï¿½ï¿½ï¿½Aï¿½ï¿½ï¿½vï¿½Ì‘rï¿½ï¿½ï¿½Aï¿½Æ–ï¿½ï¿½Ì’ï¿½ï¿½fï¿½ï¿½ï¿½Ü‚ßAï¿½Ü‚ï¿½ï¿½ï¿½
---  ï¿½ï¿½ï¿½ÉŒï¿½è‚³ï¿½ï¿½ï¿½È‚ï¿½ï¿½jï¿½ï¿½ï¿½Ú‘ï¿½ï¿½Qï¿½Aï¿½ÔÚ‘ï¿½ï¿½Qï¿½Aï¿½ï¿½Iï¿½È‘ï¿½ï¿½Qï¿½Aï¿½ï¿½Ê‘ï¿½ï¿½Qï¿½Aï¿½ï¿½ï¿½ï¿½ï¿½Iï¿½ï¿½ï¿½Qï¿½Aï¿½ï¿½
---  ï¿½ï¿½ï¿½ÍŒï¿½ï¿½Ê‘ï¿½ï¿½Qï¿½É‚Â‚ï¿½ï¿½ÄAï¿½ï¿½ï¿½ØÓ”Cï¿½ð•‰‚ï¿½ï¿½È‚ï¿½ï¿½ï¿½ï¿½Ì‚Æ‚ï¿½ï¿½Ü‚ï¿½ï¿½B
---
 --  Note that above Japanese version license is the formal document.
 --  The following translation is only for reference.
 --
@@ -58,7 +38,6 @@
 -------------------------------------------------------------------------------
 -- Memo
 --   Japanese comment lines are starts with "JP:".
---   JP: “ú–{Œê‚ÌƒRƒƒ“ƒgs‚Í JP:‚ð“ª‚É•t‚¯‚éŽ–‚É‚·‚é
 --
 -------------------------------------------------------------------------------
 -- Revision History
@@ -80,18 +59,6 @@
 --        odd  field  -> odd line  (even line is black)
 --
 -- 13th,October,2003 created by Kunihiko Ohnaka
--- JP: VDP‚ÌƒRƒA‚ÌŽÀ‘•‚Æ•\Ž¦ƒfƒoƒCƒX‚Ö‚Ìo—Í‚ð•Êƒ\[ƒX‚É‚µ‚½D
---
--------------------------------------------------------------------------------
--- Document
---
--- JP: ESE-VDPƒRƒA(vdp.vhd)‚ª¶¬‚µ‚½ƒrƒfƒIM†‚ðAVGAƒ^ƒCƒ~ƒ“ƒO‚É
--- JP: •ÏŠ·‚·‚éƒAƒbƒvƒXƒLƒƒƒ“ƒRƒ“ƒo[ƒ^‚Å‚·B
--- JP: NTSC‚Í…•½“¯ŠúŽü”g”‚ª15.7KHzA‚’¼“¯ŠúŽü”g”‚ª60Hz‚Å‚·‚ªA
--- JP: VGA‚Ì…•½“¯ŠúŽü”g”‚Í31.5KHzA‚’¼“¯ŠúŽü”g”‚Í60Hz‚Å‚ ‚èA
--- JP: ƒ‰ƒCƒ“”‚¾‚¯‚ª‚Ù‚Ú”{‚É‚È‚Á‚½‚æ‚¤‚Èƒ^ƒCƒ~ƒ“ƒO‚É‚È‚è‚Ü‚·B
--- JP: ‚»‚±‚ÅAvdp‚ð ntscƒ‚[ƒh‚Å“®‚©‚µAŠeƒ‰ƒCƒ“‚ð”{‚Ì‘¬“x‚Å
--- JP: “ñ“x•`‰æ‚·‚é‚±‚Æ‚ÅƒXƒLƒƒƒ“ƒRƒ“ƒo[ƒg‚ðŽÀŒ»‚µ‚Ä‚¢‚Ü‚·B
 --
 
 LIBRARY IEEE;
@@ -128,22 +95,6 @@ ENTITY VDP_VGA IS
 END VDP_VGA;
 
 ARCHITECTURE RTL OF VDP_VGA IS
-    COMPONENT VDP_DOUBLEBUF
-        PORT (
-            CLK         : IN    STD_LOGIC;
-            XPOSITIONW  : IN    STD_LOGIC_VECTOR(  9 DOWNTO 0 );
-            XPOSITIONR  : IN    STD_LOGIC_VECTOR(  9 DOWNTO 0 );
-            EVENODD     : IN    STD_LOGIC;
-            WE          : IN    STD_LOGIC;
-            DATARIN     : IN    STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            DATAGIN     : IN    STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            DATABIN     : IN    STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            DATAROUT    : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            DATAGOUT    : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            DATABOUT    : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 )
-        );
-    END COMPONENT;
-
     SIGNAL FF_HSYNC_N       : STD_LOGIC;
 
     -- VIDEO OUTPUT ENABLE
@@ -169,7 +120,7 @@ BEGIN
     VIDEOGOUT <= DATAGOUT  WHEN VIDEOOUTX = '1' ELSE (OTHERS => '0');
     VIDEOBOUT <= DATABOUT  WHEN VIDEOOUTX = '1' ELSE (OTHERS => '0');
 
-    DBUF : VDP_DOUBLEBUF
+    DBUF : work.VDP_DOUBLEBUF
     PORT MAP(
         CLK         => CLK21M,
         XPOSITIONW  => XPOSITIONW,

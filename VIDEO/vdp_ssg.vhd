@@ -96,7 +96,6 @@ ENTITY VDP_SSG IS
         REG_R9_INTERLACE_MODE   : IN    STD_LOGIC;
         REG_R9_Y_DOTS           : IN    STD_LOGIC;
         REG_R18_ADJ             : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-        REG_R19_HSYNC_INT_LINE  : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
         REG_R23_VSTART_LINE     : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
         REG_R25_MSK             : IN    STD_LOGIC;
         REG_R27_H_SCROLL        : IN    STD_LOGIC_VECTOR(  2 DOWNTO 0 );
@@ -106,24 +105,6 @@ ENTITY VDP_SSG IS
 END VDP_SSG;
 
 ARCHITECTURE RTL OF VDP_SSG IS
-
-    COMPONENT VDP_HVCOUNTER
-        PORT(
-            RESET               : IN    STD_LOGIC;
-            CLK21M              : IN    STD_LOGIC;
-
-            H_CNT               : OUT   STD_LOGIC_VECTOR( 10 DOWNTO 0 );
-            V_CNT_IN_FIELD      : OUT   STD_LOGIC_VECTOR(  9 DOWNTO 0 );
-            V_CNT_IN_FRAME      : OUT   STD_LOGIC_VECTOR( 10 DOWNTO 0 );
-            FIELD               : OUT   STD_LOGIC;
-            H_BLANK             : OUT   STD_LOGIC;
-            V_BLANK             : OUT   STD_LOGIC;
-
-            PAL_MODE            : IN    STD_LOGIC;
-            INTERLACE_MODE      : IN    STD_LOGIC;
-            Y212_MODE           : IN    STD_LOGIC
-        );
-    END COMPONENT;
 
     -- FLIP FLOP
     SIGNAL FF_DOTSTATE          : STD_LOGIC_VECTOR(  1 DOWNTO 0 );
@@ -177,7 +158,7 @@ BEGIN
     --------------------------------------------------------------------------
     --  SUB COMPONENTS
     --------------------------------------------------------------------------
-    U_HVCOUNTER: VDP_HVCOUNTER
+    U_HVCOUNTER: work.VDP_HVCOUNTER
     PORT MAP (
         RESET               => RESET                ,
         CLK21M              => CLK21M               ,

@@ -93,24 +93,6 @@ end scc_wave;
 
 architecture rtl of scc_wave is
 
-    component ram
-        port (
-            adr : in    std_logic_vector( 7 downto 0 );
-            clk : in    std_logic;
-            we  : in    std_logic;
-            dbo : in    std_logic_vector( 7 downto 0 );
-            dbi : out   std_logic_vector( 7 downto 0 )
-        );
-    end component;
-
-    component scc_wave_mul
-        port(
-            a   : in    std_logic_vector(  7 downto 0 );    -- 8bit �Q�̕␔
-            b   : in    std_logic_vector(  3 downto 0 );    -- 4bit �o�C�i��
-            c   : out   std_logic_vector( 11 downto 0 )     -- 12bit �Q�̕␔
-        );
-    end component;
-
     -- wire signal
     signal w_wave_ce        : std_logic;
     signal w_wave_we        : std_logic;
@@ -328,7 +310,7 @@ begin
                 ("011" & ff_ptr_ch_d)   when( ff_ch_num = "011" )else
                 ("100" & ff_ptr_ch_e);
 
-    wavemem : ram
+    wavemem : work.ram
     port map(
         adr => w_wave_adr   ,
         clk => clk21m       ,
@@ -401,7 +383,7 @@ begin
 
     w_wave  <=  (w_ch_mask and ff_wave_dat);        -- 8bit ��̕␔
 
-    u_mul: scc_wave_mul
+    u_mul: work.scc_wave_mul
     port map (
         a   => w_wave   ,   -- 8bit ��̕␔
         b   => w_ch_vol ,   -- 4bit �o�C�i���i���������j

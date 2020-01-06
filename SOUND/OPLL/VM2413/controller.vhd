@@ -105,28 +105,6 @@ end controller;
 
 architecture rtl of controller is
 
-    component registermemory
-        port (
-            clk     : in    std_logic;
-            reset   : in    std_logic;
-            addr    : in    std_logic_vector(  3 downto 0 );
-            wr      : in    std_logic;
-            idata   : in    std_logic_vector( 23 downto 0 );
-            odata   : out   std_logic_vector( 23 downto 0 )
-        );
-    end component;
-
-    component voicememory port (
-        clk     : in std_logic;
-        reset   : in std_logic;
-        idata   : in voice_type;
-        wr       : in std_logic;
-        rwaddr : in voice_id_type;
-        roaddr : in voice_id_type;
-        odata   : out voice_type;
-        rodata : out voice_type );
-    end component;
-
     -- the array which caches instrument number of each channel.
     type inst_array is array (ch_type'range) of integer range 0 to 15;
     signal inst_cache : inst_array;
@@ -162,7 +140,7 @@ architecture rtl of controller is
 begin   -- rtl
 
     --  ���W�X�^�ݒ�l��ێ����邽�߂̃�����
-    u_register_memory : RegisterMemory
+    u_register_memory : work.RegisterMemory
     port map (
         clk     => clk,
         reset   => reset,
@@ -172,7 +150,7 @@ begin   -- rtl
         odata   => regs_rdata
     );
 
-    vmem : voicememory port map (
+    vmem : work.voicememory port map (
         clk, reset, user_voice_wdata, user_voice_wr, user_voice_addr, slot_voice_addr,
         user_voice_rdata, slot_voice_data );
 

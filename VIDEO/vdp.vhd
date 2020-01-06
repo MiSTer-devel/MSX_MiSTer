@@ -300,479 +300,6 @@ ENTITY VDP IS
 END VDP;
 
 ARCHITECTURE RTL OF VDP IS
-    COMPONENT VDP_SSG
-        PORT(
-            RESET                   : IN    STD_LOGIC;
-            CLK21M                  : IN    STD_LOGIC;
-
-            H_CNT                   : OUT   STD_LOGIC_VECTOR( 10 DOWNTO 0 );
-            V_CNT                   : OUT   STD_LOGIC_VECTOR( 10 DOWNTO 0 );
-            DOTSTATE                : OUT   STD_LOGIC_VECTOR(  1 DOWNTO 0 );
-            EIGHTDOTSTATE           : OUT   STD_LOGIC_VECTOR(  2 DOWNTO 0 );
-            PREDOTCOUNTER_X         : OUT   STD_LOGIC_VECTOR(  8 DOWNTO 0 );
-            PREDOTCOUNTER_Y         : OUT   STD_LOGIC_VECTOR(  8 DOWNTO 0 );
-            PREDOTCOUNTER_YP        : OUT   STD_LOGIC_VECTOR(  8 DOWNTO 0 );
-            PREWINDOW_Y             : OUT   STD_LOGIC;
-            PREWINDOW_Y_SP          : OUT   STD_LOGIC;
-            FIELD                   : OUT   STD_LOGIC;
-            WINDOW_X                : OUT   STD_LOGIC;
-            PVIDEODHCLK             : OUT   STD_LOGIC;
-            PVIDEODLCLK             : OUT   STD_LOGIC;
-            IVIDEOVS_N              : OUT   STD_LOGIC;
-
-            HD                      : OUT   STD_LOGIC;
-            VD                      : OUT   STD_LOGIC;
-            HSYNC                   : OUT   STD_LOGIC;
-            ENAHSYNC                : OUT   STD_LOGIC;
-            V_BLANKING_START        : OUT   STD_LOGIC;
-
-            VDPR9PALMODE            : IN    STD_LOGIC;
-            REG_R9_INTERLACE_MODE   : IN    STD_LOGIC;
-            REG_R9_Y_DOTS           : IN    STD_LOGIC;
-            REG_R18_ADJ             : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            REG_R23_VSTART_LINE     : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            REG_R25_MSK             : IN    STD_LOGIC;
-            REG_R27_H_SCROLL        : IN    STD_LOGIC_VECTOR(  2 DOWNTO 0 );
-            REG_R25_YJK             : IN    STD_LOGIC;
-            CENTERYJK_R25_N         : IN    STD_LOGIC
-        );
-    END COMPONENT;
-
-    COMPONENT VDP_INTERRUPT
-        PORT(
-            RESET                   : IN    STD_LOGIC;
-            CLK21M                  : IN    STD_LOGIC;
-
-            H_CNT                   : IN    STD_LOGIC_VECTOR( 10 DOWNTO 0 );
-            Y_CNT                   : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            ACTIVE_LINE             : IN    STD_LOGIC;
-            V_BLANKING_START        : IN    STD_LOGIC;
-            CLR_VSYNC_INT           : IN    STD_LOGIC;
-            CLR_HSYNC_INT           : IN    STD_LOGIC;
-            REQ_VSYNC_INT_N         : OUT   STD_LOGIC;
-            REQ_HSYNC_INT_N         : OUT   STD_LOGIC;
-            REG_R19_HSYNC_INT_LINE  : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 )
-        );
-    END COMPONENT;
-
-    COMPONENT VDP_SPRITE
-        PORT(
-            -- VDP CLOCK ... 21.477MHZ
-            CLK21M                      : IN    STD_LOGIC;
-            RESET                       : IN    STD_LOGIC;
-
-            DOTSTATE                    : IN    STD_LOGIC_VECTOR(  1 DOWNTO 0 );
-            EIGHTDOTSTATE               : IN    STD_LOGIC_VECTOR(  2 DOWNTO 0 );
-
-            DOTCOUNTERX                 : IN    STD_LOGIC_VECTOR(  8 DOWNTO 0 );
-            DOTCOUNTERYP                : IN    STD_LOGIC_VECTOR(  8 DOWNTO 0 );
-            BWINDOW_Y                   : IN    STD_LOGIC;
-
-            -- VDP STATUS REGISTERS OF SPRITE
-            PVDPS0SPCOLLISIONINCIDENCE  : OUT   STD_LOGIC;
-            PVDPS0SPOVERMAPPED          : OUT   STD_LOGIC;
-            PVDPS0SPOVERMAPPEDNUM       : OUT   STD_LOGIC_VECTOR(  4 DOWNTO 0 );
-            PVDPS3S4SPCOLLISIONX        : OUT   STD_LOGIC_VECTOR(  8 DOWNTO 0 );
-            PVDPS5S6SPCOLLISIONY        : OUT   STD_LOGIC_VECTOR(  8 DOWNTO 0 );
-            PVDPS0RESETREQ              : IN    STD_LOGIC;
-            PVDPS0RESETACK              : OUT   STD_LOGIC;
-            PVDPS5RESETREQ              : IN    STD_LOGIC;
-            PVDPS5RESETACK              : OUT   STD_LOGIC;
-            -- VDP REGISTERS
-            REG_R1_SP_SIZE              : IN    STD_LOGIC;
-            REG_R1_SP_ZOOM              : IN    STD_LOGIC;
-            REG_R11R5_SP_ATR_ADDR       : IN    STD_LOGIC_VECTOR(  9 DOWNTO 0 );
-            REG_R6_SP_GEN_ADDR          : IN    STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            REG_R8_COL0_ON              : IN    STD_LOGIC;
-            REG_R8_SP_OFF               : IN    STD_LOGIC;
-            REG_R23_VSTART_LINE         : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            REG_R27_H_SCROLL            : IN    STD_LOGIC_VECTOR(  2 DOWNTO 0 );
-            SPMODE2                     : IN    STD_LOGIC;
-            VRAMINTERLEAVEMODE          : IN    STD_LOGIC;
-
-            SPVRAMACCESSING             : OUT   STD_LOGIC;
-
-            PRAMDAT                     : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            PRAMADR                     : OUT   STD_LOGIC_VECTOR( 16 DOWNTO 0 );
-
-            -- JP: �X�v���C�g���`�悵������'1'�ɂȂ��B�J���[�R�[�h0��
-            -- JP: �`�悷�鎖���ł����̂ŁA���̃r�b�g���K�v
-            SPCOLOROUT                  : OUT   STD_LOGIC;
-            -- OUTPUT COLOR
-            SPCOLORCODE                 : OUT   STD_LOGIC_VECTOR(  3 DOWNTO 0 )
-        );
-    END COMPONENT;
-
-    COMPONENT RAM
-        PORT(
-            ADR     : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            CLK     : IN    STD_LOGIC;
-            WE      : IN    STD_LOGIC;
-            DBO     : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            DBI     : OUT   STD_LOGIC_VECTOR(  7 DOWNTO 0 )
-        );
-    END COMPONENT;
-
-    COMPONENT VDP_NTSC_PAL
-        PORT(
-            CLK21M              : IN    STD_LOGIC;
-            RESET               : IN    STD_LOGIC;
-            -- MODE
-            PALMODE             : IN    STD_LOGIC;
-            INTERLACEMODE       : IN    STD_LOGIC;
-            -- VIDEO INPUT
-            VIDEORIN            : IN    STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            VIDEOGIN            : IN    STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            VIDEOBIN            : IN    STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            VIDEOVSIN_N         : IN    STD_LOGIC;
-            HCOUNTERIN          : IN    STD_LOGIC_VECTOR( 10 DOWNTO 0 );
-            VCOUNTERIN          : IN    STD_LOGIC_VECTOR( 10 DOWNTO 0 );
-            -- VIDEO OUTPUT
-            VIDEOROUT           : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            VIDEOGOUT           : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            VIDEOBOUT           : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            VIDEOHSOUT_N        : OUT   STD_LOGIC;
-            VIDEOVSOUT_N        : OUT   STD_LOGIC
-        );
-    END COMPONENT;
-
-    COMPONENT VDP_VGA
-        PORT(
-            CLK21M              : IN    STD_LOGIC;
-            RESET               : IN    STD_LOGIC;
-            -- VIDEO INPUT
-            VIDEORIN            : IN    STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            VIDEOGIN            : IN    STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            VIDEOBIN            : IN    STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            VIDEOVSIN_N         : IN    STD_LOGIC;
-            HCOUNTERIN          : IN    STD_LOGIC_VECTOR( 10 DOWNTO 0 );
-            VCOUNTERIN          : IN    STD_LOGIC_VECTOR( 10 DOWNTO 0 );
-            -- MODE
-            PALMODE             : IN    STD_LOGIC;
-            INTERLACEMODE       : IN    STD_LOGIC;
-            LEGACY_VGA          : IN    STD_LOGIC;
-            -- VIDEO OUTPUT
-            VIDEOROUT           : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            VIDEOGOUT           : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            VIDEOBOUT           : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            VIDEODEOUT          : OUT   STD_LOGIC;
-            VIDEOHSOUT_N        : OUT   STD_LOGIC;
-            VIDEOVSOUT_N        : OUT   STD_LOGIC;
-            -- SWITCHED I/O SIGNALS
-            RATIOMODE           : IN    STD_LOGIC_VECTOR(  2 DOWNTO 0 )
-            );
-    END COMPONENT;
-
-    COMPONENT VDP_COMMAND
-        PORT(
-            RESET               : IN    STD_LOGIC;
-            CLK21M              : IN    STD_LOGIC;
-
-            VDPMODEGRAPHIC4     : IN    STD_LOGIC;
-            VDPMODEGRAPHIC5     : IN    STD_LOGIC;
-            VDPMODEGRAPHIC6     : IN    STD_LOGIC;
-            VDPMODEGRAPHIC7     : IN    STD_LOGIC;
-            VDPMODEISHIGHRES    : IN    STD_LOGIC;
-
-            VRAMWRACK           : IN    STD_LOGIC;
-            VRAMRDACK           : IN    STD_LOGIC;
-            VRAMREADINGR        : IN    STD_LOGIC;
-            VRAMREADINGA        : IN    STD_LOGIC;
-            VRAMRDDATA          : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            REGWRREQ            : IN    STD_LOGIC;
-            TRCLRREQ            : IN    STD_LOGIC;
-            REGNUM              : IN    STD_LOGIC_VECTOR(  3 DOWNTO 0 );
-            REGDATA             : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            PREGWRACK           : OUT   STD_LOGIC;
-            PTRCLRACK           : OUT   STD_LOGIC;
-            PVRAMWRREQ          : OUT   STD_LOGIC;
-            PVRAMRDREQ          : OUT   STD_LOGIC;
-            PVRAMACCESSADDR     : OUT   STD_LOGIC_VECTOR( 16 DOWNTO 0 );
-            PVRAMWRDATA         : OUT   STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            PCLR                : OUT   STD_LOGIC_VECTOR(  7 DOWNTO 0 );    -- R44, S#7
-            PCE                 : OUT   STD_LOGIC;  -- S#2 (BIT 0)
-            PBD                 : OUT   STD_LOGIC;  -- S#2 (BIT 4)
-            PTR                 : OUT   STD_LOGIC;  -- S#2 (BIT 7)
-            PSXTMP              : OUT   STD_LOGIC_VECTOR( 10 DOWNTO 0 ); -- S#8,S#9
-
-            CUR_VDP_COMMAND     : OUT   STD_LOGIC_VECTOR(  7 DOWNTO 4 );
-
-            REG_R25_CMD         : IN    STD_LOGIC
-        );
-    END COMPONENT;
-
-    COMPONENT VDP_WAIT_CONTROL
-        PORT(
-            RESET           : IN    STD_LOGIC;
-            CLK21M          : IN    STD_LOGIC;
-
-            VDP_COMMAND     : IN    STD_LOGIC_VECTOR(  7 DOWNTO  4 );
-
-            VDPR9PALMODE    : IN    STD_LOGIC;      -- 0=60Hz (NTSC), 1=50Hz (PAL)
-            REG_R1_DISP_ON  : IN    STD_LOGIC;      -- 0=Display Off, 1=Display On
-            REG_R8_SP_OFF   : IN    STD_LOGIC;      -- 0=Sprite On, 1=Sprite Off
-            REG_R9_Y_DOTS   : IN    STD_LOGIC;      -- 0=192 Lines, 1=212 Lines
-
-            VDPSPEEDMODE    : IN    STD_LOGIC;
-            DRIVE           : IN    STD_LOGIC;
-
-            ACTIVE          : OUT   STD_LOGIC
-        );
-    END COMPONENT;
-
-    COMPONENT VDP_COLORDEC
-        PORT(
-            RESET               : IN    STD_LOGIC;
-            CLK21M              : IN    STD_LOGIC;
-
-            DOTSTATE            : IN    STD_LOGIC_VECTOR(  1 DOWNTO 0 );
-
-            PPALETTEADDR_OUT    : OUT   STD_LOGIC_VECTOR(  3 DOWNTO 0 );
-            PALETTEDATARB_OUT   : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            PALETTEDATAG_OUT    : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-
-            VDPMODETEXT1        : IN    STD_LOGIC;
-            VDPMODETEXT2        : IN    STD_LOGIC;
-            VDPMODEMULTI        : IN    STD_LOGIC;
-            VDPMODEGRAPHIC1     : IN    STD_LOGIC;
-            VDPMODEGRAPHIC2     : IN    STD_LOGIC;
-            VDPMODEGRAPHIC3     : IN    STD_LOGIC;
-            VDPMODEGRAPHIC4     : IN    STD_LOGIC;
-            VDPMODEGRAPHIC5     : IN    STD_LOGIC;
-            VDPMODEGRAPHIC6     : IN    STD_LOGIC;
-            VDPMODEGRAPHIC7     : IN    STD_LOGIC;
-
-            WINDOW              : IN    STD_LOGIC;
-            SPRITECOLOROUT      : IN    STD_LOGIC;
-            COLORCODET12        : IN    STD_LOGIC_VECTOR(  3 DOWNTO 0 );
-            COLORCODEG123M      : IN    STD_LOGIC_VECTOR(  3 DOWNTO 0 );
-            COLORCODEG4567      : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            COLORCODESPRITE     : IN    STD_LOGIC_VECTOR(  3 DOWNTO 0 );
-            P_YJK_R             : IN    STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            P_YJK_G             : IN    STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            P_YJK_B             : IN    STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            P_YJK_EN            : IN    STD_LOGIC;
-
-            PVIDEOR_VDP         : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            PVIDEOG_VDP         : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            PVIDEOB_VDP         : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-
-            REG_R1_DISP_ON      : IN    STD_LOGIC;
-            REG_R7_FRAME_COL    : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            REG_R8_COL0_ON      : IN    STD_LOGIC;
-            REG_R25_YJK         : IN    STD_LOGIC
-        );
-    END COMPONENT;
-
-    COMPONENT VDP_TEXT12
-        PORT(
-            -- VDP CLOCK ... 21.477MHZ
-            CLK21M                      : IN    STD_LOGIC;
-            RESET                       : IN    STD_LOGIC;
-
-            DOTSTATE                    : IN    STD_LOGIC_VECTOR(  1 DOWNTO 0 );
-            DOTCOUNTERX                 : IN    STD_LOGIC_VECTOR(  8 DOWNTO 0 );
-            DOTCOUNTERY                 : IN    STD_LOGIC_VECTOR(  8 DOWNTO 0 );
-
-            VDPMODETEXT1                : IN    STD_LOGIC;
-            VDPMODETEXT2                : IN    STD_LOGIC;
-
-            -- REGISTERS
-            REG_R7_FRAME_COL            : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            REG_R12_BLINK_MODE          : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            REG_R13_BLINK_PERIOD        : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-
-            REG_R2_PT_NAM_ADDR          : IN    STD_LOGIC_VECTOR(  6 DOWNTO 0 );
-            REG_R4_PT_GEN_ADDR          : IN    STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            REG_R10R3_COL_ADDR          : IN    STD_LOGIC_VECTOR( 10 DOWNTO 0 );
-            --
-            PRAMDAT                     : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            PRAMADR                     : OUT   STD_LOGIC_VECTOR( 16 DOWNTO 0 );
-            TXVRAMREADEN                : OUT   STD_LOGIC;
-
-            PCOLORCODE                  : OUT   STD_LOGIC_VECTOR(  3 DOWNTO 0 )
-        );
-    END COMPONENT;
-
-    COMPONENT VDP_GRAPHIC123M
-        PORT(
-            CLK21M                      : IN    STD_LOGIC;      --  21.477MHZ
-            RESET                       : IN    STD_LOGIC;
-
-            -- CONTROL SIGNALS
-            DOTSTATE                    : IN    STD_LOGIC_VECTOR(  1 DOWNTO 0 );
-            EIGHTDOTSTATE               : IN    STD_LOGIC_VECTOR(  2 DOWNTO 0 );
-            DOTCOUNTERX                 : IN    STD_LOGIC_VECTOR(  8 DOWNTO 0 );
-            DOTCOUNTERY                 : IN    STD_LOGIC_VECTOR(  8 DOWNTO 0 );
-
-            VDPMODEMULTI                : IN    STD_LOGIC;
-            VDPMODEGRAPHIC1             : IN    STD_LOGIC;
-            VDPMODEGRAPHIC2             : IN    STD_LOGIC;
-            VDPMODEGRAPHIC3             : IN    STD_LOGIC;
-
-            -- REGISTERS
-            REG_R2_PT_NAM_ADDR          : IN    STD_LOGIC_VECTOR(  6 DOWNTO 0 );
-            REG_R4_PT_GEN_ADDR          : IN    STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            REG_R10R3_COL_ADDR          : IN    STD_LOGIC_VECTOR( 10 DOWNTO 0 );
-            REG_R26_H_SCROLL            : IN    STD_LOGIC_VECTOR(  8 DOWNTO 3 );
-            REG_R27_H_SCROLL            : IN    STD_LOGIC_VECTOR(  2 DOWNTO 0 );
-            --
-            PRAMDAT                     : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            PRAMADR                     : OUT   STD_LOGIC_VECTOR( 16 DOWNTO 0 );
-
-            PCOLORCODE                  : OUT   STD_LOGIC_VECTOR(  3 DOWNTO 0 )
-        );
-    END COMPONENT;
-
-    COMPONENT VDP_GRAPHIC4567
-        PORT(
-            -- VDP CLOCK ... 21.477MHZ
-            CLK21M                  : IN    STD_LOGIC;
-            RESET                   : IN    STD_LOGIC;
-
-            DOTSTATE                : IN    STD_LOGIC_VECTOR(  1 DOWNTO 0 );
-            EIGHTDOTSTATE           : IN    STD_LOGIC_VECTOR(  2 DOWNTO 0 );
-            DOTCOUNTERX             : IN    STD_LOGIC_VECTOR(  8 DOWNTO 0 );
-            DOTCOUNTERY             : IN    STD_LOGIC_VECTOR(  8 DOWNTO 0 );
-
-            VDPMODEGRAPHIC4         : IN    STD_LOGIC;
-            VDPMODEGRAPHIC5         : IN    STD_LOGIC;
-            VDPMODEGRAPHIC6         : IN    STD_LOGIC;
-            VDPMODEGRAPHIC7         : IN    STD_LOGIC;
-
-            -- REGISTERS
-            REG_R2_PT_NAM_ADDR      : IN    STD_LOGIC_VECTOR(  6 DOWNTO 0 );
-            REG_R26_H_SCROLL        : IN    STD_LOGIC_VECTOR(  8 DOWNTO 3 );
-            REG_R27_H_SCROLL        : IN    STD_LOGIC_VECTOR(  2 DOWNTO 0 );
-            REG_R25_YAE             : IN    STD_LOGIC;
-            REG_R25_YJK             : IN    STD_LOGIC;
-            REG_R25_SP2             : IN    STD_LOGIC;
-
-            --
-            PRAMDAT                 : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            PRAMDATPAIR             : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            PRAMADR                 : OUT   STD_LOGIC_VECTOR( 16 DOWNTO 0 );
-
-            PCOLORCODE              : OUT   STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-
-            P_YJK_R                 : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            P_YJK_G                 : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            P_YJK_B                 : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            P_YJK_EN                : OUT   STD_LOGIC
-        );
-    END COMPONENT;
-
-    COMPONENT VDP_REGISTER
-        PORT(
-            RESET                       : IN    STD_LOGIC;
-            CLK21M                      : IN    STD_LOGIC;
-
-            REQ                         : IN    STD_LOGIC;
-            ACK                         : OUT   STD_LOGIC;
-            WRT                         : IN    STD_LOGIC;
-            ADR                         : IN    STD_LOGIC_VECTOR( 15 DOWNTO 0 );
-            DBI                         : OUT   STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            DBO                         : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-
-            DOTSTATE                    : IN    STD_LOGIC_VECTOR(  1 DOWNTO 0 );
-
-            VDPCMDTRCLRACK              : IN    STD_LOGIC;
-            VDPCMDREGWRACK              : IN    STD_LOGIC;
-            HSYNC                       : IN    STD_LOGIC;
-
-            VDPS0SPCOLLISIONINCIDENCE   : IN    STD_LOGIC;
-            VDPS0SPOVERMAPPED           : IN    STD_LOGIC;
-            VDPS0SPOVERMAPPEDNUM        : IN    STD_LOGIC_VECTOR(  4 DOWNTO 0 );
-            SPVDPS0RESETREQ             : OUT   STD_LOGIC;
-            SPVDPS0RESETACK             : IN    STD_LOGIC;
-            SPVDPS5RESETREQ             : OUT   STD_LOGIC;
-            SPVDPS5RESETACK             : IN    STD_LOGIC;
-
-            VDPCMDTR                    : IN    STD_LOGIC;                          -- S#2
-            VD                          : IN    STD_LOGIC;                          -- S#2
-            HD                          : IN    STD_LOGIC;                          -- S#2
-            VDPCMDBD                    : IN    STD_LOGIC;                          -- S#2
-            FIELD                       : IN    STD_LOGIC;                          -- S#2
-            VDPCMDCE                    : IN    STD_LOGIC;                          -- S#2
-            VDPS3S4SPCOLLISIONX         : IN    STD_LOGIC_VECTOR(  8 DOWNTO 0 );    -- S#3,S#4
-            VDPS5S6SPCOLLISIONY         : IN    STD_LOGIC_VECTOR(  8 DOWNTO 0 );    -- S#5,S#6
-            VDPCMDCLR                   : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );    -- R44,S#7
-            VDPCMDSXTMP                 : IN    STD_LOGIC_VECTOR( 10 DOWNTO 0 );    -- S#8,S#9
-
-            VDPVRAMACCESSDATA           : OUT   STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            VDPVRAMACCESSADDRTMP        : OUT   STD_LOGIC_VECTOR( 16 DOWNTO 0 );
-            VDPVRAMADDRSETREQ           : OUT   STD_LOGIC;
-            VDPVRAMADDRSETACK           : IN    STD_LOGIC;
-            VDPVRAMWRREQ                : OUT   STD_LOGIC;
-            VDPVRAMWRACK                : IN    STD_LOGIC;
-            VDPVRAMRDDATA               : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            VDPVRAMRDREQ                : OUT   STD_LOGIC;
-            VDPVRAMRDACK                : IN    STD_LOGIC;
-
-            VDPCMDREGNUM                : OUT   STD_LOGIC_VECTOR(  3 DOWNTO 0 );
-            VDPCMDREGDATA               : OUT   STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            VDPCMDREGWRREQ              : OUT   STD_LOGIC;
-            VDPCMDTRCLRREQ              : OUT   STD_LOGIC;
-
-            PALETTEADDR_OUT             : IN    STD_LOGIC_VECTOR(  3 DOWNTO 0 );
-            PALETTEDATARB_OUT           : OUT   STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            PALETTEDATAG_OUT            : OUT   STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-
-            -- INTERRUPT
-            CLR_VSYNC_INT               : OUT   STD_LOGIC;
-            CLR_HSYNC_INT               : OUT   STD_LOGIC;
-            REQ_VSYNC_INT_N             : IN    STD_LOGIC;
-            REQ_HSYNC_INT_N             : IN    STD_LOGIC;
-
-            -- REGISTER VALUE
-            REG_R0_HSYNC_INT_EN         : OUT   STD_LOGIC;
-            REG_R1_SP_SIZE              : OUT   STD_LOGIC;
-            REG_R1_SP_ZOOM              : OUT   STD_LOGIC;
-            REG_R1_VSYNC_INT_EN         : OUT   STD_LOGIC;
-            REG_R1_DISP_ON              : OUT   STD_LOGIC;
-            REG_R2_PT_NAM_ADDR          : OUT   STD_LOGIC_VECTOR(  6 DOWNTO 0 );
-            REG_R4_PT_GEN_ADDR          : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            REG_R10R3_COL_ADDR          : OUT   STD_LOGIC_VECTOR( 10 DOWNTO 0 );
-            REG_R11R5_SP_ATR_ADDR       : OUT   STD_LOGIC_VECTOR(  9 DOWNTO 0 );
-            REG_R6_SP_GEN_ADDR          : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );
-            REG_R7_FRAME_COL            : OUT   STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            REG_R8_SP_OFF               : OUT   STD_LOGIC;
-            REG_R8_COL0_ON              : OUT   STD_LOGIC;
-            REG_R9_PAL_MODE             : OUT   STD_LOGIC;
-            REG_R9_INTERLACE_MODE       : OUT   STD_LOGIC;
-            REG_R9_Y_DOTS               : OUT   STD_LOGIC;
-            REG_R12_BLINK_MODE          : OUT   STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            REG_R13_BLINK_PERIOD        : OUT   STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            REG_R18_ADJ                 : OUT   STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            REG_R19_HSYNC_INT_LINE      : OUT   STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            REG_R23_VSTART_LINE         : OUT   STD_LOGIC_VECTOR(  7 DOWNTO 0 );
-            REG_R25_CMD                 : OUT   STD_LOGIC;
-            REG_R25_YAE                 : OUT   STD_LOGIC;
-            REG_R25_YJK                 : OUT   STD_LOGIC;
-            REG_R25_MSK                 : OUT   STD_LOGIC;
-            REG_R25_SP2                 : OUT   STD_LOGIC;
-            REG_R26_H_SCROLL            : OUT   STD_LOGIC_VECTOR(  8 DOWNTO 3 );
-            REG_R27_H_SCROLL            : OUT   STD_LOGIC_VECTOR(  2 DOWNTO 0 );
-
-            --  MODE
-            VDPMODETEXT1                : OUT   STD_LOGIC;
-            VDPMODETEXT2                : OUT   STD_LOGIC;
-            VDPMODEMULTI                : OUT   STD_LOGIC;
-            VDPMODEGRAPHIC1             : OUT   STD_LOGIC;
-            VDPMODEGRAPHIC2             : OUT   STD_LOGIC;
-            VDPMODEGRAPHIC3             : OUT   STD_LOGIC;
-            VDPMODEGRAPHIC4             : OUT   STD_LOGIC;
-            VDPMODEGRAPHIC5             : OUT   STD_LOGIC;
-            VDPMODEGRAPHIC6             : OUT   STD_LOGIC;
-            VDPMODEGRAPHIC7             : OUT   STD_LOGIC;
-            VDPMODEISHIGHRES            : OUT   STD_LOGIC;
-            SPMODE2                     : OUT   STD_LOGIC;
-            VDPMODEISVRAMINTERLEAVE     : OUT   STD_LOGIC;
-
-            -- SWITCHED I/O SIGNALS
-            FORCED_V_MODE               : IN    STD_LOGIC
-        );
-    END COMPONENT;
 
     SIGNAL H_CNT                        : STD_LOGIC_VECTOR( 10 DOWNTO 0 );
     SIGNAL V_CNT                        : STD_LOGIC_VECTOR( 10 DOWNTO 0 );
@@ -1012,7 +539,7 @@ BEGIN
     IVIDEOB <=  (OTHERS => '0') WHEN( BWINDOW = '0' )ELSE
                 IVIDEOB_VDP;
 
-    U_VDP_NTSC_PAL: VDP_NTSC_PAL
+    U_VDP_NTSC_PAL: work.VDP_NTSC_PAL
     PORT MAP(
         CLK21M              => CLK21M,
         RESET               => RESET,
@@ -1031,7 +558,7 @@ BEGIN
         VIDEOVSOUT_N        => IVIDEOVS_N_NTSC_PAL
     );
 
-    U_VDP_VGA: VDP_VGA
+    U_VDP_VGA: work.VDP_VGA
     PORT MAP(
         CLK21M              => CLK21M,
         RESET               => RESET,
@@ -1089,7 +616,7 @@ BEGIN
     INT_N       <=  '0' WHEN( VSYNCINT_N = '0' OR HSYNCINT_N = '0' )ELSE
                     '1';
 
-    U_INTERRUPT: VDP_INTERRUPT
+    U_INTERRUPT: work.VDP_INTERRUPT
     PORT MAP (
         RESET                   => RESET                        ,
         CLK21M                  => CLK21M                       ,
@@ -1119,7 +646,7 @@ BEGIN
     -----------------------------------------------------------------------------
     -- SYNCHRONOUS SIGNAL GENERATOR
     -----------------------------------------------------------------------------
-    U_SSG: VDP_SSG
+    U_SSG: work.VDP_SSG
     PORT MAP(
         RESET                   => RESET                    ,
         CLK21M                  => CLK21M                   ,
@@ -1496,7 +1023,7 @@ BEGIN
     -----------------------------------------------------------------------
     -- COLOR DECODING
     -------------------------------------------------------------------------
-    U_VDP_COLORDEC: VDP_COLORDEC
+    U_VDP_COLORDEC: work.VDP_COLORDEC
     PORT MAP(
         RESET               => RESET                ,
         CLK21M              => CLK21M               ,
@@ -1542,7 +1069,7 @@ BEGIN
     -----------------------------------------------------------------------------
     -- MAKE COLOR CODE
     -----------------------------------------------------------------------------
-    U_VDP_TEXT12: VDP_TEXT12
+    U_VDP_TEXT12: work.VDP_TEXT12
     PORT MAP(
         CLK21M                      => CLK21M,
         RESET                       => RESET,
@@ -1563,7 +1090,7 @@ BEGIN
         PCOLORCODE                  => COLORCODET12
     );
 
-    U_VDP_GRAPHIC123M: VDP_GRAPHIC123M
+    U_VDP_GRAPHIC123M: work.VDP_GRAPHIC123M
     PORT MAP(
         CLK21M                      => CLK21M,
         RESET                       => RESET,
@@ -1585,7 +1112,7 @@ BEGIN
         PCOLORCODE                  => COLORCODEG123M
     );
 
-    U_VDP_GRAPHIC4567: VDP_GRAPHIC4567
+    U_VDP_GRAPHIC4567: work.VDP_GRAPHIC4567
     PORT MAP(
         CLK21M                      => CLK21M,
         RESET                       => RESET,
@@ -1616,7 +1143,7 @@ BEGIN
     -----------------------------------------------------------------------------
     -- SPRITE Modules
     -----------------------------------------------------------------------------
-    U_SPRITE: VDP_SPRITE
+    U_SPRITE: work.VDP_SPRITE
     PORT MAP(
         CLK21M                      => CLK21M,
         RESET                       => RESET,
@@ -1654,7 +1181,7 @@ BEGIN
     -----------------------------------------------------------------------------
     -- VDP REGISTER ACCESS
     -----------------------------------------------------------------------------
-    U_VDP_REGISTER: VDP_REGISTER
+    U_VDP_REGISTER: work.VDP_REGISTER
     PORT MAP(
         RESET                       => RESET                        ,
         CLK21M                      => CLK21M                       ,
@@ -1767,7 +1294,7 @@ BEGIN
     -----------------------------------------------------------------------------
     -- VDP COMMAND
     -----------------------------------------------------------------------------
-    U_VDP_COMMAND: VDP_COMMAND
+    U_VDP_COMMAND: work.VDP_COMMAND
     PORT MAP(
         RESET               => RESET                ,
         CLK21M              => CLK21M               ,
@@ -1800,7 +1327,7 @@ BEGIN
         REG_R25_CMD         => REG_R25_CMD
     );
 
-    U_VDP_WAIT_CONTROL: VDP_WAIT_CONTROL
+    U_VDP_WAIT_CONTROL: work.VDP_WAIT_CONTROL
     PORT MAP (
         RESET               => RESET                ,
         CLK21M              => CLK21M               ,

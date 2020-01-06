@@ -54,17 +54,6 @@ end rtc;
 
 architecture rtl of rtc is
 
-    -- bank memory
-    component ram is
-        port (
-            adr     : in    std_logic_vector( 7 downto 0 );
-            clk     : in    std_logic;
-            we      : in    std_logic;
-            dbo     : in    std_logic_vector( 7 downto 0 );
-            dbi     : out   std_logic_vector( 7 downto 0 )
-        );
-    end component;
-
     -- ff
     signal ff_req       : std_logic;
     signal ff_1sec_cnt  : std_logic_vector(  3 downto 0 );
@@ -597,7 +586,7 @@ begin
     w_mem_we    <=  '1' when( w_wrt = '1' and adr(0) = '1' )else
                 '0';
 
-    u_mem: ram
+    u_mem: work.ram
     port map (
         adr     => w_mem_addr   ,
         clk     => clk21m       ,

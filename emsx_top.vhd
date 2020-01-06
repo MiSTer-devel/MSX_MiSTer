@@ -106,334 +106,6 @@ end emsx_top;
 
 architecture RTL of emsx_top is
 
-    -- CPU
-    component T80pa
-        port(
-            RESET_n     : in  std_logic;
-            R800_mode   : in  std_logic;
-            CLK         : in  std_logic;
-            CEN_p       : in  std_logic;
-            CEN_n       : in  std_logic;
-            WAIT_n      : in  std_logic;
-            INT_n       : in  std_logic;
-            NMI_n       : in  std_logic;
-            BUSRQ_n     : in  std_logic;
-            M1_n        : out std_logic;
-            MREQ_n      : out std_logic;
-            IORQ_n      : out std_logic;
-            RD_n        : out std_logic;
-            WR_n        : out std_logic;
-            RFSH_n      : out std_logic;
-            HALT_n      : out std_logic;
-            BUSAK_n     : out std_logic;
-            A           : out std_logic_vector( 15 downto 0 );
-            DO          : out std_logic_vector(  7 downto 0 );
-            DI          : in  std_logic_vector(  7 downto 0 )
-        );
-    end component;
-
-    -- boot loader ROM (initial program loader)
-    component iplrom
-        port(
-            clk     : in    std_logic;
-            adr     : in    std_logic_vector( 15 downto 0 );
-            dbi     : out   std_logic_vector(  7 downto 0 )
-        );
-    end component;
-
-    -- MEGA-SD (SD controller)
-    component megasd
-        port(
-            clk21m  : in    std_logic;
-            reset   : in    std_logic;
-            clkena  : in    std_logic;
-            req     : in    std_logic;
-            ack     : out   std_logic;
-            wrt     : in    std_logic;
-            adr     : in    std_logic_vector( 15 downto 0 );
-            dbi     : out   std_logic_vector(  7 downto 0 );
-            dbo     : in    std_logic_vector(  7 downto 0 );
-
-            ramreq  : out   std_logic;
-            ramwrt  : out   std_logic;
-            ramadr  : out   std_logic_vector( 19 downto 0 );
-            ramdbi  : in    std_logic_vector(  7 downto 0 );
-            ramdbo  : out   std_logic_vector(  7 downto 0 );
-
-            mmcdbi  : out   std_logic_vector(  7 downto 0 );
-            mmcena  : out   std_logic;
-            mmcact  : out   std_logic;
-
-            mmc_ck  : out   std_logic;
-            mmc_cs  : out   std_logic;
-            mmc_di  : out   std_logic;
-            mmc_do  : in    std_logic;
-
-            epc_ck  : out   std_logic;
-            epc_cs  : out   std_logic;
-            epc_oe  : out   std_logic;
-            epc_di  : out   std_logic;
-            epc_do  : in    std_logic
-        );
-    end component;
-
-    component mapper
-        port(
-            clk21m      : in    std_logic;
-            reset       : in    std_logic;
-            clkena      : in    std_logic;
-            req         : in    std_logic;
-            ack         : out   std_logic;
-            mem         : in    std_logic;
-            wrt         : in    std_logic;
-            adr         : in    std_logic_vector( 15 downto 0 );
-            dbi         : out   std_logic_vector(  7 downto 0 );
-            dbo         : in    std_logic_vector(  7 downto 0 );
-
-            ramreq      : out   std_logic;
-            ramwrt      : out   std_logic;
-            ramadr      : out   std_logic_vector( 21 downto 0 );
-            ramdbi      : in    std_logic_vector(  7 downto 0 );
-            ramdbo      : out   std_logic_vector(  7 downto 0 )
-        );
-    end component;
-
-    component rtc
-        port(
-            clk21m      : in    std_logic;
-            reset       : in    std_logic;
-            setup       : in    std_logic;
-            rt          : in    std_logic_vector( 64 downto 0 );
-            clkena      : in    std_logic;
-            req         : in    std_logic;
-            ack         : out   std_logic;
-            wrt         : in    std_logic;
-            adr         : in    std_logic_vector( 15 downto 0 );
-            dbi         : out   std_logic_vector(  7 downto 0 );
-            dbo         : in    std_logic_vector(  7 downto 0 )
-        );
-    end component;
-
-    component kanji is
-        port (
-            clk21m          : in    std_logic;
-            reset           : in    std_logic;
-            clkena          : in    std_logic;
-            req             : in    std_logic;
-            ack             : out   std_logic;
-            wrt             : in    std_logic;
-            adr             : in    std_logic_vector( 15 downto 0 );
-            dbi             : out   std_logic_vector(  7 downto 0 );
-            dbo             : in    std_logic_vector(  7 downto 0 );
-
-            ramreq          : out   std_logic;
-            ramadr          : out   std_logic_vector( 17 downto 0 );
-            ramdbi          : in    std_logic_vector(  7 downto 0 );
-            ramdbo          : out   std_logic_vector(  7 downto 0 )
-        );
-    end component;
-
-    component vdp
-        port(
-            -- VDP Clock ... 21.477MHz
-            clk21m          : in    std_logic;
-            reset           : in    std_logic;
-            req             : in    std_logic;
-            ack             : out   std_logic;
-            wrt             : in    std_logic;
-            adr             : in    std_logic_vector( 15 downto 0 );
-            dbi             : out   std_logic_vector(  7 downto 0 );
-            dbo             : in    std_logic_vector(  7 downto 0 );
-
-            int_n           : out   std_logic;
-
-            pRamOe_n        : out   std_logic;
-            pRamWe_n        : out   std_logic;
-            pRamAdr         : out   std_logic_vector( 16 downto 0 );
-            pRamDbi         : in    std_logic_vector( 15 downto 0 );
-            pRamDbo         : out   std_logic_vector(  7 downto 0 );
-
-            VdpSpeedMode    : in    std_logic;                          -- (for V9958 MSX2+/tR VDP)
-            RatioMode       : in    std_logic_vector(  2 downto 0 );    -- (for V9958 MSX2+/tR VDP)
-            centerYJK_R25_n : in    std_logic;                          -- (for V9958 MSX2+/tR VDP)
-
-            -- Video Output
-            pVideoR         : out   std_logic_vector(  5 downto 0 );
-            pVideoG         : out   std_logic_vector(  5 downto 0 );
-            pVideoB         : out   std_logic_vector(  5 downto 0 );
-            PVIDEODE        : OUT   STD_LOGIC;
-
-            pVideoHS_n      : out   std_logic;
-            pVideoVS_n      : out   std_logic;
-            pVideoCS_n      : out   std_logic;
-
-            pVideoDHClk     : out   std_logic;
-            pVideoDLClk     : out   std_logic;
-
-            -- Display resolution (0=15kHz, 1=31kHz)
-            DispReso        : in    std_logic;
-            ntsc_pal_type   : in    std_logic;
-            forced_v_mode   : in    std_logic;
-            legacy_vga      : in    std_logic
-        );
-    end component;
-
-    component psg
-        port(
-            clk21m      : in    std_logic;
-            reset       : in    std_logic;
-            clkena      : in    std_logic;
-            req         : in    std_logic;
-            ack         : out   std_logic;
-            wrt         : in    std_logic;
-            adr         : in    std_logic_vector( 15 downto 0 );
-            dbi         : out   std_logic_vector(  7 downto 0 );
-            dbo         : in    std_logic_vector(  7 downto 0 );
-
-            joya        : in    std_logic_vector(  5 downto 0 );
-            stra        : out   std_logic;
-            joyb        : in    std_logic_vector(  5 downto 0 );
-            strb        : out   std_logic;
-
-            kana        : out   std_logic;
-            cmtin       : in    std_logic;
-            keymode     : in    std_logic;
-
-            wave        : out   std_logic_vector(  9 downto 0 )
-        );
-    end component;
-
-    component megaram   -- ESE-MegaSCC+ / ESE-MegaRAM (not a brasilian MegaRAM)
-        port(
-            clk21m      : in    std_logic;
-            reset       : in    std_logic;
-            clkena      : in    std_logic;
-            req         : in    std_logic;
-            ack         : out   std_logic;
-            wrt         : in    std_logic;
-            adr         : in    std_logic_vector( 15 downto 0 );
-            dbi         : out   std_logic_vector(  7 downto 0 );
-            dbo         : in    std_logic_vector(  7 downto 0 );
-
-            ramreq      : out   std_logic;
-            ramwrt      : out   std_logic;
-            ramadr      : out   std_logic_vector( 20 downto 0 );
-            ramdbi      : in    std_logic_vector(  7 downto 0 );
-            ramdbo      : out   std_logic_vector(  7 downto 0 );
-
-            mapsel      : in    std_logic_vector(  1 downto 0 );    -- "0-":SCC+, "10":ASC8K, "11":ASC16K
-
-            wavl        : out   std_logic_vector( 14 downto 0 );
-            wavr        : out   std_logic_vector( 14 downto 0 )
-        );
-    end component;
-
-    component eseopll
-        port(
-            clk21m      : in    std_logic;
-            reset       : in    std_logic;
-            clkena      : in    std_logic;
-            enawait     : in    std_logic;
-            req         : in    std_logic;
-            ack         : out   std_logic;
-            wrt         : in    std_logic;
-            adr         : in    std_logic_vector( 15 downto 0 );
-            dbo         : in    std_logic_vector(  7 downto 0 );
-            wav         : out   std_logic_vector( 13 downto 0 )
-            );
-    end component;
-
-    --  system timer (S1990)
-    component system_timer
-        port(
-            clk21m  : in    std_logic;
-            reset   : in    std_logic;
-            req     : in    std_logic;
-            ack     : out   std_logic;
-            adr     : in    std_logic_vector( 15 downto 0 );
-            dbi     : out   std_logic_vector(  7 downto 0 );
-            dbo     : in    std_logic_vector(  7 downto 0 )
-        );
-    end component;
-
-    --  switched I/O ports
-    component switched_io_ports
-        port(
-            clk21m          : in    std_logic;
-            reset           : in    std_logic;
-            req             : in    std_logic;
-            ack             : out   std_logic;
-            wrt             : in    std_logic;
-            adr             : in    std_logic_vector( 15 downto 0 );
-            dbi             : out   std_logic_vector(  7 downto 0 );
-            dbo             : in    std_logic_vector(  7 downto 0 );
-            -- 'REGS' group
-            io40_n          : inout std_logic_vector(  7 downto 0 );        -- ID Manufacturers/Devices :   $08 (008), $D4 (212=1chipMSX), $FF (255=null)
-            io41_id212_n    : inout std_logic_vector(  7 downto 0 );        -- $41 ID212 states         :   Smart Commands
-            io42_id212      : inout std_logic_vector(  7 downto 0 );        -- $42 ID212 states         :   Virtual DIP-SW states
-            io43_id212      : inout std_logic_vector(  7 downto 0 );        -- $43 ID212 states         :   Lock Mask for port $42 functions, cmt and reset key
-            io44_id212      : inout std_logic_vector(  7 downto 0 );        -- $44 ID212 states         :   Lights Mask have the green leds control when Lights Mode is enabled
-            OpllVol         : inout std_logic_vector(  2 downto 0 );        -- OPLL Volume
-            SccVol          : inout std_logic_vector(  2 downto 0 );        -- SCC-I Volume
-            PsgVol          : inout std_logic_vector(  2 downto 0 );        -- PSG Volume
-            MstrVol         : inout std_logic_vector(  2 downto 0 );        -- Master Volume
-            CustomSpeed     : inout std_logic_vector(  3 downto 0 );        -- Counter limiter of CPU wait control
-            tMegaSD         : inout std_logic;                              -- Turbo on MegaSD access   :   3.58MHz to 5.37MHz autoselection
-            tPanaRedir      : inout std_logic;                              -- tPana Redirection switch
-            VdpSpeedMode    : inout std_logic;                              -- VDP High Speed Mode
-            V9938_n         : inout std_logic;                              -- V9938 Status             :   0=V9938, 1=V9958
-            Mapper_req      : inout std_logic;                              -- Mapper req               :   Warm or Cold Reset are necessary to complete the request
-            Mapper_ack      : out   std_logic;                              -- Current Mapper state
-            MegaSD_req      : inout std_logic;                              -- MegaSD req               :   Warm or Cold Reset are necessary to complete the request
-            MegaSD_ack      : out   std_logic;                              -- Current MegaSD state
-            io41_id008_n    : inout std_logic;                              -- $41 ID008 BIT-0 state    :   0=5.37MHz, 1=3.58MHz (write_n only)
-            swioKmap        : inout std_logic;                              -- Keyboard layout selector
-            CmtScro         : inout std_logic;                              -- CMT state
-            swioCmt         : inout std_logic;                              -- CMT enabler
-            LightsMode      : inout std_logic;                              -- Custom green led states
-            Red_sta         : inout std_logic;                              -- Custom red led state
-            LastRst_sta     : inout std_logic;                              -- Last reset state         :   0=Cold Reset, 1=Warm Reset (MSX2+) / 1=Cold Reset, 0=Warm Reset (MSXtR)
-            RstReq_sta      : inout std_logic;                              -- Reset request state      :   0=No, 1=Yes
-            Blink_ena       : inout std_logic;                              -- MegaSD blink led enabler
-            pseudoStereo    : inout std_logic;                              -- RCA-LEFT(red) = External Audio Card / RCA-RIGHT(white) = Internal Sounds
-            extclk3m        : inout std_logic;                              -- External Clock 3.58MHz   :   0=No, 1=Yes
-            ntsc_pal_type   : inout std_logic;                              -- NTSC/PAL Type            :   0=Forced, 1=Auto
-            forced_v_mode   : inout std_logic;                              -- Forced Video Mode        :   0=60Hz, 1=50Hz
-            right_inverse   : inout std_logic;                              -- Right Inverse Audio      :   0=Off (Normal Wave), 1=On (Inverse Wave)
-            vram_slot_ids   : inout std_logic_vector(  7 downto 0 );        -- VRAM Slot IDs            :   MSB(4bits)=0-15 for Page 1, LSB(4bits)=0-15 for Page 0
-            DefKmap         : inout std_logic;                              -- Default keyboard layout  :   0=JP, 1=Non-JP (as UK,FR,..)
-            -- 'DIP-SW' group
-            ff_dip_req      : in    std_logic_vector(  7 downto 0 );        -- DIP-SW states/reqs
-            ff_dip_ack      : inout std_logic_vector(  7 downto 0 );        -- DIP-SW acks
-            -- 'KEYS' group
-            SdPaus          : in    std_logic;
-            Scro            : in    std_logic;
-            ff_Scro         : in    std_logic;
-            Reso            : in    std_logic;
-            ff_Reso         : in    std_logic;
-            FKeys           : in    std_logic_vector(  7 downto 0 );
-            vFKeys          : in    std_logic_vector(  7 downto 0 );
-            LevCtrl         : inout std_logic_vector(  2 downto 0 );        -- Volume and high-speed level
-            GreenLvEna      : out   std_logic;
-            -- 'RESET' group
-            swioRESET_n     : inout std_logic;                              -- Reset Pulse
-            warmRESET       : inout std_logic;                              -- 0=Cold Reset, 1=Warm Reset
-            WarmMSXlogo     : inout std_logic;                              -- Show MSX logo with Warm Reset
-            -- 'MACHINES' group
-            ZemmixNeo       : inout std_logic;                              -- Machine type             :   0=1chipMSX, 1=Zemmix Neo
-            -- 'IPL-ROM' group
-            JIS2_ena        : inout std_logic;                              -- JIS2 enabler             :   0=JIS1 only (BIOS 384 kB), 1=JIS1+JIS2 (BIOS 512 kB)
-            portF4_mode     : inout std_logic;                              -- Port F4 mode             :   0=F4 Device Inverted (MSX2+), 1=F4 Device Normal (MSXtR)
-            ff_ldbios_n     : in    std_logic;                              -- MSX-BIOS loading status
-            -- 'SPECIAL' group
-            Slot0_req       : inout std_logic;                              -- Slot-0 Primary Mode req  :   Warm Reset is necessary to complete the request
-            Slot0Mode       : inout std_logic;                               -- Current Slot-0 state     :   0=Primary, 1=Expanded
-	         RatioMode       : inout std_logic_vector(  2 downto 0);         -- Pixel Ratio 1:1 for LED Display (default is 0) (range 0-7) (60Hz only)
-	         centerYJK_R25_n : inout std_logic;                              -- Centering YJK Modes/R25 Mask (0=centered, 1=shifted to the right)
-	         legacy_sel      : inout std_logic                               -- Legacy Output selector   :   0=Assigned to VGA, 1=Assigned to VGA+
-        );
-    end component;
-
     -- Switched I/O ports
     signal  swio_req        : std_logic;
     signal  swio_dbi        : std_logic_vector(  7 downto 0 );
@@ -2106,83 +1778,252 @@ begin
     ----------------------------------------------------------------
     -- Connect components
     ----------------------------------------------------------------
-    U01 : T80pa
-        port map(
-            RESET_n     => ((pSltRst_n or RstKeyLock) and swioRESET_n),
-            R800_mode   => pR800,
-            CLK         => clk21m,
-            CEN_p       => trueCen,
-            CEN_n       => trueCen_n,
-            WAIT_n      => pSltWait_n,
-            INT_n       => pSltInt_n,
-            NMI_n       => '1',
-            BUSRQ_n     => '1',
-            M1_n        => CpuM1_n,
-            MREQ_n      => pSltMerq_n,
-            IORQ_n      => pSltIorq_n,
-            RD_n        => pSltRd_n,
-            WR_n        => pSltWr_n,
-            RFSH_n      => CpuRfsh_n,
-            HALT_n      => open,
-            BUSAK_n     => open,
-            A           => pSltAdr,
-            DI          => cpu_di,
-            DO          => cpu_do
-        );
+    U01 : work.T80pa
+	  port map(
+			RESET_n     => ((pSltRst_n or RstKeyLock) and swioRESET_n),
+			R800_mode   => pR800,
+			CLK         => clk21m,
+			CEN_p       => trueCen,
+			CEN_n       => trueCen_n,
+			WAIT_n      => pSltWait_n,
+			INT_n       => pSltInt_n,
+			NMI_n       => '1',
+			BUSRQ_n     => '1',
+			M1_n        => CpuM1_n,
+			MREQ_n      => pSltMerq_n,
+			IORQ_n      => pSltIorq_n,
+			RD_n        => pSltRd_n,
+			WR_n        => pSltWr_n,
+			RFSH_n      => CpuRfsh_n,
+			HALT_n      => open,
+			BUSAK_n     => open,
+			A           => pSltAdr,
+			DI          => cpu_di,
+			DO          => cpu_do
+	  );
 
-    U02 : iplrom
-        port map(clk21m, adr, RomDbi);
+    U02 : work.iplrom
+	  port map (
+			clk => clk21m, 
+			adr => adr, 
+			dbi => RomDbi
+	  );
 
-    U03 : megasd
-        port map(clk21m, reset, cpucen, ErmReq, open, wrt, adr, open, dbo,
-                        ErmRam, ErmWrt, ErmAdr, RamDbi, open,
-                        MmcDbi, MmcEna, MmcAct, mmc_sck, mmc_cs, mmc_mosi, mmc_miso,
-                        open, open, open, open, '0');
+    U03 : work.megasd
+	  port map (
+			clk21m => clk21m, 
+			reset  => reset, 
+			clkena => cpucen, 
+			req    => ErmReq, 
+			ack    => open, 
+			wrt    => wrt, 
+			adr    => adr, 
+			dbi    => open, 
+			dbo    => dbo,
+			ramreq => ErmRam, 
+			ramwrt => ErmWrt, 
+			ramadr => ErmAdr, 
+			ramdbi => RamDbi, 
+			ramdbo => open,
+			mmcdbi => MmcDbi, 
+			mmcena => MmcEna, 
+			mmcact => MmcAct, 
+			mmc_ck => mmc_sck, 
+			mmc_cs => mmc_cs, 
+			mmc_di => mmc_mosi, 
+			mmc_do => mmc_miso,
+			epc_ck => open, 
+			epc_cs => open, 
+			epc_oe => open, 
+			epc_di => open, 
+			epc_do => '0'
+	  );
 
-    U05 : mapper
-        port map(clk21m, reset, cpucen, MapReq, open, mem, wrt, adr, MapDbi, dbo,
-                        MapRam, MapWrt, MapAdr, RamDbi, open);
+    U05 : work.mapper
+	  port map (
+			clk21m => clk21m, 
+			reset  => reset, 
+			clkena => cpucen, 
+			req    => MapReq, 
+			ack    => open, 
+			mem    => mem, 
+			wrt    => wrt, 
+			adr    => adr, 
+			dbi    => MapDbi, 
+			dbo    => dbo,
+			ramreq => MapRam, 
+			ramwrt => MapWrt, 
+			ramadr => MapAdr, 
+			ramdbi => RamDbi, 
+			ramdbo => open
+	  );
 
     U06 : work.eseps2
-        port map(clk21m, reset, cpucen, Kmap, Paus, Scro, Reso, Fkeys,
-                        ps2_key, PpiPortC, PpiPortB);
+	  port map (
+			clk21m   => clk21m, 
+			reset    => reset, 
+			clkena   => cpucen, 
+			Kmap     => Kmap, 
+			Paus     => Paus, 
+			Scro     => Scro, 
+			Reso     => Reso, 
+			Fkeys    => Fkeys,
+			ps2_key  => ps2_key, 
+			PpiPortC => PpiPortC, 
+			pKeyX    => PpiPortB
+	  );
 
-    U07 : rtc
-        port map(clk21m, reset, rtc_setup, rtc_time, w_10Hz, RtcReq, open, wrt, adr, RtcDbi, dbo);
+    U07 : work.rtc
+	  port map (
+			clk21m => clk21m, 
+			reset  => reset, 
+			setup  => rtc_setup, 
+			rt     => rtc_time, 
+			clkena => w_10Hz, 
+			req    => RtcReq, 
+			ack    => open, 
+			wrt    => wrt, 
+			adr    => adr, 
+			dbi    => RtcDbi, 
+			dbo    => dbo
+	  );
 
-    U08 : kanji
-        port map(clk21m, reset, cpucen, KanReq, open, wrt, adr, KanDbi, dbo,
-                        KanRom, KanAdr, RamDbi, open);
+    U08 : work.kanji
+	  port map (
+			clk21m => clk21m, 
+			reset  => reset, 
+			clkena => cpucen, 
+			req    => KanReq, 
+			ack    => open, 
+			wrt    => wrt, 
+			adr    => adr, 
+			dbi    => KanDbi, 
+			dbo    => dbo,
+			ramreq => KanRom, 
+			ramadr => KanAdr, 
+			ramdbi => RamDbi, 
+			ramdbo => open
+	  );
 
     -- V9958 MSX2+/tR VDP
-    U20 : vdp
-        port map(clk21m, reset, VdpReq, open, wrt, adr, VdpDbi, dbo, pVdpInt_n,
-                        open, WeVdp_n, VdpAdr, VrmDbi, VrmDbo, VdpSpeedMode, RatioMode, centerYJK_R25_n,
-                        VideoR, VideoG, VideoB, pVideoDE, VideoHS_n, VideoVS_n, open,
-                        VideoDHClk, VideoDLClk, Reso_v, ntsc_pal_type, forced_v_mode, legacy_vga);
+    U20 : work.vdp
+	  port map (
+			CLK21M          => clk21m, 
+			RESET           => reset, 
+			REQ             => VdpReq, 
+			ACK             => open, 
+			WRT             => wrt, 
+			ADR             => adr, 
+			DBI             => VdpDbi, 
+			DBO             => dbo, 
+			INT_N           => pVdpInt_n,
+			PRAMOE_N        => open, 
+			PRAMWE_N        => WeVdp_n, 
+			PRAMADR         => VdpAdr, 
+			PRAMDBI         => VrmDbi, 
+			PRAMDBO         => VrmDbo, 
+			VDPSPEEDMODE    => VdpSpeedMode, 
+			RATIOMODE       => RatioMode, 
+			CENTERYJK_R25_N => centerYJK_R25_n,
+			PVIDEOR         => VideoR, 
+			PVIDEOG         => VideoG, 
+			PVIDEOB         => VideoB, 
+			PVIDEODE        => pVideoDE, 
+			PVIDEOHS_N      => VideoHS_n, 
+			PVIDEOVS_N      => VideoVS_n, 
+			PVIDEOCS_N      => open,
+			PVIDEODHCLK     => VideoDHClk, 
+			PVIDEODLCLK     => VideoDLClk, 
+			DISPRESO        => Reso_v, 
+			NTSC_PAL_TYPE   => ntsc_pal_type, 
+			FORCED_V_MODE   => forced_v_mode, 
+			LEGACY_VGA      => legacy_vga
+	  );
 
-    U30 : psg
-        port map(clk21m, reset, cpucen, PsgReq, open, wrt, adr, PsgDbi, dbo,
-                        pJoyA, pStrA, pJoyB, pStrB, open, '0', w_key_mode, PsgAmp);
+    U30 : work.psg
+	  port map (
+			clk21m  => clk21m, 
+			reset   => reset, 
+			clkena  => cpucen, 
+			req     => PsgReq, 
+			ack     => open, 
+			wrt     => wrt, 
+			adr     => adr, 
+			dbi     => PsgDbi, 
+			dbo     => dbo,
+			joya    => pJoyA, 
+			stra    => pStrA, 
+			joyb    => pJoyB, 
+			strb    => pStrB, 
+			kana    => open, 
+			cmtin   => '0', 
+			keymode => w_key_mode, 
+			wave    => PsgAmp
+	  );
 
-    U31_1 : megaram
-        port map(clk21m, reset, cpucen, Scc1Req, Scc1Ack, wrt, adr, Scc1Dbi, dbo,
-                        Scc1Ram, Scc1Wrt, Scc1Adr, RamDbi, open, Scc1Type, Scc1AmpL, open);
+    U31_1 : work.megaram
+	  port map (
+			clk21m => clk21m, 
+			reset  => reset, 
+			clkena => cpucen, 
+			req    => Scc1Req, 
+			ack    => Scc1Ack, 
+			wrt    => wrt, 
+			adr    => adr, 
+			dbi    => Scc1Dbi, 
+			dbo    => dbo,
+			ramreq => Scc1Ram, 
+			ramwrt => Scc1Wrt, 
+			ramadr => Scc1Adr, 
+			ramdbi => RamDbi, 
+			ramdbo => open, 
+			mapsel => Scc1Type, 
+			wavl   => Scc1AmpL, 
+			wavr   => open
+	  );
 
     Scc1Type <= "00"    when( Slot1Mode = '0' )else
                 "10";
 
-    U31_2 : megaram
-        port map(clk21m, reset, cpucen, Scc2Req, Scc2Ack, wrt, adr, Scc2Dbi, dbo,
-                        Scc2Ram, Scc2Wrt, Scc2Adr, RamDbi, open, Slot2Mode, Scc2AmpL, open);
+    U31_2 : work.megaram
+	  port map (
+			clk21m => clk21m,
+			reset  => reset,
+			clkena => cpucen,
+			req    => Scc2Req,
+			ack    => Scc2Ack,
+			wrt    => wrt,
+			adr    => adr,
+			dbi    => Scc2Dbi,
+			dbo    => dbo,
+			ramreq => Scc2Ram,
+			ramwrt => Scc2Wrt,
+			ramadr => Scc2Adr,
+			ramdbi => RamDbi,
+			ramdbo => open,
+			mapsel => Slot2Mode,
+			wavl   => Scc2AmpL,
+			wavr   => open
+	  );
 
-    U32 : eseopll
-        port map(clk21m, reset, cpucen, OpllEnaWait, OpllReq, OpllAck, wrt, adr, dbo, pAudioOPLL);
+    U32 : work.eseopll
+	  port map (
+		  clk21m  => clk21m,
+		  reset   => reset,
+		  clkena  => cpucen,
+		  enawait => OpllEnaWait,
+		  req     => OpllReq,
+		  ack     => OpllAck,
+		  wrt     => wrt,
+		  adr     => adr,
+		  dbo     => dbo,
+		  wav     => pAudioOPLL
+	  );
 
     OpllEnaWait     <=  '1' when( ff_clksel = '1' or ff_clksel5m_n = '0' )else
                         '0';
 
-    U34: system_timer
+    U34: work.system_timer
     port map (
         clk21m  => clk21m       ,
         reset   => reset        ,
@@ -2193,7 +2034,7 @@ begin
         dbo     => dbo
     );
 
-    U35: switched_io_ports
+    U35: work.switched_io_ports
     port map (
         clk21m          => clk21m       ,
         reset           => reset        ,
