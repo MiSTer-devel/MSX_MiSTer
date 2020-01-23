@@ -96,6 +96,8 @@ entity emsx_top is
         pVideoVS        : out   std_logic;
         pScandoubler    : in    std_logic;
 
+        cmtin           : in    std_logic;   						-- EAR 
+		
         pAudioPSG       : out   std_logic_vector(  9 downto 0);
         pAudioOPLL      : out   std_logic_vector( 13 downto 0);
         pAudioPCM       : out   std_logic_vector( 15 downto 0)
@@ -2171,9 +2173,10 @@ begin
                         VideoR, VideoG, VideoB, pVideoDE, VideoHS_n, VideoVS_n, open,
                         VideoDHClk, VideoDLClk, Reso_v, ntsc_pal_type, forced_v_mode, legacy_vga);
 
-    U30 : psg
+    ---- EAR add as cmtin
+	U30 : psg     
         port map(clk21m, reset, cpucen, PsgReq, open, wrt, adr, PsgDbi, dbo,
-                        pJoyA, pStrA, pJoyB, pStrB, open, '0', w_key_mode, PsgAmp);
+                        pJoyA, pStrA, pJoyB, pStrB, open, cmtin, w_key_mode, PsgAmp);  
 
     U31_1 : megaram
         port map(clk21m, reset, cpucen, Scc1Req, Scc1Ack, wrt, adr, Scc1Dbi, dbo,

@@ -123,7 +123,7 @@ module emu
 	input         OSD_STATUS
 );
 
-assign ADC_BUS  = 'Z;
+//assign ADC_BUS  = 'Z;  - We need the ADC for the EAR
 assign USER_OUT = '1;
 assign {UART_RTS, UART_TXD, UART_DTR} = 0;
 assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = 0;
@@ -354,6 +354,8 @@ emsx_top emsx
 	.pVideoVS(vs),
 	.pScandoubler(scandoubler),
 
+    .cmtin(tape_in),   		// EAR Added by Fernando Mosquera
+	
 	.pAudioPSG(audioPSG),   //10bits unsigned
 	.pAudioOPLL(audioOPLL), //14bits signed
 	.pAudioPCM(audioPCM)    //16bits signed
@@ -426,5 +428,19 @@ always @(posedge clk_sys) begin
 
 	if((old_mosi ^ sdmosi) || (old_miso ^ sdmiso)) timeout <= 0;
 end
+
+/////////  EAR added by Fernando Mosquera
+wire tape_in;
+assign tape_in = tape_adc_act & tape_adc;
+
+wire tape_adc, tape_adc_act;
+ltc2308_tape ltc2308_tape
+(
+  .clk(CLK_50M),
+  .ADC_BUS(ADC_BUS),
+  .dout(tape_adc),
+  .active(tape_adc_act)
+);
+/////////////////////////
 
 endmodule
