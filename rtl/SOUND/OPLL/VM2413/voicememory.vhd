@@ -50,7 +50,7 @@ end VoiceMemory;
 architecture RTL of VoiceMemory is
 
   -- The following array is mapped into a Single-Clock Synchronous RAM with two-read
-  -- addresses by Altera's QuartusII compiler.
+  -- addresses by Altera's Quartus II compiler.
   type VOICE_ARRAY_TYPE is array (VOICE_ID_TYPE'range) of VOICE_VECTOR_TYPE;
   signal voices : VOICE_ARRAY_TYPE;
 
@@ -75,37 +75,34 @@ begin
 
   begin
 
-    if rising_edge(clk) then
+    if reset = '1' then
 
-      if reset = '1' then
+      init_id := 0;
+      rstate <= 0;
 
-        init_id := 0;
-        rstate <= 0;
+    elsif clk'event and clk = '1' then
 
-      else
+      if init_id /= VOICE_ID_TYPE'high+1 then
 
-        if init_id /= VOICE_ID_TYPE'high+1 then
+        case rstate is
+        when 0 =>
+          rom_addr <= init_id;
+          rstate <= 1;
+        when 1 =>
+          rstate <= 2;
+        when 2 =>
+          voices(init_id) <= CONV_VOICE_VECTOR(rom_data);
+          rstate <= 0;
+          init_id := init_id + 1;
+        end case;
 
-          case rstate is
-          when 0 =>
-            rom_addr <= init_id;
-            rstate <= 1;
-          when 1 =>
-            rstate <= 2;
-          when 2 =>
-            voices(init_id) <= CONV_VOICE_VECTOR(rom_data);
-            rstate <= 0;
-            init_id := init_id + 1;
-          end case;
-
-        elsif wr = '1' then
-          voices(rwaddr) <= CONV_VOICE_VECTOR(idata);
-        end if;
-
-        odata <= CONV_VOICE(voices(rwaddr));
-        rodata <= CONV_VOICE(voices(roaddr));
-
+      elsif wr = '1' then
+        voices(rwaddr) <= CONV_VOICE_VECTOR(idata);
       end if;
+
+      odata <= CONV_VOICE(voices(rwaddr));
+      rodata <= CONV_VOICE(voices(roaddr));
+
     end if;
 
   end process;

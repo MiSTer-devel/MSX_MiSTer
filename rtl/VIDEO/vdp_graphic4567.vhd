@@ -79,7 +79,9 @@ ENTITY VDP_GRAPHIC4567 IS
         VDPMODEGRAPHIC7         : IN    STD_LOGIC;
 
         -- REGISTERS
+        REG_R1_BL_CLKS          : IN    STD_LOGIC;
         REG_R2_PT_NAM_ADDR      : IN    STD_LOGIC_VECTOR(  6 DOWNTO 0 );
+        REG_R13_BLINK_PERIOD    : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
         REG_R26_H_SCROLL        : IN    STD_LOGIC_VECTOR(  8 DOWNTO 3 );
         REG_R27_H_SCROLL        : IN    STD_LOGIC_VECTOR(  2 DOWNTO 0 );
         REG_R25_YAE             : IN    STD_LOGIC;
@@ -140,6 +142,11 @@ ARCHITECTURE RTL OF VDP_GRAPHIC4567 IS
     SIGNAL  W_R                         : STD_LOGIC_VECTOR( 5 DOWNTO 0 );
     SIGNAL  W_G                         : STD_LOGIC_VECTOR( 5 DOWNTO 0 );
     SIGNAL  W_B                         : STD_LOGIC_VECTOR( 5 DOWNTO 0 );
+    SIGNAL FF_BLINK_CLK_CNT             : STD_LOGIC_VECTOR(  3 DOWNTO 0 );
+    SIGNAL FF_BLINK_STATE               : STD_LOGIC;
+    SIGNAL FF_BLINK_PERIOD_CNT          : STD_LOGIC_VECTOR(  3 DOWNTO 0 );
+    SIGNAL W_BLINK_CNT_MAX              : STD_LOGIC_VECTOR(  3 DOWNTO 0 );
+    SIGNAL W_BLINK_SYNC                 : STD_LOGIC;
 BEGIN
 
     ----------------------------------------------------------------
@@ -195,6 +202,7 @@ BEGIN
         (OTHERS => 'X') WHEN OTHERS;
 
     -- TWO SCREEN H-SCROLL MODE (R25 SP2 = '1')
+    -- CONSIDER R#13 BLINKING TO FLIP PAGES
     W_SP2_H_SCROLL      <=  LOCALDOTCOUNTERX(8) WHEN( (REG_R25_SP2 AND LATCHEDPTNNAMETBLBASEADDR(5)) = '1' )ELSE
                             LATCHEDPTNNAMETBLBASEADDR(5);
 
@@ -213,7 +221,7 @@ BEGIN
         IF( CLK21M'EVENT AND CLK21M = '1' )THEN
             IF( RESET = '1' )THEN
                 FIFOADDR_IN <= (OTHERS => '0');
-	    ELSE
+            ELSE
                 IF( DOTSTATE = "00" )THEN
                     IF( EIGHTDOTSTATE = "000" AND DOTCOUNTERX = 0 ) THEN
                         FIFOADDR_IN <= (OTHERS => '0');
@@ -230,7 +238,7 @@ BEGIN
         IF( CLK21M'EVENT AND CLK21M = '1' )THEN
             IF( RESET = '1' )THEN
                 FIFOADDR_OUT    <= (OTHERS => '0');
-	    ELSE
+            ELSE
                 CASE DOTSTATE IS
                 WHEN "00" =>
                     NULL;
@@ -259,7 +267,7 @@ BEGIN
         IF( CLK21M'EVENT AND CLK21M = '1' )THEN
             IF( RESET = '1' )THEN
                 FIFOIN <= '0';
-	    ELSE
+            ELSE
                 CASE DOTSTATE IS
                 WHEN "00" =>
                     IF(     EIGHTDOTSTATE = "000" ) THEN
@@ -296,7 +304,7 @@ BEGIN
             IF( RESET = '1' )THEN
                 COLORDATA   <= (OTHERS => '0');
                 PCOLORCODE  <= (OTHERS => '0');
-	    ELSE
+            ELSE
                 CASE DOTSTATE IS
                 WHEN "00" =>
                     NULL;
@@ -362,7 +370,7 @@ BEGIN
                 P_YJK_R <=  (OTHERS => '0');
                 P_YJK_G <=  (OTHERS => '0');
                 P_YJK_B <=  (OTHERS => '0');
-	    ELSE
+            ELSE
                 IF( DOTSTATE = "01" )THEN
                     P_YJK_R <= W_R;
                     P_YJK_G <= W_G;
@@ -377,7 +385,7 @@ BEGIN
         IF( CLK21M'EVENT AND CLK21M = '1' )THEN
             IF( RESET = '1' )THEN
                 P_YJK_EN <= '0';
-	    ELSE
+            ELSE
                 IF( DOTSTATE = "01" )THEN
                     IF( REG_R25_YAE = '1' AND W_PIX(3) = '1' )THEN
                         -- PALETTE COLOR ON SCREEN10/SCREEN11
@@ -396,7 +404,7 @@ BEGIN
         IF( CLK21M'EVENT AND CLK21M = '1' )THEN
             IF( RESET = '1' )THEN
                 PRAMADR <= (OTHERS => '0');
-	    ELSE
+            ELSE
                 IF( DOTSTATE = "11" )THEN
                     IF( (VDPMODEGRAPHIC4 = '1') OR (VDPMODEGRAPHIC5 = '1') ) THEN
                         PRAMADR <= LOGICALVRAMADDRG45( 16 DOWNTO 0 );
@@ -413,7 +421,7 @@ BEGIN
         IF( CLK21M'EVENT AND CLK21M = '1' )THEN
             IF( RESET = '1' )THEN
                 LATCHEDPTNNAMETBLBASEADDR   <= (OTHERS => '0');
-	    ELSE
+            ELSE
                 IF( DOTSTATE = "00" AND EIGHTDOTSTATE = "000" )THEN
                     LATCHEDPTNNAMETBLBASEADDR <= REG_R2_PT_NAM_ADDR;
                 END IF;
@@ -428,7 +436,7 @@ BEGIN
         IF( CLK21M'EVENT AND CLK21M = '1' )THEN
             IF( RESET = '1' )THEN
                 LOCALDOTCOUNTERX <= (OTHERS => '0');
-	    ELSE
+            ELSE
                 IF( DOTSTATE = "00" )THEN
                     IF( EIGHTDOTSTATE = "000" ) THEN
                         LOCALDOTCOUNTERX <= W_DOTCOUNTERX;
@@ -440,6 +448,50 @@ BEGIN
                     END IF;
                 END IF;
             END IF;
+        END IF;
+    END PROCESS;
+
+    W_BLINK_CNT_MAX <=  REG_R13_BLINK_PERIOD(  3 DOWNTO 0 ) WHEN( FF_BLINK_STATE = '0' )ELSE
+                        REG_R13_BLINK_PERIOD(  7 DOWNTO 4 );
+    W_BLINK_SYNC    <=  '1' WHEN ( (DOTCOUNTERX = 0) AND (DOTCOUNTERY = 0) AND (DOTSTATE = "00") AND (REG_R1_BL_CLKS = '0') ) ELSE
+                        '1' WHEN ( (DOTCOUNTERX = 0) AND (DOTSTATE = "00") AND (REG_R1_BL_CLKS = '1') ) ELSE
+                        '0';
+
+    PROCESS( RESET, CLK21M )
+    BEGIN
+        IF (CLK21M'EVENT AND CLK21M = '1') THEN
+            IF( RESET = '1' )THEN
+                FF_BLINK_CLK_CNT <= (OTHERS => '0');
+                FF_BLINK_STATE <= '0';
+                FF_BLINK_PERIOD_CNT <= (OTHERS => '0');
+            ELSE
+                IF( W_BLINK_SYNC = '1' )THEN
+
+                    IF (FF_BLINK_CLK_CNT = "1001") THEN
+                        FF_BLINK_CLK_CNT <= (OTHERS => '0');
+                        FF_BLINK_PERIOD_CNT <= FF_BLINK_PERIOD_CNT + 1;
+                    ELSE
+                        FF_BLINK_CLK_CNT <= FF_BLINK_CLK_CNT + 1;
+                    END IF;
+
+                    IF( FF_BLINK_PERIOD_CNT >= W_BLINK_CNT_MAX )THEN
+                        FF_BLINK_PERIOD_CNT <= (OTHERS => '0');
+                        IF (REG_R13_BLINK_PERIOD( 7 DOWNTO 4 ) = "0000")THEN
+                             -- WHEN ON PERIOD IS 0, THE PAGE SELECTED SHOULD BE ALWAYS ODD / R#2
+                             FF_BLINK_STATE <= '0';
+                        ELSIF( REG_R13_BLINK_PERIOD( 3 DOWNTO 0 ) = "0000")THEN
+                             -- WHEN OFF PERIOD IS 0 AND ON NOT, THE PAGE SELECT SHOULD BE ALWAYS THE R#2 EVEN PAIR
+                             FF_BLINK_STATE <= '1';
+                        ELSE
+                             -- NEITHER ARE 0, SO JUST KEEP SWITCHING WHEN PERIOD ENDS
+                             FF_BLINK_STATE <= NOT FF_BLINK_STATE;
+                        END IF;
+                    END IF;
+
+                END IF;
+
+            END IF;
+
         END IF;
     END PROCESS;
 

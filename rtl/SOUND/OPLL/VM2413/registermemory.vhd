@@ -49,7 +49,7 @@ entity RegisterMemory is
 end RegisterMemory;
 
 architecture rtl of registermemory is
-    --  �`���l�����ێ��p 1read/1write �� SRAM
+    --  チャネル情報保持用 1read/1write の SRAM
     type regs_array_type is array (0 to 8) of std_logic_vector( 23 downto 0 );
     signal regs_array : regs_array_type;
 
@@ -57,21 +57,19 @@ begin
     process( reset, clk )
         variable init_state : integer range 0 to 9;
     begin
-        if( rising_edge(clk) )then
-            if( reset = '1' )then
-                init_state := 0;
-            else
-                if( init_state /= 9 )then
-                    --  �N�����Ă����� RAM �̓��e������������
-                    regs_array( init_state ) <= (others => '0');
-                    init_state := init_state + 1;
-                elsif( wr = '1' )then
-                    --  �������݃T�C�N��
-                    regs_array( conv_integer(addr) ) <= idata;
-                end if;
-                --  �ǂݏo���͏펞
-                odata <= regs_array( conv_integer(addr) );
+        if( reset = '1' )then
+            init_state := 0;
+        elsif( clk'event and clk ='1' )then
+            if( init_state /= 9 )then
+                --  起動してすぐに RAM の内容を初期化する
+                regs_array( init_state ) <= (others => '0');
+                init_state := init_state + 1;
+            elsif( wr = '1' )then
+                --  書き込みサイクル
+                regs_array( conv_integer(addr) ) <= idata;
             end if;
+            --  読み出しは常時
+            odata <= regs_array( conv_integer(addr) );
         end if;
     end process;
 end rtl;

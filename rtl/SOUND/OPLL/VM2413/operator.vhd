@@ -52,13 +52,13 @@ entity Operator is
         FB      : in    FB_TYPE;
 
         noise   : in    std_logic;
-        pgout   : in    std_logic_vector( 17 downto 0 );    --  ������ 9bit, ������ 9bit
+        pgout   : in    std_logic_vector( 17 downto 0 );    --  整数部 9bit, 小数部 9bit
         egout   : in    std_logic_vector( 12 downto 0 );
 
         faddr   : out   CH_TYPE;
         fdata   : in    SIGNED_LI_TYPE;
 
-        opout   : out   std_logic_vector( 13 downto 0 )     -- ������ 8bit, ������ 6bit
+        opout   : out   std_logic_vector( 13 downto 0 )     -- 整数部 8bit, 小数部 6bit
     );
 end Operator;
 
@@ -69,8 +69,8 @@ architecture rtl of Operator is
             clk     : in    std_logic;
             clkena  : in    std_logic;
             wf      : in    std_logic;
-            addr    : in    std_logic_vector( 17 downto 0 );    --  ������ 9bit, ������ 9bit
-            data    : out   std_logic_vector( 13 downto 0 )     --  ������ 8bit, ������ 6bit
+            addr    : in    std_logic_vector( 17 downto 0 );    --  整数部 9bit, 小数部 9bit
+            data    : out   std_logic_vector( 13 downto 0 )     --  整数部 8bit, 小数部 6bit
         );
     end component;
 
@@ -83,13 +83,13 @@ architecture rtl of Operator is
     signal ff_egout     : std_logic_vector( 12 downto 0 );
 begin
 
-    --  �T�C���g�i�ΐ��\���j--------------------------------------------------
-    --  addr �w�肵�����X�T�C�N���� data ���o�Ă���
+    --  サイン波（対数表現）--------------------------------------------------
+    --  addr 指定した次々サイクルに data が出てくる
     --
     --  stage   X 00    X 01    X 10    X 11    X 00
-    --  addr            X �m��
-    --  data                            X �m��
-    --  opout                                   X �m��
+    --  addr            X 確定
+    --  data                            X 確定
+    --  opout                                   X 確定
     --
     u_sine_table : SineTable
     port map(
@@ -108,53 +108,51 @@ begin
                         w_modula_m;
 
     process( reset, clk )
-        variable opout_buf  : std_logic_vector( 13 downto 0 );  --  ������ 8bit, ������ 6bit
+        variable opout_buf  : std_logic_vector( 13 downto 0 );  --  整数部 8bit, 小数部 6bit
     begin
-        if( rising_edge(clk) )then
-            if( reset = '1' )then
-                opout       <= (others => '0');
-                ff_egout    <= (others => '0');
-            else
-                if( clkena = '1' )then
-                    if( stage = "00" )then
-                        --  �T�C���g�̎Q�ƃA�h���X�i�ʑ��j�����肷��X�e�[�W
-                        if(    rhythm = '1' and ( slot = 14 or slot = 17 ))then -- HH or CYM
-                            addr <= (not noise) & "01111111" & "000000000";
-                        elsif( rhythm = '1' and slot = 15 )then -- SD
-                            addr <= (not pgout(pgout'high)) & "01111111" & "000000000";
-                        elsif( rhythm = '1' and slot = 16 )then -- TOM
-                            addr <= pgout;
+        if( reset = '1' )then
+            opout       <= (others => '0');
+            ff_egout    <= (others => '0');
+        elsif( clk'event and clk='1' )then
+            if( clkena = '1' )then
+                if( stage = "00" )then
+                    --  サイン波の参照アドレス（位相）を決定するステージ
+                    if(    rhythm = '1' and ( slot = 14 or slot = 17 ))then -- HH or CYM
+                        addr <= (not noise) & "01111111" & "000000000";
+                    elsif( rhythm = '1' and slot = 15 )then -- SD
+                        addr <= (not pgout(pgout'high)) & "01111111" & "000000000";
+                    elsif( rhythm = '1' and slot = 16 )then -- TOM
+                        addr <= pgout;
+                    else
+                        if( fdata.sign = '0' )then      -- modula は fdata の絶対値をシフトした値だから、ここで符号処理してる
+                            addr <= pgout + w_modula(pgout'range);
                         else
-                            if( fdata.sign = '0' )then      -- modula �� fdata �̐�Βl���V�t�g�����l������A�����ŕ����������Ă�
-                                addr <= pgout + w_modula(pgout'range);
-                            else
-                                addr <= pgout - w_modula(pgout'range);
-                            end if;
+                            addr <= pgout - w_modula(pgout'range);
                         end if;
-
-                    elsif( stage = "01" )then
-                        --  ���肳�ꂽ�Q�ƃA�h���X�� u_sine_table �֋��������X�e�[�W
-                    elsif( stage = "10" )then
-                        ff_egout <= egout;
-
-                        --  �t�B�[�h�o�b�N�������̃A�h���X�����߂�X�e�[�W
-                        if( slot(0) = '1' )then
-                            if( conv_integer(slot)/2 = 8 )then
-                                faddr <= 0;
-                            else
-                                faddr <= conv_integer(slot)/2 + 1;  --  ���̃��W�����[�^�̃A�h���X�Ȃ̂� +1
-                            end if;
-                        end if;
-                    elsif( stage = "11" )then
-                        -- SineTable ����f�[�^���o�Ă���X�e�[�W
-                        if ( ( '0' & ff_egout ) + ('0'& data(12 downto 0) ) ) < "10000000000000" then
-                            opout_buf := data(13) & (ff_egout + data(12 downto 0) );
-                        else
-                            opout_buf := data(13) & "1111111111111";
-                        end if;
-                        opout <= opout_buf;
-                        --  ���肳�ꂽ�t�B�[�h�o�b�N�������A�h���X�� FeedBackMemory �֋��������X�e�[�W
                     end if;
+
+                elsif( stage = "01" )then
+                    --  決定された参照アドレスが u_sine_table へ供給されるステージ
+                elsif( stage = "10" )then
+                    ff_egout <= egout;
+
+                    --  フィードバックメモリのアドレスを決めるステージ
+                    if( slot(0) = '1' )then
+                        if( conv_integer(slot)/2 = 8 )then
+                            faddr <= 0;
+                        else
+                            faddr <= conv_integer(slot)/2 + 1;  --  次のモジュレータのアドレスなので +1
+                        end if;
+                    end if;
+                elsif( stage = "11" )then
+                    -- SineTable からデータが出てくるステージ
+                    if ( ( '0' & ff_egout ) + ('0'& data(12 downto 0) ) ) < "10000000000000" then
+                        opout_buf := data(13) & (ff_egout + data(12 downto 0) );
+                    else
+                        opout_buf := data(13) & "1111111111111";
+                    end if;
+                    opout <= opout_buf;
+                    --  決定されたフィードバックメモリアドレスが FeedBackMemory へ供給されるステージ
                 end if;
             end if;
         end if;

@@ -58,24 +58,21 @@ begin
 
   begin
 
-  if rising_edge(clk) then
+   if reset = '1' then
 
-    if reset = '1' then
+     init_slot := 0;
 
-      init_slot := 0;
+   elsif clk'event and clk = '1' then
 
-    else
+     if init_slot /= 18 then
+       egdata_set(init_slot) <= (others=>'1');
+       init_slot := init_slot + 1;
+     elsif wr = '1' then
+       egdata_set(conv_integer(waddr)) <= CONV_EGDATA_VECTOR(wdata);
+     end if;
+     rdata <= CONV_EGDATA(egdata_set(conv_integer(raddr)));
 
-      if init_slot /= 18 then
-        egdata_set(init_slot) <= (others=>'1');
-        init_slot := init_slot + 1;
-      elsif wr = '1' then
-        egdata_set(conv_integer(waddr)) <= CONV_EGDATA_VECTOR(wdata);
-      end if;
-      rdata <= CONV_EGDATA(egdata_set(conv_integer(raddr)));
-
-    end if;
-  end if;
+   end if;
 
 end process;
 

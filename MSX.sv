@@ -257,12 +257,14 @@ hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 	.ioctl_wait(0)
 );
 
-wire [13:0] audioOPLL;
+wire  [9:0] audioOPLL;
 wire  [9:0] audioPSG;
 wire [15:0] audioPCM;
+wire  [7:0] audioTRPCM;
 
-wire [15:0] fm    = {audioOPLL, 2'b00} + {1'b0, audioPSG, 5'b00000};
-wire [16:0] audio = {audioPCM[15], audioPCM} + {fm[15], fm};
+wire [16:0] pcm   = {audioPCM[15], audioPCM} + {audioTRPCM[7], audioTRPCM, 8'd0};
+wire [15:0] fm    = {1'b0, audioOPLL, 5'b00000} + {1'b0, audioPSG, 5'b00000};
+wire [16:0] audio = {pcm[16], pcm[16:1]} + {1'b0, fm};
 
 wire [15:0] compr[7:0] = '{ {1'b1, audio[13:0], 1'b0}, 16'h8000, 16'h8000, 16'h8000, 16'h7FFF, 16'h7FFF, 16'h7FFF,  {1'b0, audio[13:0], 1'b0}};
 assign AUDIO_L = compr[audio[16:14]];
@@ -377,11 +379,12 @@ emsx_top emsx
 	.pVideoVS(vs),
 	.pScandoubler(scandoubler),
 
-    .cmtin(tape_in),   		// EAR Added by Fernando Mosquera
-	
-	.pAudioPSG(audioPSG),   //10bits unsigned
-	.pAudioOPLL(audioOPLL), //14bits signed
-	.pAudioPCM(audioPCM)    //16bits signed
+	.cmtin(tape_in),   		// EAR Added by Fernando Mosquera
+
+	.pAudioPSG(audioPSG),     //10bits unsigned
+	.pAudioOPLL(audioOPLL),   //10bits unsigned
+	.pAudioPCM(audioPCM),     //16bits signed
+	.pAudioTRPCM(audioTRPCM)  //8bits  signed
 );
 
 altddio_out

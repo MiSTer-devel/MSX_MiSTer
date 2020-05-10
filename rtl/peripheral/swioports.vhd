@@ -117,8 +117,8 @@ architecture RTL of switched_io_ports is
     signal  swio_ack    : std_logic;
 
     -- 'OCM-PLD' version number (x \ 10).(y mod 10).(z[0~3])                -- OCM-PLD version 0.0(.0) ~ 25.5(.3)
-    constant ocm_pld_xy : std_logic_vector(  7 downto 0 ) := "00100101";    -- 37
-    constant ocm_pld_z  : std_logic_vector(  1 downto 0 ) :=       "01";    -- 1
+    constant ocm_pld_xy : std_logic_vector(  7 downto 0 ) := "00100110";    -- 38
+    constant ocm_pld_z  : std_logic_vector(  1 downto 0 ) :=       "00";    -- 0
 
     -- 'Switched I/O Ports' revision number (0-31)                          -- Switched I/O ports Revision 0 ~ 31
     constant swioRevNr  : std_logic_vector(  4 downto 0 ) :=    "01001";    -- 9
@@ -714,6 +714,7 @@ begin
                             swioRESET_n     <=  '0';
                         -- SMART CODE   #255
                         when "11111111" =>                                  -- System Restore
+                            RatioMode       <=  "000";
                             OFFSET_Y        :=  "0010011";
                             io42_id212(5 downto 0)  <=  ff_dip_req(5 downto 0);
                             ff_dip_ack(5 downto 0)  <=  ff_dip_req(5 downto 0);

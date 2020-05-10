@@ -58,29 +58,26 @@ begin
 
   begin
 
-    if rising_edge(clk) then
+    if (reset = '1') then
 
-      if (reset = '1') then
+      init_ch := 0;
 
-        init_ch := 0;
+    elsif clk'event and clk='1' then
 
-      else
+      if init_ch /= 18 then
 
-        if init_ch /= 18 then
+        data_array(init_ch) <= (others=>'0');
+        init_ch := init_ch + 1;
 
-          data_array(init_ch) <= (others=>'0');
-          init_ch := init_ch + 1;
+      elsif wr='1' then
 
-        elsif wr='1' then
-
-          data_array(conv_integer(addr)) <= CONV_SIGNED_LI_VECTOR(wdata);
-
-        end if;
-
-        rdata <= CONV_SIGNED_LI(data_array(conv_integer(addr)));
-        rdata2 <= CONV_SIGNED_LI(data_array(conv_integer(addr2)));
+        data_array(conv_integer(addr)) <= CONV_SIGNED_LI_VECTOR(wdata);
 
       end if;
+
+      rdata <= CONV_SIGNED_LI(data_array(conv_integer(addr)));
+      rdata2 <= CONV_SIGNED_LI(data_array(conv_integer(addr2)));
+
     end if;
 
   end process;

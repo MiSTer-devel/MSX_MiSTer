@@ -111,6 +111,7 @@ PACKAGE VDP_PACKAGE IS
     --    => l+g+h => 3 + 3 + 13 = 19
     --
 
+    -- NUMBER OF CLOCKS PER LINE, MUST BE A MULTIPLE OF 4
     CONSTANT CLOCKS_PER_LINE                    : INTEGER := 1368;                              -- 342*4
 
     -- LEFT-TOP POSITION OF VISIBLE AREA

@@ -40,18 +40,18 @@ library ieee;
 
 entity linear_table_mul is
     port (
-        i0      : in    std_logic_vector( 5 downto 0 );     --  •„†–³‚µ 6bit (¬”•”  6bit)
-        i1      : in    std_logic_vector( 9 downto 0 );     --  •„†•t‚«10bit (®”•” 10bit)
-        o       : out   std_logic_vector( 9 downto 0 )      --  •„†•t‚«10bit (®”•” 10bit)
+        i0      : in    std_logic_vector( 5 downto 0 );     --  ç¬¦å·ç„¡ã— 6bit (å°æ•°éƒ¨  6bit)
+        i1      : in    std_logic_vector( 9 downto 0 );     --  ç¬¦å·ä»˜ã10bit (æ•´æ•°éƒ¨ 10bit)
+        o       : out   std_logic_vector( 9 downto 0 )      --  ç¬¦å·ä»˜ã10bit (æ•´æ•°éƒ¨ 10bit)
     );
 end linear_table_mul;
 
 architecture rtl of linear_table_mul is
-    signal w_mul    : std_logic_vector( 16 downto 0 );      --  •„†•t‚«17bit (®”•”16bit)
+    signal w_mul    : std_logic_vector( 16 downto 0 );      --  ç¬¦å·ä»˜ã17bit (æ•´æ•°éƒ¨16bit)
 begin
 
     w_mul   <= ('0' & i0) * i1;
-    o       <= w_mul( 15 downto 6 );        --  MSBƒJƒbƒg, ¬”•”‰ºˆÊ 6bitƒJƒbƒg
+    o       <= w_mul( 15 downto 6 );        --  MSBã‚«ãƒƒãƒˆ, å°æ•°éƒ¨ä¸‹ä½ 6bitã‚«ãƒƒãƒˆ
 end rtl;
 
 -- ----------------------------------------------------------------------------
@@ -64,7 +64,7 @@ entity LinearTable is
     port (
         clk     : in    std_logic;
         reset   : in    std_logic;
-        addr    : in    std_logic_vector( 13 downto 0 );    --  ®”•” 8bit, ¬”•” 6bit
+        addr    : in    std_logic_vector( 13 downto 0 );    --  æ•´æ•°éƒ¨ 8bit, å°æ•°éƒ¨ 6bit
         data    : out   signed_li_type
     );
 end LinearTable;
@@ -122,7 +122,7 @@ architecture rtl of lineartable is
 
     signal w_addr1      : std_logic_vector( 12 downto 6 );
     signal w_data       : std_logic_vector(  8 downto 0 );
-    signal w_sub        : std_logic_vector(  9 downto 0 );  --  •„†•t‚«
+    signal w_sub        : std_logic_vector(  9 downto 0 );  --  ç¬¦å·ä»˜ã
     signal w_mul        : std_logic_vector(  9 downto 0 );
     signal w_inter      : std_logic_vector(  9 downto 0 );
 begin
@@ -132,7 +132,7 @@ begin
     process( clk )
     begin
         if( clk'event and clk = '1' )then
-            --  ƒAƒhƒŒƒXw’è‚³‚ê‚½Ÿ‚ÌƒTƒCƒNƒ‹‚Å‘Î‰‚·‚é’l‚ªo‚Ä‚­‚éi1cycle delayj
+            --  ã‚¢ãƒ‰ãƒ¬ã‚¹æŒ‡å®šã•ã‚ŒãŸæ¬¡ã®ã‚µã‚¤ã‚¯ãƒ«ã§å¯¾å¿œã™ã‚‹å€¤ãŒå‡ºã¦ãã‚‹ï¼ˆ1cycle delayï¼‰
             ff_data0 <= log2lin_data( conv_integer( addr(12 downto 6) ) );
             ff_data1 <= log2lin_data( conv_integer( w_addr1           ) );
         end if;
@@ -146,7 +146,7 @@ begin
         end if;
     end process;
 
-    --  •âŠÔ    (¦•„†‚ğ‚Ü‚½‚ª‚éêŠ‚Å‚Í 0 ‚É‚È‚é‚©‚ç ff_sign ‚Í‹C‚É‚µ‚È‚¢j
+    --  è£œé–“    (â€»ç¬¦å·ã‚’ã¾ãŸãŒã‚‹å ´æ‰€ã§ã¯ 0 ã«ãªã‚‹ã‹ã‚‰ ff_sign ã¯æ°—ã«ã—ãªã„ï¼‰
     --  o = i0 * (1 - k) + i1 * w = i0 - w * i0 + w * i1 = i0 + w * (i1 - i0)
     w_sub   <=  ('0' & ff_data1) - ('0' & ff_data0);
 

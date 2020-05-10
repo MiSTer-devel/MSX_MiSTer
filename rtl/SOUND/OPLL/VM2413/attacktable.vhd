@@ -41,9 +41,9 @@ library ieee;
 
 entity attack_table_mul is
     port(
-        i0      : in    std_logic_vector(  7 downto 0 );    --  •„†–³‚µ 8bit (®”•” 0bit, ¬”•” 8bit)
-        i1      : in    std_logic_vector(  7 downto 0 );    --  •„†•t‚« 8bit (®”•” 8bit)
-        o       : out   std_logic_vector( 13 downto 0 )     --  •„†•t‚«14bit (®”•” 8bit, ¬”•” 6bit)
+        i0      : in    std_logic_vector(  7 downto 0 );    --  ç¬¦å·ç„¡ã— 8bit (æ•´æ•°éƒ¨ 0bit, å°æ•°éƒ¨ 8bit)
+        i1      : in    std_logic_vector(  7 downto 0 );    --  ç¬¦å·ä»˜ã 8bit (æ•´æ•°éƒ¨ 8bit)
+        o       : out   std_logic_vector( 13 downto 0 )     --  ç¬¦å·ä»˜ã14bit (æ•´æ•°éƒ¨ 8bit, å°æ•°éƒ¨ 6bit)
     );
 end attack_table_mul;
 
@@ -52,7 +52,7 @@ architecture rtl of attack_table_mul is
 begin
 
     w_mul   <= ('0' & i0) * i1;
-    o       <= w_mul( 15 downto 2 );        --  bit16 ‚Í bit15 ‚Æ“¯‚¶‚È‚Ì‚ÅƒJƒbƒgBbit1`0 (¬”•”) ‚ÍØ‚èÌ‚ÄB
+    o       <= w_mul( 15 downto 2 );        --  bit16 ã¯ bit15 ã¨åŒã˜ãªã®ã§ã‚«ãƒƒãƒˆã€‚bit1ï½0 (å°æ•°éƒ¨) ã¯åˆ‡ã‚Šæ¨ã¦ã€‚
 end rtl;
 
 -------------------------------------------------------------------------------
@@ -65,8 +65,8 @@ entity AttackTable is
     port(
         clk     : in    std_logic;
         clkena  : in    std_logic;
-        addr    : in    std_logic_vector( 21 downto 0 );    --  ¬”•” 15bit
-        data    : out   std_logic_vector( 12 downto 0 )     --  ¬”•”  6bit
+        addr    : in    std_logic_vector( 21 downto 0 );    --  å°æ•°éƒ¨ 15bit
+        data    : out   std_logic_vector( 12 downto 0 )     --  å°æ•°éƒ¨  6bit
     );
 end AttackTable;
 
@@ -74,9 +74,9 @@ architecture rtl of attacktable is
 
     component attack_table_mul
         port(
-            i0      : in    std_logic_vector(  7 downto 0 );    --  •„†–³‚µ 8bit (®”•” 0bit, ¬”•” 8bit)
-            i1      : in    std_logic_vector(  7 downto 0 );    --  •„†•t‚« 8bit (®”•” 8bit)
-            o       : out   std_logic_vector( 13 downto 0 )     --  •„†•t‚« 8bit (®”•” 8bit, ¬”•” 6bit)
+            i0      : in    std_logic_vector(  7 downto 0 );    --  ç¬¦å·ç„¡ã— 8bit (æ•´æ•°éƒ¨ 0bit, å°æ•°éƒ¨ 8bit)
+            i1      : in    std_logic_vector(  7 downto 0 );    --  ç¬¦å·ä»˜ã 8bit (æ•´æ•°éƒ¨ 8bit)
+            o       : out   std_logic_vector( 13 downto 0 )     --  ç¬¦å·ä»˜ã 8bit (æ•´æ•°éƒ¨ 8bit, å°æ•°éƒ¨ 6bit)
         );
     end component;
 
@@ -106,8 +106,8 @@ architecture rtl of attacktable is
 
     signal w_addr1  : std_logic_vector(  6 downto 0 );
     signal w_addr2  : std_logic_vector(  6 downto 0 );
-    signal w_sub    : std_logic_vector(  7 downto 0 );  --  •„†•t‚«
-    signal w_mul    : std_logic_vector( 13 downto 0 );  --  •„†•t‚«
+    signal w_sub    : std_logic_vector(  7 downto 0 );  --  ç¬¦å·ä»˜ã
+    signal w_mul    : std_logic_vector( 13 downto 0 );  --  ç¬¦å·ä»˜ã
     signal w_inter  : std_logic_vector( 13 downto 0 );
 begin
 
@@ -129,12 +129,12 @@ begin
     begin
         if( clk'event and clk = '1' )then
             if( clkena = '1' )then
-                ff_w <= addr( 14 downto 7 );    --  ƒf[ƒ^©‘Ì‚Ìƒrƒbƒg”‚ª 7bit ‚È‚Ì‚Å 8bit ‚Å\•ª
+                ff_w <= addr( 14 downto 7 );    --  ãƒ‡ãƒ¼ã‚¿è‡ªä½“ã®ãƒ“ãƒƒãƒˆæ•°ãŒ 7bit ãªã®ã§ 8bit ã§ååˆ†
             end if;
         end if;
     end process;
 
-    --  •âŠÔ    (¦•„†‚ğ‚Ü‚½‚ª‚éêŠ‚Å‚Í 0 ‚É‚È‚é‚©‚ç ff_sign ‚Í‹C‚É‚µ‚È‚¢j
+    --  è£œé–“    (â€»ç¬¦å·ã‚’ã¾ãŸãŒã‚‹å ´æ‰€ã§ã¯ 0 ã«ãªã‚‹ã‹ã‚‰ ff_sign ã¯æ°—ã«ã—ãªã„ï¼‰
     --  o = i1 * (1 - k) + i2 * w = i1 - w * i1 + w * i2 = i1 + w * (i2 - i1)
     w_sub   <= ('0' & ff_d2) - ('0' & ff_d1);
 
@@ -151,7 +151,7 @@ begin
     begin
         if( clk'event and clk = '1' )then
             if( clkena = '1' )then
-                data <=w_inter( 12 downto 0 );  --  MSB ‚Í•K‚¸ 0
+                data <=w_inter( 12 downto 0 );  --  MSB ã¯å¿…ãš 0
             end if;
         end if;
     end process;

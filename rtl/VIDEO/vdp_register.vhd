@@ -65,7 +65,13 @@
 --
 --  26th,January,2017
 --      patch yuukun status register #0 S5 timing
-
+--
+--  5th, September,2019 modified by Oduvaldo Pavan Junior
+--      Fixed the lack of page flipping (R13) capability
+--
+--      Added the undocumented feature where R1 bit #2 change the blink counter
+--      clock source from VSYNC to HSYNC
+--
 
 LIBRARY IEEE;
     USE IEEE.STD_LOGIC_1164.ALL;
@@ -138,6 +144,7 @@ ENTITY VDP_REGISTER IS
         REG_R0_HSYNC_INT_EN         : OUT   STD_LOGIC;
         REG_R1_SP_SIZE              : OUT   STD_LOGIC;
         REG_R1_SP_ZOOM              : OUT   STD_LOGIC;
+        REG_R1_BL_CLKS              : OUT   STD_LOGIC;
         REG_R1_VSYNC_INT_EN         : OUT   STD_LOGIC;
         REG_R1_DISP_ON              : OUT   STD_LOGIC;
         REG_R2_PT_NAM_ADDR          : OUT   STD_LOGIC_VECTOR(  6 DOWNTO 0 );
@@ -490,6 +497,7 @@ BEGIN
                 FF_R1_DISP_MODE <= (OTHERS => '0');
                 REG_R1_SP_SIZE <= '0';
                 REG_R1_SP_ZOOM <= '0';
+                REG_R1_BL_CLKS <= '0';
                 REG_R1_VSYNC_INT_EN <= '0';
                 FF_R1_DISP_ON <= '0';
                 FF_R2_PT_NAM_ADDR <= (OTHERS => '0');
@@ -627,6 +635,7 @@ BEGIN
                             WHEN "00001" =>     -- #01
                                 REG_R1_SP_ZOOM      <= VDPP1DATA(0);
                                 REG_R1_SP_SIZE      <= VDPP1DATA(1);
+                                REG_R1_BL_CLKS      <= VDPP1DATA(2);
                                 FF_R1_DISP_MODE     <= VDPP1DATA(4 DOWNTO 3);
                                 REG_R1_VSYNC_INT_EN <= VDPP1DATA(5);
                                 FF_R1_DISP_ON       <= VDPP1DATA(6);

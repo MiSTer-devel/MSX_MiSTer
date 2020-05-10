@@ -31,6 +31,11 @@
 --
 -- Revision History
 --
+-- 09th,Jan,2020 modified by KdL
+--  - Fix LMMV which improves the Sunrise logo a bit (temporary solution?)
+--    Some glitches appear to be unrelated to the VDP_COMMAND entity and
+--    the correct speed is not yet reached
+--
 -- 20th,May,2019 modified by KdL
 --  - Optimization of speed parameters for greater game compatibility
 --
@@ -79,27 +84,27 @@ ARCHITECTURE RTL OF VDP_WAIT_CONTROL IS
     -- Sprite On, 212 Lines, 50Hz
     CONSTANT C_WAIT_TABLE_501 : WAIT_TABLE_T :=(
         X"8000", X"8000", X"8000", X"8000", X"8000", X"8000", X"19E4", X"0F30",
-        X"10F8", X"1288", X"8000", X"8000", X"119C", X"1964", X"1590", X"8000"
+        X"8000", X"1288", X"8000", X"8000", X"119C", X"1964", X"1590", X"8000"
     );
     -- Sprite On, 192 Lines, 50Hz
     CONSTANT C_WAIT_TABLE_502 : WAIT_TABLE_T :=(
         X"8000", X"8000", X"8000", X"8000", X"8000", X"8000", X"18C8", X"0E80",
-        X"1018", X"11B4", X"8000", X"8000", X"10B0", X"1848", X"1514", X"8000"
+        X"8000", X"11B4", X"8000", X"8000", X"10B0", X"1848", X"1514", X"8000"
     );
     -- Sprite Off, 212 Lines, 50Hz
     CONSTANT C_WAIT_TABLE_503 : WAIT_TABLE_T :=(
         X"8000", X"8000", X"8000", X"8000", X"8000", X"8000", X"1678", X"0A10",
-        X"0CE4", X"10AC", X"8000", X"8000", X"0CA8", X"15F8", X"1520", X"8000"
+        X"8000", X"10AC", X"8000", X"8000", X"0CA8", X"15F8", X"1520", X"8000"
     );
     -- Sprite Off, 192 Lines, 50Hz
     CONSTANT C_WAIT_TABLE_504 : WAIT_TABLE_T :=(
         X"8000", X"8000", X"8000", X"8000", X"8000", X"8000", X"15B8", X"0A00",
-        X"0C78", X"0FFC", X"8000", X"8000", X"0C5C", X"1538", X"144C", X"8000"
+        X"8000", X"0FFC", X"8000", X"8000", X"0C5C", X"1538", X"144C", X"8000"
     );
     -- Blank, 50Hz (Test: Sprite On, 212 Lines)
     CONSTANT C_WAIT_TABLE_505 : WAIT_TABLE_T :=(
         X"8000", X"8000", X"8000", X"8000", X"8000", X"8000", X"13C4", X"08D4",
-        X"0CC4", X"0E68", X"8000", X"8000", X"0CAC", X"1384", X"12DC", X"8000"
+        X"8000", X"0E68", X"8000", X"8000", X"0CAC", X"1384", X"12DC", X"8000"
     );
     ---------------------------------------------------------------------------
     --   "STOP",  "XXXX",  "XXXX",  "XXXX", "POINT",  "PSET",  "SRCH",  "LINE",
@@ -108,27 +113,27 @@ ARCHITECTURE RTL OF VDP_WAIT_CONTROL IS
     -- Sprite On, 212 Lines, 60Hz
     CONSTANT C_WAIT_TABLE_601 : WAIT_TABLE_T :=(
         X"8000", X"8000", X"8000", X"8000", X"8000", X"8000", X"1AC4", X"10F0",
-        X"13DC", X"15B4", X"8000", X"8000", X"14CC", X"1A44", X"182C", X"8000"
+        X"8000", X"15B4", X"8000", X"8000", X"14CC", X"1A44", X"182C", X"8000"
     );
     -- Sprite On, 192 Lines, 60Hz
     CONSTANT C_WAIT_TABLE_602 : WAIT_TABLE_T :=(
         X"8000", X"8000", X"8000", X"8000", X"8000", X"8000", X"18E4", X"0FC0",
-        X"1274", X"1424", X"8000", X"8000", X"1318", X"1864", X"16FC", X"8000"
+        X"8000", X"1424", X"8000", X"8000", X"1318", X"1864", X"16FC", X"8000"
     );
     -- Sprite Off, 212 Lines, 60Hz
     CONSTANT C_WAIT_TABLE_603 : WAIT_TABLE_T :=(
         X"8000", X"8000", X"8000", X"8000", X"8000", X"8000", X"1674", X"0AB0",
-        X"0E24", X"12B4", X"8000", X"8000", X"0DFC", X"15F4", X"17B4", X"8000"
+        X"8000", X"12B4", X"8000", X"8000", X"0DFC", X"15F4", X"17B4", X"8000"
     );
     -- Sprite Off, 192 Lines, 60Hz
     CONSTANT C_WAIT_TABLE_604 : WAIT_TABLE_T :=(
         X"8000", X"8000", X"8000", X"8000", X"8000", X"8000", X"1564", X"0A40",
-        X"0D7C", X"11AC", X"8000", X"8000", X"0D58", X"14E4", X"167C", X"8000"
+        X"8000", X"11AC", X"8000", X"8000", X"0D58", X"14E4", X"167C", X"8000"
     );
     -- Blank, 60Hz (Test: Sprite On, 212 Lines)
     CONSTANT C_WAIT_TABLE_605 : WAIT_TABLE_T :=(
         X"8000", X"8000", X"8000", X"8000", X"8000", X"8000", X"1278", X"08F0",
-        X"0D58", X"0EFC", X"8000", X"8000", X"0D38", X"11F8", X"13D4", X"8000"
+        X"8000", X"0EFC", X"8000", X"8000", X"0D38", X"11F8", X"13D4", X"8000"
     );
 BEGIN
 

@@ -40,15 +40,16 @@ library ieee;
 
 entity opll is
     port(
-        xin         : in  std_logic;
-        xout        : out std_logic;
-        xena        : in  std_logic;
-        d           : in  std_logic_vector( 7 downto 0 );
-        a           : in  std_logic;
-        cs_n        : in  std_logic;
-        we_n        : in  std_logic;
-        ic_n        : in  std_logic;
-        mixout      : out std_logic_vector(13 downto 0 )
+        xin         : in    std_logic;
+        xout        : out   std_logic;
+        xena        : in    std_logic;
+        d           : in    std_logic_vector( 7 downto 0 );
+        a           : in    std_logic;
+        cs_n        : in    std_logic;
+        we_n        : in    std_logic;
+        ic_n        : in    std_logic;
+        mo          : out   std_logic_vector( 9 downto 0 );
+        ro          : out   std_logic_vector( 9 downto 0 )
     );
 end opll;
 
@@ -197,7 +198,8 @@ architecture rtl of opll is
         maddr   : out slot_type;
         mdata   : in signed_li_type;
 
-        mixout  : out std_logic_vector(13 downto 0)
+        mo      : out std_logic_vector(9 downto 0);
+        ro      : out std_logic_vector(9 downto 0)
     );
     end component;
 
@@ -225,7 +227,7 @@ architecture rtl of opll is
     signal rhythm   : std_logic;
 
     signal noise    : std_logic;
-    signal pgout    : std_logic_vector( 17 downto 0 );  --  ������ 9bit, ������ 9bit
+    signal pgout    : std_logic_vector( 17 downto 0 );  --  整数部 9bit, 小数部 9bit
 
     signal egout    : std_logic_vector( 12 downto 0 );
 
@@ -254,30 +256,28 @@ begin
     xout    <= xin;
     reset   <= not ic_n;
 
-    --  CPU�A�N�Z�X���� ------------------------------------------------------
+    --  CPUアクセス制御 ------------------------------------------------------
     process( xin, reset )
     begin
-        if( rising_edge(xin) )then
-            if( reset ='1' )then
-                opllwr  <= '0';
-                opllptr <= (others =>'0');
-            else
-                if( xena = '1' )then
-                    if(    cs_n = '0' and we_n = '0' and a = '0' )then
-                        --  �����W�X�^�A�h���X�w�背�W�X�^ �ւ̏�������
-                        opllptr <= d;
-                        opllwr  <= '0';
-                    elsif( cs_n = '0' and we_n = '0' and a = '1' )then
-                        --  �����W�X�^ �ւ̏�������
-                        oplldat <= d;
-                        opllwr  <= '1';
-                    end if;
+        if( reset ='1' )then
+            opllwr  <= '0';
+            opllptr <= (others =>'0');
+        elsif( xin'event and xin = '1' )then
+            if( xena = '1' )then
+                if(    cs_n = '0' and we_n = '0' and a = '0' )then
+                    --  内部レジスタアドレス指定レジスタ への書き込み
+                    opllptr <= d;
+                    opllwr  <= '0';
+                elsif( cs_n = '0' and we_n = '0' and a = '1' )then
+                    --  内部レジスタ への書き込み
+                    oplldat <= d;
+                    opllwr  <= '1';
                 end if;
             end if;
         end if;
     end process;
 
-    --  �^�C�~���O�W�F�l���[�^ -----------------------------------------------
+    --  タイミングジェネレータ -----------------------------------------------
     s0: slotcounter
     generic map(
         delay   => 0
@@ -364,7 +364,7 @@ begin
         xin, reset, xena,
         slot, stage, rhythm,
         maddr, mdata,
-        mixout
+        mo, ro
     );
 
 end rtl;

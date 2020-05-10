@@ -101,8 +101,9 @@ entity emsx_top is
         cmtin           : in    std_logic;   						-- EAR 
 		
         pAudioPSG       : out   std_logic_vector(  9 downto 0);
-        pAudioOPLL      : out   std_logic_vector( 13 downto 0);
-        pAudioPCM       : out   std_logic_vector( 15 downto 0)
+        pAudioOPLL      : out   std_logic_vector(  9 downto 0);
+        pAudioPCM       : out   std_logic_vector( 15 downto 0);
+        pAudioTRPCM     : out   std_logic_vector(  7 downto 0)
     );
 end emsx_top;
 
@@ -361,6 +362,10 @@ architecture RTL of emsx_top is
     signal  OpllAck         : std_logic;
     signal  OpllEnaWait     : std_logic;
 
+    -- turboR PCM device
+    signal  tr_pcm_req      : std_logic;
+    signal  tr_pcm_dbi      : std_logic_vector(  7 downto 0 );
+
     -- External memory signals
     signal  RamReq          : std_logic;
     signal  RamAck          : std_logic;
@@ -427,6 +432,21 @@ architecture RTL of emsx_top is
     signal  pSltWait_n      : std_logic;
     signal  pSltInt_n       : std_logic;
     signal  pSltMerq_n      : std_logic;
+
+    component tr_pcm                                                            -- 2019/11/29 t.hara added
+        port(
+            clk21m          : in    std_logic;
+            reset           : in    std_logic;
+            req             : in    std_logic;
+            ack             : out   std_logic;
+            wrt             : in    std_logic;
+            adr             : in    std_logic;
+            dbi             : out   std_logic_vector(  7 downto 0 );
+            dbo             : in    std_logic_vector(  7 downto 0 );
+            wave_in         : in    std_logic_vector(  7 downto 0 );
+            wave_out        : out   std_logic_vector(  7 downto 0 )
+        );
+    end component;
 
 begin
 
@@ -1091,6 +1111,8 @@ begin
                     dlydbi <= RtcDbi;
                 elsif( mem = '0' and adr(  7 downto 1 ) = "1110011" )then                           -- System timer (S1990)
                     dlydbi <= systim_dbi;
+                elsif( mem = '0' and adr(  7 downto 1 ) = "1010010" )then                           -- turboR PCM device
+                    dlydbi <= tr_pcm_dbi;
                 elsif( mem = '0' and adr(  7 downto 4 ) = "0100" and io40_n /= "11111111" )then     -- Switched I/O ports
                     dlydbi <= swio_dbi;
                 elsif( mem = '0' and adr(  7 downto 0 ) = "10100111" and portF4_mode = '1' )then    -- Pause R800 (read only)
@@ -1395,6 +1417,7 @@ begin
     systim_req  <=  req when( mem = '0' and adr(7 downto 1) = "1110011" )else '0';  -- I/O:E6-E7h   / System timer (S1990)
     swio_req    <=  req when( mem = '0' and adr(7 downto 4) = "0100" )else '0';     -- I/O:40-4Fh   / Switched I/O ports
     portF4_req  <=  req when( mem = '0' and adr(7 downto 0) = "11110100" )else '0'; -- I/O:F4h      / Port F4 device
+    tr_pcm_req  <=  req when( mem = '0' and adr(7 downto 1) = "1010010" )else '0';                  -- I/O:A4h-A5h  / turboR PCM device
     --  pcm_req <=  req when( mem = '0' and adr(7 downto 1) = "1110100" )else '0';  -- I/O:E8-E9h   / Test PCM
 
     BusDir  <=  '1' when( pSltAdr(7 downto 2) = "100110"                         )else  -- I/O:98-9Bh / VDP (V9938/V9958)
@@ -1408,6 +1431,7 @@ begin
                 '1' when( pSltAdr(7 downto 4) = "0100" and io40_n /= "11111111"  )else  -- I/O:40-4Fh / Switched I/O ports
                 '1' when( pSltAdr(7 downto 0) = "10100111" and portF4_mode = '1' )else  -- I/O:A7h    / Pause R800 (read only)
                 '1' when( pSltAdr(7 downto 0) = "11110100"                       )else  -- I/O:F4h    / Port F4 device
+                '1' when( pSltAdr(7 downto 1) = "1010010"                        )else  -- I/O:A4-A5h / turboR PCM device
 --              '1' when( pSltAdr(7 downto 1) = "1110100"                        )else  -- I/O:E8-E9h / Test PCM
                 '0';
 
@@ -2027,88 +2051,102 @@ begin
 
     U34: work.system_timer
     port map (
-        clk21m  => clk21m       ,
-        reset   => reset        ,
-        req     => systim_req   ,
-        ack     => open   ,
-        adr     => adr          ,
-        dbi     => systim_dbi   ,
+        clk21m  => clk21m,
+        reset   => reset,
+        req     => systim_req,
+        ack     => open,
+        adr     => adr,
+        dbi     => systim_dbi,
         dbo     => dbo
     );
 
+    U40 : tr_pcm
+    port map (
+        clk21m   => clk21m,
+        reset    => reset,
+        req      => tr_pcm_req,
+        ack      => open,
+        wrt      => wrt,
+        adr      => adr(0),
+        dbi      => tr_pcm_dbi,
+        dbo      => dbo,
+        wave_in  => (others => '0'),
+        wave_out => pAudioTRPCM
+    );
+	 
     U35: work.switched_io_ports
     port map (
-        clk21m          => clk21m       ,
-        reset           => reset        ,
-        req             => swio_req     ,
-        ack             => open     ,
-        wrt             => wrt          ,
-        adr             => adr          ,
-        dbi             => swio_dbi     ,
-        dbo             => dbo          ,
+        clk21m          => clk21m,
+        reset           => reset,
+        req             => swio_req,
+        ack             => open,
+        wrt             => wrt,
+        adr             => adr,
+        dbi             => swio_dbi,
+        dbo             => dbo,
 
-        io40_n          => io40_n       ,
-        io41_id212_n    => io41_id212_n ,   -- here to reduce LEs
-        io42_id212      => io42_id212   ,
-        io43_id212      => io43_id212   ,
-        io44_id212      => io44_id212   ,
-        OpllVol         => open         ,
-        SccVol          => open         ,
-        PsgVol          => open         ,
-        MstrVol         => open         ,
-        CustomSpeed     => CustomSpeed  ,
-        tMegaSD         => tMegaSD      ,
-        tPanaRedir      => tPanaRedir   ,   -- here to reduce LEs
-        VdpSpeedMode    => VdpSpeedMode ,
-        V9938_n         => V9938_n      ,
-        Mapper_req      => Mapper_req   ,   -- here to reduce LEs
-        Mapper_ack      => Mapper_ack   ,
-        MegaSD_req      => MegaSD_req   ,   -- here to reduce LEs
-        MegaSD_ack      => MegaSD_ack   ,
-        io41_id008_n    => io41_id008_n ,
-        swioKmap        => swioKmap     ,
-        CmtScro         => CmtScro      ,
-        swioCmt         => swioCmt      ,
-        LightsMode      => LightsMode   ,
-        Red_sta         => Red_sta      ,
-        LastRst_sta     => LastRst_sta  ,   -- here to reduce LEs
-        RstReq_sta      => RstReq_sta   ,   -- here to reduce LEs
-        Blink_ena       => Blink_ena    ,
-        pseudoStereo    => pseudoStereo ,
-        extclk3m        => extclk3m     ,
+        io40_n          => io40_n,
+        io41_id212_n    => io41_id212_n, -- here to reduce LEs
+        io42_id212      => io42_id212,
+        io43_id212      => io43_id212,
+        io44_id212      => io44_id212,
+        OpllVol         => open,
+        SccVol          => open,
+        PsgVol          => open,
+        MstrVol         => open,
+        CustomSpeed     => CustomSpeed,
+        tMegaSD         => tMegaSD,
+        tPanaRedir      => tPanaRedir,   -- here to reduce LEs
+        VdpSpeedMode    => VdpSpeedMode,
+        V9938_n         => V9938_n,
+        Mapper_req      => Mapper_req,   -- here to reduce LEs
+        Mapper_ack      => Mapper_ack,
+        MegaSD_req      => MegaSD_req,   -- here to reduce LEs
+        MegaSD_ack      => MegaSD_ack,
+        io41_id008_n    => io41_id008_n,
+        swioKmap        => swioKmap,
+        CmtScro         => CmtScro,
+        swioCmt         => swioCmt,
+        LightsMode      => LightsMode,
+        Red_sta         => Red_sta,
+        LastRst_sta     => LastRst_sta,  -- here to reduce LEs
+        RstReq_sta      => RstReq_sta,   -- here to reduce LEs
+        Blink_ena       => Blink_ena,
+        pseudoStereo    => pseudoStereo,
+        extclk3m        => extclk3m,
         ntsc_pal_type   => ntsc_pal_type,
         forced_v_mode   => forced_v_mode,
         right_inverse   => right_inverse,
         vram_slot_ids   => vram_slot_ids,
-        DefKmap         => DefKmap      ,   -- here to reduce LEs
+        DefKmap         => DefKmap,      -- here to reduce LEs
 
-        ff_dip_req      => ff_dip_req   ,
-        ff_dip_ack      => ff_dip_ack   ,   -- here to reduce LEs
+        ff_dip_req      => ff_dip_req,
+        ff_dip_ack      => ff_dip_ack,   -- here to reduce LEs
 
-        SdPaus          => SdPaus       ,
-        Scro            => '0'          ,
-        ff_Scro         => '0'          ,
-        Reso            => '0'          ,
-        ff_Reso         => '0'          ,
-        FKeys           => FKeys        ,
-        vFKeys          => vFKeys       ,
-        LevCtrl         => LevCtrl      ,
-        GreenLvEna      => GreenLvEna   ,
+        SdPaus          => SdPaus,
+        Scro            => '0',
+        ff_Scro         => '0',
+        Reso            => '0',
+        ff_Reso         => '0',
+        FKeys           => FKeys,
+        vFKeys          => vFKeys,
+        LevCtrl         => LevCtrl,
+        GreenLvEna      => GreenLvEna,
 
-        swioRESET_n     => swioRESET_n  ,
-        warmRESET       => warmRESET    ,
-        WarmMSXlogo     => WarmMSXlogo  ,   -- here to reduce LEs
+        swioRESET_n     => swioRESET_n,
+        warmRESET       => warmRESET,
+        WarmMSXlogo     => WarmMSXlogo,   -- here to reduce LEs
 
-        ZemmixNeo       => ZemmixNeo    ,
+        ZemmixNeo       => ZemmixNeo,
 
-        JIS2_ena        => JIS2_ena     ,
-        portF4_mode     => portF4_mode  ,
-        ff_ldbios_n     => ff_ldbios_n  ,
+        JIS2_ena        => JIS2_ena,
+        portF4_mode     => portF4_mode,
+        ff_ldbios_n     => ff_ldbios_n,
 
-        RatioMode       => RatioMode       ,
-        centerYJK_R25_n => centerYJK_R25_n ,
-        legacy_sel      => legacy_sel      ,
-        Slot0_req       => Slot0_req       ,   -- here to reduce LEs
+        RatioMode       => RatioMode,
+        centerYJK_R25_n => centerYJK_R25_n,
+        legacy_sel      => legacy_sel,
+        Slot0_req       => Slot0_req,     -- here to reduce LEs
         Slot0Mode       => Slot0Mode
     );
 

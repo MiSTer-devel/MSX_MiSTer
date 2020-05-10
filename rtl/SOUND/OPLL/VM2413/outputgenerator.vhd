@@ -92,7 +92,7 @@ architecture RTL of OutputGenerator is
         variable vL, vR : std_logic_vector(LI_TYPE'high + 2 downto 0);
     begin
 
-        --  �����{��Βl �� �Q�̕␔
+        --  符号＋絶対値 → ２の補数
         if( L.sign = '0' )then
             vL := "00" & L.value;
         else
@@ -106,7 +106,7 @@ architecture RTL of OutputGenerator is
 
         vL := vL + vR;
 
-        --  �Q�̕␔ �� �����{��Βl�A���ł� 1/2 �{�B�����łP�r�b�g�����B
+        --  ２の補数 → 符号＋絶対値、ついでに 1/2 倍。ここで１ビット消失。
         if vL(vL'high) = '0' then -- positive
             return ( sign => '0', value => vL(vL'high-1 downto 1) );
         else -- negative
@@ -146,40 +146,38 @@ begin
     Ltbl : LinearTable port map (
         clk     => clk,
         reset   => reset,
-        addr    => opout,           --  0�`127 (opout �� FF �̏o�͂�����_�C���N�g�ɓ���Ă����Ȃ��j
-        data    => li_data          --  0�`511
+        addr    => opout,           --  0～127 (opout は FF の出力だからダイレクトに入れても問題ない）
+        data    => li_data          --  0～511
     );
 
     process( reset, clk )
     begin
-        if( rising_edge(clk) )then
-            if( reset = '1' )then
-                mo_wr <= '0';
-                fb_wr <= '0';
-            else
-                if( clkena = '1' )then
-                    mo_addr <= slot;
+        if( reset = '1' )then
+            mo_wr <= '0';
+            fb_wr <= '0';
+        elsif( clk'event and clk = '1' )then
+            if( clkena = '1' )then
+                mo_addr <= slot;
 
-                    if( stage = 0 )then
-                        mo_wr   <= '0';
-                        fb_wr   <= '0';
+                if( stage = 0 )then
+                    mo_wr   <= '0';
+                    fb_wr   <= '0';
 
-                    elsif( stage = 1 )then
-                        --  opout �ɏ��]�̒l�������Ă���X�e�[�W
-                    elsif( stage = 2 )then
-                        --  �҂�
-                    elsif( stage = 3 )then
-                        --  LinerTable ���� opout �Ŏw�肳�ꂽ�A�h���X�ɑΉ�����l���o�Ă���X�e�[�W
-                        if( slot(0) = '0' )then
-                            --  �t�B�[�h�o�b�N�������ɂ̓��W�����[�^�̂Ƃ������������܂Ȃ�
-                            fb_addr <= conv_integer(slot)/2;
-                            fb_wdata<= AVERAGE(mo_rdata, li_data);
-                            fb_wr   <= '1';
-                        end if;
-                        -- Store raw output
-                        mo_wdata<= li_data;
-                        mo_wr   <= '1';
+                elsif( stage = 1 )then
+                    --  opout に所望の値が入ってくるステージ
+                elsif( stage = 2 )then
+                    --  待ち
+                elsif( stage = 3 )then
+                    --  LinerTable から opout で指定されたアドレスに対応する値が出てくるステージ
+                    if( slot(0) = '0' )then
+                        --  フィードバックメモリにはモジュレータのときしか書き込まない
+                        fb_addr <= conv_integer(slot)/2;
+                        fb_wdata<= AVERAGE(mo_rdata, li_data);
+                        fb_wr   <= '1';
                     end if;
+                    -- Store raw output
+                    mo_wdata<= li_data;
+                    mo_wr   <= '1';
                 end if;
             end if;
         end if;

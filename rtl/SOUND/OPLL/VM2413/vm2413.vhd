@@ -143,7 +143,8 @@ package VM2413 is
     CS_n    : in std_logic;
     WE_n    : in std_logic;
     IC_n    : in std_logic;
-    mixout  : out std_logic_vector(13 downto 0)
+    MO      : out std_logic_vector(9 downto 0);
+    RO      : out std_logic_vector(9 downto 0)
   );
   end component;
 

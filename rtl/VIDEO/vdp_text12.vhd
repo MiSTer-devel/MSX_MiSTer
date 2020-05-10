@@ -82,6 +82,12 @@
 -- 22th,March,2008
 -- JP: タイミング緩和と、リファクタリング by t.hara
 --
+-- 11th, September,2019 modified by Oduvaldo Pavan Junior
+-- Fixed the lack of page flipping (R13) capability
+--
+-- Added the undocumented feature where R1 bit #2 change the blink counter
+-- clock source from VSYNC to HSYNC
+--
 -------------------------------------------------------------------------------
 -- Document
 --
@@ -108,6 +114,7 @@ ENTITY VDP_TEXT12 IS
         VDPMODETEXT2                : IN    STD_LOGIC;
 
         -- REGISTERS
+        REG_R1_BL_CLKS              : IN    STD_LOGIC;
         REG_R7_FRAME_COL            : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
         REG_R12_BLINK_MODE          : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
         REG_R13_BLINK_PERIOD        : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );
@@ -147,11 +154,11 @@ ARCHITECTURE RTL OF VDP_TEXT12 IS
     SIGNAL TXCOLORCODE              : STD_LOGIC;             -- ONLY 2 COLORS
     SIGNAL TXCOLOR                  : STD_LOGIC_VECTOR(  7 DOWNTO 0 );
 
-    SIGNAL FF_BLINK_FRAME_CNT       : STD_LOGIC_VECTOR(  3 DOWNTO 0 );
+    SIGNAL FF_BLINK_CLK_CNT         : STD_LOGIC_VECTOR(  3 DOWNTO 0 );
     SIGNAL FF_BLINK_STATE           : STD_LOGIC;
     SIGNAL FF_BLINK_PERIOD_CNT      : STD_LOGIC_VECTOR(  3 DOWNTO 0 );
     SIGNAL W_BLINK_CNT_MAX          : STD_LOGIC_VECTOR( 3 DOWNTO 0 );
-    SIGNAL W_FRAME_SYNC             : STD_LOGIC;
+    SIGNAL W_BLINK_SYNC             : STD_LOGIC;
 
 BEGIN
 
@@ -409,61 +416,45 @@ BEGIN
     --------------------------------------------------------------------------
     W_BLINK_CNT_MAX <=  REG_R13_BLINK_PERIOD( 3 DOWNTO 0 )  WHEN( FF_BLINK_STATE = '0' )ELSE
                         REG_R13_BLINK_PERIOD( 7 DOWNTO 4 );
-    W_FRAME_SYNC    <=  '1' WHEN( (DOTCOUNTERX = 0) AND (DOTCOUNTERY = 0) AND (DOTSTATE = "00") )ELSE
+    W_BLINK_SYNC    <=  '1' WHEN( (DOTCOUNTERX = 0) AND (DOTCOUNTERY = 0) AND (DOTSTATE = "00") AND (REG_R1_BL_CLKS = '0') )ELSE
+                        '1' WHEN( (DOTCOUNTERX = 0) AND (DOTSTATE = "00") AND (REG_R1_BL_CLKS = '1') )ELSE
                         '0';
 
     PROCESS( RESET, CLK21M )
     BEGIN
         IF (RISING_EDGE(CLK21M)) THEN
             IF( RESET = '1' )THEN
-                FF_BLINK_FRAME_CNT <= (OTHERS => '0');
-	    ELSE
-                IF( W_FRAME_SYNC = '1' )THEN
-                    IF (FF_BLINK_FRAME_CNT = "1001") THEN
-                        FF_BLINK_FRAME_CNT <= (OTHERS => '0');
-                    ELSE
-                        FF_BLINK_FRAME_CNT <= FF_BLINK_FRAME_CNT + 1;
-                    END IF;
-                END IF;
-            END IF;
-        END IF;
-    END PROCESS;
-
-    PROCESS( RESET, CLK21M )
-    BEGIN
-        IF (RISING_EDGE(CLK21M)) THEN
-            IF( RESET = '1' )THEN
+                FF_BLINK_CLK_CNT <= (OTHERS => '0');
                 FF_BLINK_STATE <= '0';
-	    ELSE
-                IF( (W_FRAME_SYNC = '1') AND (FF_BLINK_FRAME_CNT = "1001") )THEN
-                    IF(    REG_R13_BLINK_PERIOD( 7 DOWNTO 4 ) = "0000" )THEN
-                        -- WHEN ON PERIOD IS 0, THE BLINK COLOR IS ALWAYS OFF
-                        FF_BLINK_STATE <= '0';
-                    ELSIF( REG_R13_BLINK_PERIOD( 3 DOWNTO 0 ) = "0000" )THEN
-                        -- WHEN OFF PERIOD IS 0, THE BLINK COLOR IS ALWAYS ON
-                        FF_BLINK_STATE <= '1';
-                    ELSIF( FF_BLINK_PERIOD_CNT >= W_BLINK_CNT_MAX )THEN
-                        FF_BLINK_STATE <= NOT FF_BLINK_STATE;
-                    END IF;
-                END IF;
-            END IF;
-        END IF;
-    END PROCESS;
-
-    PROCESS( RESET, CLK21M )
-    BEGIN
-        IF (RISING_EDGE(CLK21M) )THEN
-            IF( RESET = '1' )THEN
                 FF_BLINK_PERIOD_CNT <= (OTHERS => '0');
-	    ELSE
-                IF( (W_FRAME_SYNC = '1') AND (FF_BLINK_FRAME_CNT = "1001") )THEN
+            ELSE
+                IF( W_BLINK_SYNC = '1' )THEN
+
+                    IF (FF_BLINK_CLK_CNT = "1001") THEN
+                        FF_BLINK_CLK_CNT <= (OTHERS => '0');
+                        FF_BLINK_PERIOD_CNT <= FF_BLINK_PERIOD_CNT + 1;
+                    ELSE
+                        FF_BLINK_CLK_CNT <= FF_BLINK_CLK_CNT + 1;
+                    END IF;
+
                     IF( FF_BLINK_PERIOD_CNT >= W_BLINK_CNT_MAX )THEN
                         FF_BLINK_PERIOD_CNT <= (OTHERS => '0');
-                    ELSE
-                        FF_BLINK_PERIOD_CNT <= FF_BLINK_PERIOD_CNT + 1;
+                        IF (REG_R13_BLINK_PERIOD( 7 DOWNTO 4 ) = "0000")THEN
+                             -- WHEN ON PERIOD IS 0, THE PAGE SELECTED SHOULD BE ALWAYS ODD / R#2
+                             FF_BLINK_STATE <= '0';
+                        ELSIF( REG_R13_BLINK_PERIOD( 3 DOWNTO 0 ) = "0000")THEN
+                             -- WHEN OFF PERIOD IS 0 AND ON NOT, THE PAGE SELECT SHOULD BE ALWAYS THE R#2 EVEN PAIR
+                             FF_BLINK_STATE <= '1';
+                        ELSE
+                             -- NEITHER ARE 0, SO JUST KEEP SWITCHING WHEN PERIOD ENDS
+                             FF_BLINK_STATE <= NOT FF_BLINK_STATE;
+                        END IF;
                     END IF;
                 END IF;
+
             END IF;
+
         END IF;
     END PROCESS;
+
 END RTL;

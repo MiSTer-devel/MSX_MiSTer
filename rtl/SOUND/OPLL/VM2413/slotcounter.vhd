@@ -57,21 +57,19 @@ begin
 
     process( reset, clk )
     begin
-        if( rising_edge(clk) )then
-            if( reset = '1' )then
-                ff_count <= "1000111" - delay;
-            else
-                if( clkena ='1' )then
-                    if( ff_count = "1000111" )then      -- 71
-                        ff_count <= (others => '0');
-                    else
-                        ff_count <= ff_count + 1;
-                    end if;
+        if( reset = '1' )then
+            ff_count <= "1000111" - delay;
+        elsif( clk'event and clk='1' )then
+            if( clkena ='1' )then
+                if( ff_count = "1000111" )then      -- 71
+                    ff_count <= (others => '0');
+                else
+                    ff_count <= ff_count + 1;
                 end if;
             end if;
         end if;
     end process;
 
-    stage   <= ff_count( 1 downto 0 );      --  0�`3 �ŏz��
-    slot    <= ff_count( 6 downto 2 );      --  0�`17 �ŏz��
+    stage   <= ff_count( 1 downto 0 );      --  0`3 ‚ÅzŠÂ
+    slot    <= ff_count( 6 downto 2 );      --  0`17 ‚ÅzŠÂ
 end rtl;

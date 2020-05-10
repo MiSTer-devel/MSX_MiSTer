@@ -105,6 +105,28 @@ end controller;
 
 architecture rtl of controller is
 
+    component registermemory
+        port (
+            clk     : in    std_logic;
+            reset   : in    std_logic;
+            addr    : in    std_logic_vector(  3 downto 0 );
+            wr      : in    std_logic;
+            idata   : in    std_logic_vector( 23 downto 0 );
+            odata   : out   std_logic_vector( 23 downto 0 )
+        );
+    end component;
+
+    component voicememory port (
+        clk     : in std_logic;
+        reset   : in std_logic;
+        idata   : in voice_type;
+        wr       : in std_logic;
+        rwaddr : in voice_id_type;
+        roaddr : in voice_id_type;
+        odata   : out voice_type;
+        rodata : out voice_type );
+    end component;
+
     -- the array which caches instrument number of each channel.
     type inst_array is array (ch_type'range) of integer range 0 to 15;
     signal inst_cache : inst_array;
@@ -139,8 +161,8 @@ architecture rtl of controller is
 
 begin   -- rtl
 
-    --  ���W�X�^�ݒ�l��ێ����邽�߂̃�����
-    u_register_memory : work.RegisterMemory
+    --  レジスタ設定値を保持するためのメモリ
+    u_register_memory : RegisterMemory
     port map (
         clk     => clk,
         reset   => reset,
@@ -150,46 +172,42 @@ begin   -- rtl
         odata   => regs_rdata
     );
 
-    vmem : work.voicememory port map (
+    vmem : voicememory port map (
         clk, reset, user_voice_wdata, user_voice_wr, user_voice_addr, slot_voice_addr,
         user_voice_rdata, slot_voice_data );
 
-    --  ���W�X�^�A�h���X���b�` (��P�X�e�[�W)
+    --  レジスタアドレスラッチ (第１ステージ)
     process( reset, clk )
     begin
-        if( rising_edge(clk) )then
-            if( reset = '1' )then
-                regs_addr   <= (others => '0');
-            else
-                if clkena='1' then
-                    if( stage = "00" )then
-                        regs_addr <= slot( 4 downto 1 );
-                    else
-                        --  hold
-                    end if;
+        if( reset = '1' )then
+            regs_addr   <= (others => '0');
+        elsif( clk'event and clk = '1' )then
+            if clkena='1' then
+                if( stage = "00" )then
+                    regs_addr <= slot( 4 downto 1 );
+                else
+                    --  hold
                 end if;
             end if;
         end if;
     end process;
 
-    --  ���݂̃X���b�g�̉��F�f�[�^�ǂݏo���A�h���X���b�` (��P�X�e�[�W)
+    --  現在のスロットの音色データ読み出しアドレスラッチ (第１ステージ)
     process( reset, clk )
     begin
-        if( rising_edge(clk) )then
-            if( reset = '1' )then
-                slot_voice_addr <= 0;
-            else
-                if clkena='1' then
-                    if( stage = "00" )then
-                        if( rflag(5) = '1' and w_channel >= "0110" )then
-                            --  ���Y�����[�h�� ch6 �ȍ~
-                            slot_voice_addr <= conv_integer(slot) - 12 + 32;
-                        else
-                            slot_voice_addr <= inst_cache(conv_integer(slot)/2) * 2 + conv_integer(slot) mod 2;
-                        end if;
+        if( reset = '1' )then
+            slot_voice_addr <= 0;
+        elsif( clk'event and clk = '1' )then
+            if clkena='1' then
+                if( stage = "00" )then
+                    if( rflag(5) = '1' and w_channel >= "0110" )then
+                        --  リズムモードで ch6 以降
+                        slot_voice_addr <= conv_integer(slot) - 12 + 32;
                     else
-                        --  hold
+                        slot_voice_addr <= inst_cache(conv_integer(slot)/2) * 2 + conv_integer(slot) mod 2;
                     end if;
+                else
+                    --  hold
                 end if;
             end if;
         end if;
@@ -214,8 +232,6 @@ begin   -- rtl
         variable vindex : voice_id_type;
 
     begin   -- process
-
-        if rising_edge(clk) then if clkena='1' then
 
         if(reset = '1') then
 
@@ -243,8 +259,8 @@ begin   -- rtl
             rhythm <= '0';
             extra_mode := '0';
             vindex := 0;
-        
-        else
+
+        elsif clk'event and clk='1' then if clkena='1' then
 
             case stage is
             --------------------------------------------------------------------------
@@ -343,16 +359,16 @@ begin   -- rtl
                         if( conv_integer(addr(3 downto 0) ) = conv_integer(slot) / 2 ) then
                             regs_tmp := regs_rdata;
                             case addr( 5 downto 4 ) is
-                                when "01" => -- 10h�`18h �̏ꍇ�i���� F-Number�j
+                                when "01" => -- 10h～18h の場合（下位 F-Number）
                                     regs_tmp(7 downto 0) := data;               --  F-Number
                                     regs_wr <= '1';
-                                when "10" => -- 20h�`28h �̏ꍇ�iSus, Key, Block, F-Number MSB�j
+                                when "10" => -- 20h～28h の場合（Sus, Key, Block, F-Number MSB）
                                     regs_tmp(13) := data(5);                    --  Sus
                                     regs_tmp(12) := data(4);                    --  Key
                                     regs_tmp(11 downto 9) := data(3 downto 1);  --  Block
                                     regs_tmp(8) := data(0);                     --  F-Number
                                     regs_wr <= '1';
-                                when "11" => -- 30h�`38h �̏ꍇ�iInst, Vol�j
+                                when "11" => -- 30h～38h の場合（Inst, Vol）
                                     regs_tmp(23 downto 20) := data(7 downto 4); --  Inst
                                     regs_tmp(19 downto 16) := data(3 downto 0); --  Vol
                                     regs_wr <='1';
@@ -419,7 +435,7 @@ begin   -- rtl
                 end if;
 
                 -- calculate base total level from volume register value.
-                if rflag(5) = '1' and (slot = "01110" or slot = "10000") then -- hh and cym
+                if rflag(5) = '1' and (slot = "01110" or slot = "10000") then -- hh and tom
                     tll := ('0' & regs_rdata(23 downto 20) & "000");
                 elsif( slot(0) = '0' )then
                     tll := ('0' & slot_voice_data.tl & '0'); -- mod
@@ -491,7 +507,6 @@ begin   -- rtl
             end case;
 
         end if; end if;
-        end if;
 
     end process;
 

@@ -45,7 +45,7 @@ entity eseopll is
     wrt     : in std_logic;
     adr     : in std_logic_vector(15 downto 0);
     dbo     : in std_logic_vector(7 downto 0);
-    wav     : out std_logic_vector(13 downto 0)
+    wav     : out std_logic_vector(9 downto 0)
  );
 end eseopll;
 
@@ -73,50 +73,51 @@ begin
 
   process (clk21m, reset)
 
+    variable mix : std_logic_vector(10 downto 0);
+
   begin
 
-    if rising_edge(clk21m) then
+    if reset = '1' then
 
-      if reset = '1' then
+      counter <= 0;
 
-        counter <= 0;
+    elsif clk21m'event and clk21m = '1' then
 
+      if counter /= 0 then
+        counter <= counter - 1;
+        ack <= '0';
       else
-
-        if counter /= 0 then
-          counter <= counter - 1;
-          ack <= '0';
-        else
-          if req = '1' then
-            if enawait = '1' then
-              if adr(0) = '0' then
-                counter <= 4*6;
-              else
-                counter <= 72*6;
-              end if;
+        if req = '1' then
+          if enawait = '1' then
+            if adr(0) = '0' then
+              counter <= 4*6;
+            else
+              counter <= 72*6;
             end if;
-            A_buf <= adr(0);
-            dbo_buf <= dbo;
-            CS_n_buf <= not req;
-            WE_n_buf <= not wrt;
           end if;
-          ack <= req;
+          A_buf <= adr(0);
+          dbo_buf <= dbo;
+          CS_n_buf <= not req;
+          WE_n_buf <= not wrt;
         end if;
+        ack <= req;
+      end if;
 
-        if (clkena = '1') then
+      if (clkena = '1') then
 
-          A    <= A_buf;
-          D    <= dbo_buf;
-          CS_n <= CS_n_buf;
-          WE_n <= WE_n_buf;
-
-        end if;
+        A    <= A_buf;
+        D    <= dbo_buf;
+        CS_n <= CS_n_buf;
+        WE_n <= WE_n_buf;
+        mix := ('0'&MO) + ('0'&RO) - "01000000000";
+        wav <= mix(wav'range);
 
       end if;
+
     end if;
 
   end process;
 
-  U1 : opll port map (clk21m, open, clkena, D, A, CS_n, WE_n, IC_n, wav);
+  U1 : opll port map (clk21m, open, clkena, D, A, CS_n, WE_n, IC_n, MO, RO);
 
 end RTL;
