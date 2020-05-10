@@ -98,6 +98,8 @@ entity emsx_top is
         pVideoVS        : out   std_logic;
         pScandoubler    : in    std_logic;
 
+        cmtin           : in    std_logic;   						-- EAR 
+		
         pAudioPSG       : out   std_logic_vector(  9 downto 0);
         pAudioOPLL      : out   std_logic_vector( 13 downto 0);
         pAudioPCM       : out   std_logic_vector( 15 downto 0)
@@ -1956,7 +1958,7 @@ begin
 			joyb    => pJoyB, 
 			strb    => pStrB, 
 			kana    => open, 
-			cmtin   => '0', 
+			cmtin   => cmtin,
 			keymode => w_key_mode, 
 			wave    => PsgAmp
 	  );
