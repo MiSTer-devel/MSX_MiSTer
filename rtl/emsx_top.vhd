@@ -101,7 +101,7 @@ entity emsx_top is
         cmtin           : in    std_logic;   						-- EAR 
 		
         pAudioPSG       : out   std_logic_vector(  9 downto 0);
-        pAudioOPLL      : out   std_logic_vector(  9 downto 0);
+        pAudioOPLL      : out   std_logic_vector( 13 downto 0);
         pAudioPCM       : out   std_logic_vector( 15 downto 0);
         pAudioTRPCM     : out   std_logic_vector(  7 downto 0)
     );

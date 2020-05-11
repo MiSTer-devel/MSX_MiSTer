@@ -48,14 +48,15 @@ entity TemporalMixer is
     maddr : out SLOT_TYPE;
     mdata : in SIGNED_LI_TYPE;
 
-    mo : out std_logic_vector(9 downto 0);
-    ro : out std_logic_vector(9 downto 0)
+    wav   : out std_logic_vector(13 downto 0)
   );
 end TemporalMixer;
 
 architecture RTL of TemporalMixer is
 
-  signal mmute, rmute : std_logic;
+  signal mute : std_logic;
+  signal mix  : std_logic_vector(13 downto 0);
+  
 
 begin
 
@@ -64,92 +65,77 @@ begin
 
     if reset = '1' then
 
-      mo <= (others =>'0');
-      ro <= (others =>'0');
+      wav <= (others =>'0');
+      mix <= (others =>'0');
       maddr <= (others => '0');
-      mmute <= '1';
-      rmute <= '1';
+      mute <= '1';
 
     elsif clk'event and clk = '1' then if clkena='1' then
 
       if stage = 0 then
-
-        mo <= "1000000000";
-        ro <= "1000000000";
+        if slot = "00000" then
+            mix <= (others => '0');
+				wav <= mix;
+        end if;
 
         if rhythm = '0' then
 
           case slot is
-            when "00000" => maddr <= "00001"; mmute <='0'; -- CH0
-            when "00001" => maddr <= "00011"; mmute <='0'; -- CH1
-            when "00010" => maddr <= "00101"; mmute <='0'; -- CH2
-            when "00011" => mmute <= '1';
-            when "00100" => mmute <= '1';
-            when "00101" => mmute <= '1';
-            when "00110" => maddr <= "00111"; mmute<='0'; -- CH3
-            when "00111" => maddr <= "01001"; mmute<='0'; -- CH4
-            when "01000" => maddr <= "01011"; mmute<='0'; -- CH5
-            when "01001" => mmute <= '1';
-            when "01010" => mmute <= '1';
-            when "01011" => mmute <= '1';
-            when "01100" => maddr <= "01101"; mmute<='0'; -- CH6
-            when "01101" => maddr <= "01111"; mmute<='0'; -- CH7
-            when "01110" => maddr <= "10001"; mmute<='0'; -- CH8
-            when "01111" => mmute <= '1';
-            when "10000" => mmute <= '1';
-            when "10001" => mmute <= '1';
+            when "00000" => maddr <= "00001"; mute <='0'; -- CH0
+            when "00001" => maddr <= "00011"; mute <='0'; -- CH1
+            when "00010" => maddr <= "00101"; mute <='0'; -- CH2
+            when "00011" =>                   mute <='1';
+            when "00100" =>                   mute <='1';
+            when "00101" =>                   mute <='1';
+            when "00110" => maddr <= "00111"; mute <='0'; -- CH3
+            when "00111" => maddr <= "01001"; mute <='0'; -- CH4
+            when "01000" => maddr <= "01011"; mute <='0'; -- CH5
+            when "01001" =>                   mute <='1';
+            when "01010" =>                   mute <='1';
+            when "01011" =>                   mute <='1';
+            when "01100" => maddr <= "01101"; mute <='0'; -- CH6
+            when "01101" => maddr <= "01111"; mute <='0'; -- CH7
+            when "01110" => maddr <= "10001"; mute <='0'; -- CH8
+            when "01111" =>                   mute <='1';
+            when "10000" =>                   mute <='1';
+            when "10001" =>                   mute <='1';
             when others  =>
           end case;
-          rmute <= '1';
 
         else
 
           case slot is
-            when "00000" => maddr <= "00001"; mmute <='0'; rmute <='1'; -- CH0
-            when "00001" => maddr <= "00011"; mmute <='0'; rmute <='1'; -- CH1
-            when "00010" => maddr <= "00101"; mmute <='0'; rmute <='1'; -- CH2
-            when "00011" => maddr <= "01111"; mmute <='1'; rmute <='0'; -- SD
-            when "00100" => maddr <= "10001"; mmute <='1'; rmute <='0'; -- CYM
-            when "00101" =>                   mmute <='1'; rmute <='1';
-            when "00110" => maddr <= "00111"; mmute <='0'; rmute <='1'; -- CH3
-            when "00111" => maddr <= "01001"; mmute <='0'; rmute <='1'; -- CH4
-            when "01000" => maddr <= "01011"; mmute <='0'; rmute <='1'; -- CH5
-            when "01001" => maddr <= "01110"; mmute <='1'; rmute <='0'; -- HH
-            when "01010" => maddr <= "10000"; mmute <='1'; rmute <='0'; -- TOM
-            when "01011" => maddr <= "01101"; mmute <='1'; rmute <='0'; -- BD
-            when "01100" => maddr <= "01111"; mmute <='1'; rmute <='0'; -- SD
-            when "01101" => maddr <= "10001"; mmute <='1'; rmute <='0'; -- CYM
-            when "01110" => maddr <= "01110"; mmute <='1'; rmute <='0'; -- HH
-            when "01111" => maddr <= "10000"; mmute <='1'; rmute <='0'; -- TOM
-            when "10000" => maddr <= "01101"; mmute <='1'; rmute <='0'; -- BD
-            when "10001" =>                   mmute <='1'; rmute <='1';
+            when "00000" => maddr <= "00001"; mute <='0'; -- CH0
+            when "00001" => maddr <= "00011"; mute <='0'; -- CH1
+            when "00010" => maddr <= "00101"; mute <='0'; -- CH2
+            when "00011" => maddr <= "01111"; mute <='0'; -- SD
+            when "00100" => maddr <= "10001"; mute <='0'; -- CYM
+            when "00101" =>                   mute <='1';
+            when "00110" => maddr <= "00111"; mute <='0'; -- CH3
+            when "00111" => maddr <= "01001"; mute <='0'; -- CH4
+            when "01000" => maddr <= "01011"; mute <='0'; -- CH5
+            when "01001" => maddr <= "01110"; mute <='0'; -- HH
+            when "01010" => maddr <= "10000"; mute <='0'; -- TOM
+            when "01011" => maddr <= "01101"; mute <='0'; -- BD
+            when "01100" => maddr <= "01111"; mute <='0'; -- SD
+            when "01101" => maddr <= "10001"; mute <='0'; -- CYM
+            when "01110" => maddr <= "01110"; mute <='0'; -- HH
+            when "01111" => maddr <= "10000"; mute <='0'; -- TOM
+            when "10000" => maddr <= "01101"; mute <='0'; -- BD
+            when "10001" =>                   mute <='1';
             when others  =>
           end case;
 
         end if;
 
-      else
-
-        if mmute = '0' then
+      elsif stage = 1 then
+        if mute = '0' then
           if mdata.sign = '0' then
-            mo <= "1000000000" + mdata.value;
+            mix <= mix + mdata.value;
           else
-            mo <= "1000000000" - mdata.value;
+            mix <= mix - mdata.value;
           end if;
-        else
-          mo <= "1000000000";
         end if;
-
-        if rmute = '0' then
-          if mdata.sign = '0' then
-            ro <= "1000000000" + mdata.value;
-          else
-            ro <= "1000000000" - mdata.value;
-          end if;
-        else
-          ro <= "1000000000";
-        end if;
-
       end if;
 
     end if; end if;

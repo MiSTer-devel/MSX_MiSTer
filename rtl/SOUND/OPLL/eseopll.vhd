@@ -45,7 +45,7 @@ entity eseopll is
     wrt     : in std_logic;
     adr     : in std_logic_vector(15 downto 0);
     dbo     : in std_logic_vector(7 downto 0);
-    wav     : out std_logic_vector(9 downto 0)
+    wav     : out std_logic_vector(13 downto 0)
  );
 end eseopll;
 
@@ -72,9 +72,6 @@ begin
   IC_n <= not reset;
 
   process (clk21m, reset)
-
-    variable mix : std_logic_vector(10 downto 0);
-
   begin
 
     if reset = '1' then
@@ -109,8 +106,6 @@ begin
         D    <= dbo_buf;
         CS_n <= CS_n_buf;
         WE_n <= WE_n_buf;
-        mix := ('0'&MO) + ('0'&RO) - "01000000000";
-        wav <= mix(wav'range);
 
       end if;
 
@@ -118,6 +113,6 @@ begin
 
   end process;
 
-  U1 : opll port map (clk21m, open, clkena, D, A, CS_n, WE_n, IC_n, MO, RO);
+  U1 : opll port map (clk21m, open, clkena, D, A, CS_n, WE_n, IC_n, wav);
 
 end RTL;

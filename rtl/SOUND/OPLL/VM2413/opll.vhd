@@ -48,8 +48,7 @@ entity opll is
         cs_n        : in    std_logic;
         we_n        : in    std_logic;
         ic_n        : in    std_logic;
-        mo          : out   std_logic_vector( 9 downto 0 );
-        ro          : out   std_logic_vector( 9 downto 0 )
+        wav         : out   std_logic_vector(13 downto 0 )
     );
 end opll;
 
@@ -198,8 +197,7 @@ architecture rtl of opll is
         maddr   : out slot_type;
         mdata   : in signed_li_type;
 
-        mo      : out std_logic_vector(9 downto 0);
-        ro      : out std_logic_vector(9 downto 0)
+        wav     : out std_logic_vector(13 downto 0)
     );
     end component;
 
@@ -364,7 +362,7 @@ begin
         xin, reset, xena,
         slot, stage, rhythm,
         maddr, mdata,
-        mo, ro
+        wav
     );
 
 end rtl;
