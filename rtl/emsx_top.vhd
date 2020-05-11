@@ -709,9 +709,17 @@ begin
         end if;
     end process;
 
-    reset       <=  '1' when( pSltRst_n = '0' and RstKeyLock = '0' and HardRst_cnt /= "0001" )else
-                    '1' when( swioRESET_n = '0' or HardRst_cnt = "0011" or HardRst_cnt = "0010" or RstSeq /= "11111" )else
-                    '0';
+    process( clk21m )
+    begin
+        if rising_edge(clk21m) then
+          reset <= '0';
+          if ( pSltRst_n = '0' and RstKeyLock = '0' and HardRst_cnt /= "0001" ) then
+            reset <= '1';
+          elsif ( swioRESET_n = '0' or HardRst_cnt = "0011" or HardRst_cnt = "0010" or RstSeq /= "11111" ) then
+            reset <= '1';
+          end if;
+        end if;
+    end process;
 
     ----------------------------------------------------------------
     -- Operation mode

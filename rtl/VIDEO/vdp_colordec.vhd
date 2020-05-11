@@ -5,25 +5,25 @@
 --  All rights reserved.
 --                                     http://www.ohnaka.jp/ese-vdp/
 --
---  �{�\�t�g�E�F�A����і{�\�t�g�E�F�A�Ɋ�Â��č쐬���ꂽ�h�����́A�ȉ��̏�����
---  �������ꍇ�Ɍ���A�ĔЕz����юg�p��������܂��B
+--  本ソフトウェアおよび本ソフトウェアに基づいて作成された派生物は、以下の条件を
+--  満たす場合に限り、再頒布および使用が許可されます。
 --
---  1.�\�[�X�R�[�h�`���ōĔЕz����ꍇ�A��L�̒��쌠�\���A�{�����ꗗ�A����щ��L
---    �Ɛӏ��������̂܂܂̌`�ŕێ����邱�ƁB
---  2.�o�C�i���`���ōĔЕz����ꍇ�A�Еz���ɕt���̃h�L�������g���̎����ɁA��L��
---    ���쌠�\���A�{�����ꗗ�A����щ��L�Ɛӏ������܂߂邱�ƁB
---  3.���ʂɂ�鎖�O�̋��Ȃ��ɁA�{�\�t�g�E�F�A��̔��A����я��ƓI�Ȑ��i�⊈��
---    �Ɏg�p���Ȃ����ƁB
+--  1.ソースコード形式で再頒布する場合、上記の著作権表示、本条件一覧、および下記
+--    免責条項をそのままの形で保持すること。
+--  2.バイナリ形式で再頒布する場合、頒布物に付属のドキュメント等の資料に、上記の
+--    著作権表示、本条件一覧、および下記免責条項を含めること。
+--  3.書面による事前の許可なしに、本ソフトウェアを販売、および商業的な製品や活動
+--    に使用しないこと。
 --
---  �{�\�t�g�E�F�A�́A���쌠�҂ɂ���āu����̂܂܁v�񋟂���Ă��܂��B���쌠�҂́A
---  ����ړI�ւ̓K�����̕ۏ؁A���i���̕ۏ؁A�܂�����Ɍ��肳��Ȃ��A�����Ȃ閾��
---  �I�������͈ÖقȕۏؐӔC�������܂���B���쌠�҂́A���R�̂�������킸�A���Q
---  �����̌�����������킸�A���ӔC�̍������_��ł��邩���i�ӔC�ł��邩�i�ߎ�
---  ���̑��́j�s�@�s�ׂł��邩���킸�A���ɂ��̂悤�ȑ��Q����������\����m��
---  ����Ă����Ƃ��Ă��A�{�\�t�g�E�F�A�̎g�p�ɂ���Ĕ��������i��֕i�܂��͑�p�T
---  �[�r�X�̒��B�A�g�p�̑r���A�f�[�^�̑r���A���v�̑r���A�Ɩ��̒��f���܂߁A�܂���
---  ��Ɍ��肳��Ȃ��j���ڑ��Q�A�Ԑڑ��Q�A�����I�ȑ��Q�A���ʑ��Q�A�����I���Q�A��
---  ���͌��ʑ��Q�ɂ��āA��ؐӔC�𕉂�Ȃ����̂Ƃ��܂��B
+--  本ソフトウェアは、著作権者によって「現状のまま」提供されています。著作権者は、
+--  特定目的への適合性の保証、商品性の保証、またそれに限定されない、いかなる明示
+--  的もしくは暗黙な保証責任も負いません。著作権者は、事由のいかんを問わず、損害
+--  発生の原因いかんを問わず、かつ責任の根拠が契約であるか厳格責任であるか（過失
+--  その他の）不法行為であるかを問わず、仮にそのような損害が発生する可能性を知ら
+--  されていたとしても、本ソフトウェアの使用によって発生した（代替品または代用サ
+--  ービスの調達、使用の喪失、データの喪失、利益の喪失、業務の中断も含め、またそ
+--  れに限定されない）直接損害、間接損害、偶発的な損害、特別損害、懲罰的損害、ま
+--  たは結果損害について、一切責任を負わないものとします。
 --
 --  Note that above Japanese version license is the formal document.
 --  The following translation is only for reference.
@@ -54,11 +54,12 @@
 --  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 --  POSSIBILITY OF SUCH DAMAGE.
 ------------------------------------------------------------------------------
---  21th,March,2008
---      JP: VDP.VHD ���番�� by t.hara
+--  21st,March,2008
+--      JP: VDP.VHD から分離 by t.hara
 --
---  22th,March,2008
---      JP: �s�v�ȐM���Ԃ̑��ւ����� by t.hara
+--  22nd,March,2008
+--      JP: 不要な信号間の相関を除去 by t.hara
+--
 
 LIBRARY IEEE;
     USE IEEE.STD_LOGIC_1164.ALL;
@@ -86,18 +87,18 @@ ENTITY VDP_COLORDEC IS
         VDPMODEGRAPHIC6     : IN    STD_LOGIC;
         VDPMODEGRAPHIC7     : IN    STD_LOGIC;
 
-        WINDOW              : IN    STD_LOGIC;                          -- JP: �L���\���̈悾�� 1 �ɂȂ�
-        SPRITECOLOROUT      : IN    STD_LOGIC;                          -- JP: �X�v���C�g�̉�f�ʒu���� 1 �ɂȂ�
-        COLORCODET12        : IN    STD_LOGIC_VECTOR(  3 DOWNTO 0 );    -- JP: TEXT1, 2 �̐F
-        COLORCODEG123M      : IN    STD_LOGIC_VECTOR(  3 DOWNTO 0 );    -- JP: GRAPHIC1,2,3,MOSAIC �̐F
-        COLORCODEG4567      : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );    -- JP: GRAPHIC4,5,6,7 �̐F
-        COLORCODESPRITE     : IN    STD_LOGIC_VECTOR(  3 DOWNTO 0 );    -- JP: �X�v���C�g�̐F
+        WINDOW              : IN    STD_LOGIC;                          -- JP: 有効表示領域だけ 1 になる
+        SPRITECOLOROUT      : IN    STD_LOGIC;                          -- JP: スプライトの画素位置だけ 1 になる
+        COLORCODET12        : IN    STD_LOGIC_VECTOR(  3 DOWNTO 0 );    -- JP: TEXT1, 2 の色
+        COLORCODEG123M      : IN    STD_LOGIC_VECTOR(  3 DOWNTO 0 );    -- JP: GRAPHIC1,2,3,MOSAIC の色
+        COLORCODEG4567      : IN    STD_LOGIC_VECTOR(  7 DOWNTO 0 );    -- JP: GRAPHIC4,5,6,7 の色
+        COLORCODESPRITE     : IN    STD_LOGIC_VECTOR(  3 DOWNTO 0 );    -- JP: スプライトの色
         P_YJK_R             : IN    STD_LOGIC_VECTOR(  5 DOWNTO 0 );
         P_YJK_G             : IN    STD_LOGIC_VECTOR(  5 DOWNTO 0 );
         P_YJK_B             : IN    STD_LOGIC_VECTOR(  5 DOWNTO 0 );
         P_YJK_EN            : IN    STD_LOGIC;
 
-        PVIDEOR_VDP         : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );    -- JP: ���j�^�֏o�͂���F
+        PVIDEOR_VDP         : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );    -- JP: モニタへ出力する色
         PVIDEOG_VDP         : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );
         PVIDEOB_VDP         : OUT   STD_LOGIC_VECTOR(  5 DOWNTO 0 );
         -- REGISTERS
@@ -143,29 +144,27 @@ BEGIN
     -- OUTPUT DATA LATCH
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RISING_EDGE(CLK21M) )THEN
-            IF( RESET = '1' )THEN
-                FF_VIDEO_R <= "000000";
-                FF_VIDEO_G <= "000000";
-                FF_VIDEO_B <= "000000";
-	    ELSE
-                IF( W_EVEN_DOTSTATE = '1' )THEN
-                    IF( VDPMODEGRAPHIC7 = '1' AND FF_YJK_EN = '1' AND FF_SPRITECOLOROUT = '0' )THEN
-                        --  YJK MODE
-                        FF_VIDEO_R <= FF_YJK_R;
-                        FF_VIDEO_G <= FF_YJK_G;
-                        FF_VIDEO_B <= FF_YJK_B;
-                    ELSIF( VDPMODEGRAPHIC7 = '0' OR REG_R25_YJK = '1' )THEN
-                        --  PALETTE COLOR (NOT GRAPHIC7, SPRITE ON YJK MODE, YAE COLOR ON YJK MODE)
-                        FF_VIDEO_R <= PALETTEDATARB_OUT( 6 DOWNTO 4 ) & "000";
-                        FF_VIDEO_G <= PALETTEDATAG_OUT(  2 DOWNTO 0 ) & "000";
-                        FF_VIDEO_B <= PALETTEDATARB_OUT( 2 DOWNTO 0 ) & "000";
-                    ELSE
-                        --  GRAPHIC7
-                        FF_VIDEO_R <= FF_GRP7_COLOR_CODE( 4 DOWNTO 2 ) & "000";
-                        FF_VIDEO_G <= FF_GRP7_COLOR_CODE( 7 DOWNTO 5 ) & "000";
-                        FF_VIDEO_B <= FF_GRP7_COLOR_CODE( 1 DOWNTO 0 ) & FF_GRP7_COLOR_CODE(1) & "000";
-                    END IF;
+        IF( RESET = '1' )THEN
+            FF_VIDEO_R <= "000000";
+            FF_VIDEO_G <= "000000";
+            FF_VIDEO_B <= "000000";
+        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( W_EVEN_DOTSTATE = '1' )THEN
+                IF( VDPMODEGRAPHIC7 = '1' AND FF_YJK_EN = '1' AND FF_SPRITECOLOROUT = '0' )THEN
+                    --  YJK MODE
+                    FF_VIDEO_R <= FF_YJK_R;
+                    FF_VIDEO_G <= FF_YJK_G;
+                    FF_VIDEO_B <= FF_YJK_B;
+                ELSIF( VDPMODEGRAPHIC7 = '0' OR REG_R25_YJK = '1' )THEN
+                    --  PALETTE COLOR (NOT GRAPHIC7, SPRITE ON YJK MODE, YAE COLOR ON YJK MODE)
+                    FF_VIDEO_R <= PALETTEDATARB_OUT( 6 DOWNTO 4 ) & "000";
+                    FF_VIDEO_G <= PALETTEDATAG_OUT ( 2 DOWNTO 0 ) & "000";
+                    FF_VIDEO_B <= PALETTEDATARB_OUT( 2 DOWNTO 0 ) & "000";
+                ELSE
+                    --  GRAPHIC7
+                    FF_VIDEO_R <= FF_GRP7_COLOR_CODE( 4 DOWNTO 2 ) & "000";
+                    FF_VIDEO_G <= FF_GRP7_COLOR_CODE( 7 DOWNTO 5 ) & "000";
+                    FF_VIDEO_B <= FF_GRP7_COLOR_CODE( 1 DOWNTO 0 ) & FF_GRP7_COLOR_CODE(1) & "000";
                 END IF;
             END IF;
         END IF;
@@ -200,15 +199,38 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RISING_EDGE(CLK21M) )THEN
-            IF( RESET = '1' )THEN
-                FF_PALETTE_ADDR     <= (OTHERS => '0');
-	    ELSE
-                IF( W_EVEN_DOTSTATE = '1' )THEN
-                    IF( WINDOW = '0' OR REG_R1_DISP_ON = '0' OR (W_FORE_COLOR = "0000" AND REG_R8_COL0_ON = '0') )THEN
-                        FF_PALETTE_ADDR     <= W_BACK_COLOR;
+        IF( RESET = '1' )THEN
+            FF_PALETTE_ADDR     <= (OTHERS => '0');
+        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( W_EVEN_DOTSTATE = '1' )THEN
+                IF( WINDOW = '0' OR REG_R1_DISP_ON = '0' OR (W_FORE_COLOR = "0000" AND REG_R8_COL0_ON = '0') )THEN
+                    FF_PALETTE_ADDR     <= W_BACK_COLOR;
+                ELSE
+                    FF_PALETTE_ADDR     <= W_FORE_COLOR;
+                END IF;
+            END IF;
+        END IF;
+    END PROCESS;
+
+    PROCESS( RESET, CLK21M )
+    BEGIN
+        IF( RESET = '1' )THEN
+            FF_PALETTE_ADDR_G5  <= (OTHERS => '0');
+        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( W_EVEN_DOTSTATE = '1' )THEN
+                IF( WINDOW = '0' OR REG_R1_DISP_ON = '0' OR
+                        (DOTSTATE(1) = '0' AND W_FORE_COLOR( 1 DOWNTO 0 ) = "00" AND REG_R8_COL0_ON = '0') OR
+                        (DOTSTATE(1) = '1' AND W_FORE_COLOR( 3 DOWNTO 2 ) = "00" AND REG_R8_COL0_ON = '0') )THEN
+                    IF( DOTSTATE(1) = '0' )THEN
+                        FF_PALETTE_ADDR_G5  <= W_BACK_COLOR( 1 DOWNTO 0 );
                     ELSE
-                        FF_PALETTE_ADDR     <= W_FORE_COLOR;
+                        FF_PALETTE_ADDR_G5  <= W_BACK_COLOR( 3 DOWNTO 2 );
+                    END IF;
+                ELSE
+                    IF( DOTSTATE(1) = '0' )THEN
+                        FF_PALETTE_ADDR_G5  <= W_FORE_COLOR( 1 DOWNTO 0 );
+                    ELSE
+                        FF_PALETTE_ADDR_G5  <= W_FORE_COLOR( 3 DOWNTO 2 );
                     END IF;
                 END IF;
             END IF;
@@ -217,26 +239,14 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RISING_EDGE(CLK21M) )THEN
-            IF( RESET = '1' )THEN
-                FF_PALETTE_ADDR_G5  <= (OTHERS => '0');
-	    ELSE
-                IF( W_EVEN_DOTSTATE = '1' )THEN
-                    IF( WINDOW = '0' OR REG_R1_DISP_ON = '0' OR
-                            (DOTSTATE(1) = '0' AND W_FORE_COLOR( 1 DOWNTO 0 ) = "00" AND REG_R8_COL0_ON = '0') OR
-                            (DOTSTATE(1) = '1' AND W_FORE_COLOR( 3 DOWNTO 2 ) = "00" AND REG_R8_COL0_ON = '0') )THEN
-                        IF( DOTSTATE(1) = '0' )THEN
-                            FF_PALETTE_ADDR_G5  <= W_BACK_COLOR( 1 DOWNTO 0 );
-                        ELSE
-                            FF_PALETTE_ADDR_G5  <= W_BACK_COLOR( 3 DOWNTO 2 );
-                        END IF;
-                    ELSE
-                        IF( DOTSTATE(1) = '0' )THEN
-                            FF_PALETTE_ADDR_G5  <= W_FORE_COLOR( 1 DOWNTO 0 );
-                        ELSE
-                            FF_PALETTE_ADDR_G5  <= W_FORE_COLOR( 3 DOWNTO 2 );
-                        END IF;
-                    END IF;
+        IF( RESET = '1' )THEN
+            FF_GRP7_COLOR_CODE  <= (OTHERS => '0');
+        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( W_EVEN_DOTSTATE = '1' )THEN
+                IF( SPRITECOLOROUT = '1' )THEN
+                    FF_GRP7_COLOR_CODE  <= W_GRP7_SPRITE_COLOR;
+                ELSE
+                    FF_GRP7_COLOR_CODE  <= COLORCODEG4567;
                 END IF;
             END IF;
         END IF;
@@ -244,46 +254,27 @@ BEGIN
 
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( RISING_EDGE(CLK21M) )THEN
-            IF( RESET = '1' )THEN
-                FF_GRP7_COLOR_CODE  <= (OTHERS => '0');
-	    ELSE
-                IF( W_EVEN_DOTSTATE = '1' )THEN
-                    IF( SPRITECOLOROUT = '1' )THEN
-                        FF_GRP7_COLOR_CODE  <= W_GRP7_SPRITE_COLOR;
-                    ELSE
-                        FF_GRP7_COLOR_CODE  <= COLORCODEG4567;
-                    END IF;
-                END IF;
-            END IF;
-        END IF;
-    END PROCESS;
-
-    PROCESS( RESET, CLK21M )
-    BEGIN
-        IF( RISING_EDGE(CLK21M) )THEN
-            IF( RESET = '1' )THEN
-                FF_SPRITECOLOROUT   <= '0';
-                FF_YJK_R            <= (OTHERS => '0');
-                FF_YJK_G            <= (OTHERS => '0');
-                FF_YJK_B            <= (OTHERS => '0');
-                FF_YJK_EN           <= '0';
-	    ELSE
-                IF( W_EVEN_DOTSTATE = '1' )THEN
-                    FF_SPRITECOLOROUT   <= SPRITECOLOROUT AND WINDOW AND REG_R1_DISP_ON;
-                    IF( WINDOW = '1' AND REG_R1_DISP_ON = '1' )THEN
-                        FF_YJK_R            <= P_YJK_R;
-                        FF_YJK_G            <= P_YJK_G;
-                        FF_YJK_B            <= P_YJK_B;
-                        FF_YJK_EN           <= P_YJK_EN;
-                    ELSIF( (WINDOW = '0' OR REG_R1_DISP_ON = '0') AND REG_R25_YJK = '1' )THEN
-                        FF_YJK_EN           <= '0';
-                    ELSE
-                        FF_YJK_R            <= REG_R7_FRAME_COL( 4 DOWNTO 2 ) & "000";
-                        FF_YJK_G            <= REG_R7_FRAME_COL( 7 DOWNTO 5 ) & "000";
-                        FF_YJK_B            <= REG_R7_FRAME_COL( 1 DOWNTO 0 ) & REG_R7_FRAME_COL(1) & "000";
-                        FF_YJK_EN           <= '1';
-                    END IF;
+        IF( RESET = '1' )THEN
+            FF_SPRITECOLOROUT   <= '0';
+            FF_YJK_R            <= (OTHERS => '0');
+            FF_YJK_G            <= (OTHERS => '0');
+            FF_YJK_B            <= (OTHERS => '0');
+            FF_YJK_EN           <= '0';
+        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
+            IF( W_EVEN_DOTSTATE = '1' )THEN
+                FF_SPRITECOLOROUT   <= SPRITECOLOROUT AND WINDOW AND REG_R1_DISP_ON;
+                IF( WINDOW = '1' AND REG_R1_DISP_ON = '1' )THEN
+                    FF_YJK_R            <= P_YJK_R;
+                    FF_YJK_G            <= P_YJK_G;
+                    FF_YJK_B            <= P_YJK_B;
+                    FF_YJK_EN           <= P_YJK_EN;
+                ELSIF( (WINDOW = '0' OR REG_R1_DISP_ON = '0') AND REG_R25_YJK = '1' )THEN
+                    FF_YJK_EN           <= '0';
+                ELSE
+                    FF_YJK_R            <= REG_R7_FRAME_COL( 4 DOWNTO 2 ) & "000";
+                    FF_YJK_G            <= REG_R7_FRAME_COL( 7 DOWNTO 5 ) & "000";
+                    FF_YJK_B            <= REG_R7_FRAME_COL( 1 DOWNTO 0 ) & REG_R7_FRAME_COL(1) & "000";
+                    FF_YJK_EN           <= '1';
                 END IF;
             END IF;
         END IF;

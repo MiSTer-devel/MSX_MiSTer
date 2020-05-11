@@ -142,7 +142,7 @@ BEGIN
         IF( CLK21M'EVENT AND CLK21M = '1' )THEN
             IF( RESET = '1' )THEN
                 FF_WAIT_CNT <= (OTHERS => '0');
-                ELSE
+            ELSE
                 IF( DRIVE = '1' )THEN
                     -- 50Hz (PAL)
                     IF( VDPR9PALMODE = '1' )THEN

@@ -6,25 +6,25 @@
 --  All rights reserved.
 --                                     http://www.ohnaka.jp/ese-vdp/
 --
---  {\tgEFA¨æÑ{\tgEFAÉîÃ¢Äì¬³ê½h¶¨ÍAÈºÌðð
---  ½·êÉÀèAÄÐz¨æÑgpªÂ³êÜ·B
+--  本ソフトウェアおよび本ソフトウェアに基づいて作成された派生物は、以下の条件を
+--  満たす場合に限り、再頒布および使用が許可されます。
 --
---  1.\[XR[h`®ÅÄÐz·éêAãLÌì \¦A{ðêA¨æÑºL
---    ÆÓðð»ÌÜÜÌ`ÅÛ·é±ÆB
---  2.oCi`®ÅÄÐz·éêAÐz¨Ét®ÌhLgÌ¿ÉAãLÌ
---    ì \¦A{ðêA¨æÑºLÆÓððÜßé±ÆB
---  3.ÊÉæéOÌÂÈµÉA{\tgEFAðÌA¨æÑ¤ÆIÈ»iâ®
---    ÉgpµÈ¢±ÆB
+--  1.ソースコード形式で再頒布する場合、上記の著作権表示、本条件一覧、および下記
+--    免責条項をそのままの形で保持すること。
+--  2.バイナリ形式で再頒布する場合、頒布物に付属のドキュメント等の資料に、上記の
+--    著作権表示、本条件一覧、および下記免責条項を含めること。
+--  3.書面による事前の許可なしに、本ソフトウェアを販売、および商業的な製品や活動
+--    に使用しないこと。
 --
---  {\tgEFAÍAì ÒÉæÁÄu»óÌÜÜvñ³êÄ¢Ü·Bì ÒÍA
---  ÁèÚIÖÌK«ÌÛØA¤i«ÌÛØAÜ½»êÉÀè³êÈ¢A¢©Èé¾¦
---  Iàµ­ÍÃÙÈÛØÓCà¢Ü¹ñBì ÒÍARÌ¢©ñðâí¸A¹Q
---  ­¶Ì´ö¢©ñðâí¸A©ÂÓCÌªª_ñÅ é©µiÓCÅ é©iß¸
---  »Ì¼Ìjs@s×Å é©ðâí¸A¼É»Ìæ¤È¹Qª­¶·éÂ\«ðmç
---  ³êÄ¢½ÆµÄàA{\tgEFAÌgpÉæÁÄ­¶µ½iãÖiÜ½ÍãpT
---  [rXÌ²BAgpÌr¸Af[^Ìr¸AvÌr¸AÆ±ÌfàÜßAÜ½»
---  êÉÀè³êÈ¢j¼Ú¹QAÔÚ¹QAô­IÈ¹QAÁÊ¹QA¦±I¹QAÜ
---  ½ÍÊ¹QÉÂ¢ÄAêØÓCðíÈ¢àÌÆµÜ·B
+--  本ソフトウェアは、著作権者によって「現状のまま」提供されています。著作権者は、
+--  特定目的への適合性の保証、商品性の保証、またそれに限定されない、いかなる明示
+--  的もしくは暗黙な保証責任も負いません。著作権者は、事由のいかんを問わず、損害
+--  発生の原因いかんを問わず、かつ責任の根拠が契約であるか厳格責任であるか（過失
+--  その他の）不法行為であるかを問わず、仮にそのような損害が発生する可能性を知ら
+--  されていたとしても、本ソフトウェアの使用によって発生した（代替品または代用サ
+--  ービスの調達、使用の喪失、データの喪失、利益の喪失、業務の中断も含め、またそ
+--  れに限定されない）直接損害、間接損害、偶発的な損害、特別損害、懲罰的損害、ま
+--  たは結果損害について、一切責任を負わないものとします。
 --
 --  Note that above Japanese version license is the formal document.
 --  The following translation is only for reference.
@@ -58,13 +58,13 @@
 -------------------------------------------------------------------------------
 -- Memo
 --   Japanese comment lines are starts with "JP:".
---   JP: ú{êÌRgsÍ JP:ðªÉt¯éÉ·é
+--   JP: 日本語のコメント行は JP:を頭に付ける事にする
 --
 -------------------------------------------------------------------------------
 -- Revision History
 --
 -- 13th,October,2003 created by Kunihiko Ohnaka
--- JP: VDPÌRAÌÀÆ\¦foCXÖÌoÍðÊ\[XÉµ½D
+-- JP: VDPのコアの実装と表示デバイスへの出力を別ソースにした．
 --
 -- ?th,August,2006 modified by Kunihiko Ohnaka
 --   - Move the equalization pulse generator from
@@ -75,17 +75,17 @@
 --   - Add the document part below.
 --
 -- 23th,March,2008 modified by t.hara
--- JP: t@N^O, NTSC Æ PAL Ì^C~O¶¬ñHð
+-- JP: リファクタリング, NTSC と PAL のタイミング生成回路を統合
 --
 -------------------------------------------------------------------------------
 -- Document
 --
--- JP: ESE-VDPRA(vdp.vhd)ª¶¬µ½rfIMðANTSC/PALÌ
--- JP: ^C~OÉÁ½¯úM¨æÑfMÉÏ·µÜ·B
--- JP: ESE-VDPRAÍNTSC[hÍ NTSC/PALÌ^C~OÅf
--- JP: Mâ¼¯úMð¶¬·é½ßA{W[ÅÍ
--- JP: ½¯úMÉ¿pXð}ü·é¾¯ðsÁÄ
--- JP: ¢Ü·B
+-- JP: ESE-VDPコア(vdp.vhd)が生成したビデオ信号を、NTSC/PALの
+-- JP: タイミングに合った同期信号および映像信号に変換します。
+-- JP: ESE-VDPコアはNTSCモード時は NTSC/PALのタイミングで映像
+-- JP: 信号や垂直同期信号を生成するため、本モジュールでは
+-- JP: 水平同期信号に等価パルスを挿入する処理だけを行って
+-- JP: います。
 --
 
 LIBRARY IEEE;
@@ -136,21 +136,21 @@ BEGIN
 --        "01001110010"   WHEN "10",  -- 626
 --        "01001110001"   WHEN "11",  -- 625
 --        (OTHERS => 'X') WHEN OTHERS;
---
+
 --    WITH( W_MODE )SELECT W_STATE_A2_FULL <=
 --        "01000011000"   WHEN "00",  -- 524+12
 --        "01000011001"   WHEN "01",  -- 525+12
 --        "01001111110"   WHEN "10",  -- 626+12
 --        "01001111101"   WHEN "11",  -- 625+12
 --        (OTHERS => 'X') WHEN OTHERS;
---
+
 --    WITH( W_MODE )SELECT W_STATE_B_FULL <=
 --        "01000010010"   WHEN "00",  -- 524+6
 --        "01000010011"   WHEN "01",  -- 525+6
 --        "01001111000"   WHEN "10",  -- 626+6
 --        "01001110111"   WHEN "11",  -- 625+6
 --        (OTHERS => 'X') WHEN OTHERS;
---
+
 --    WITH( W_MODE )SELECT W_STATE_C_FULL <=
 --        "01000011110"   WHEN "00",  -- 524+18
 --        "01000011111"   WHEN "01",  -- 525+18
@@ -161,22 +161,20 @@ BEGIN
     -- STATE
 --    PROCESS( RESET, CLK21M )
 --    BEGIN
---        IF (CLK21M'EVENT AND CLK21M = '1') THEN
---            IF (RESET = '1') THEN
+--        IF (RESET = '1') THEN
+--            FF_SSTATE <= SSTATE_A;
+--        ELSIF (CLK21M'EVENT AND CLK21M = '1') THEN
+--            IF(     (VCOUNTERIN = 0) OR
+--                    (VCOUNTERIN = 12) OR
+--                    (VCOUNTERIN = W_STATE_A1_FULL) OR
+--                    (VCOUNTERIN = W_STATE_A2_FULL) )THEN
 --                FF_SSTATE <= SSTATE_A;
---            ELSE
---                IF(     (VCOUNTERIN = 0) OR
---                        (VCOUNTERIN = 12) OR
---                        (VCOUNTERIN = W_STATE_A1_FULL) OR
---                        (VCOUNTERIN = W_STATE_A2_FULL) )THEN
---                    FF_SSTATE <= SSTATE_A;
---                ELSIF(  (VCOUNTERIN = 6) OR
---                        (VCOUNTERIN = W_STATE_B_FULL) )THEN
---                    FF_SSTATE <= SSTATE_B;
---                ELSIF(  (VCOUNTERIN = 18) OR
---                        (VCOUNTERIN = W_STATE_C_FULL) )THEN
---                    FF_SSTATE <= SSTATE_C;
---                END IF;
+--            ELSIF(  (VCOUNTERIN = 6) OR
+--                    (VCOUNTERIN = W_STATE_B_FULL) )THEN
+--                FF_SSTATE <= SSTATE_B;
+--            ELSIF(  (VCOUNTERIN = 18) OR
+--                    (VCOUNTERIN = W_STATE_C_FULL) )THEN
+--                FF_SSTATE <= SSTATE_C;
 --            END IF;
 --        END IF;
 --    END PROCESS;
@@ -184,33 +182,28 @@ BEGIN
     -- GENERATE H SYNC PULSE
     PROCESS( RESET, CLK21M )
     BEGIN
-        IF( CLK21M'EVENT AND CLK21M = '1' )THEN
-            IF( RESET = '1' )THEN
-                FF_HSYNC_N <= '0';
-            ELSE
---                IF( FF_SSTATE = SSTATE_A )THEN
---                    IF( (HCOUNTERIN = 1) OR (HCOUNTERIN = CLOCKS_PER_LINE/2+1) ) THEN
---                        FF_HSYNC_N <= '0';                       -- PULSE ON
---                        VIDEOVSOUT_N <= VIDEOVSIN_N;
---                    ELSIF( (HCOUNTERIN = 51) OR (HCOUNTERIN = CLOCKS_PER_LINE/2+51) ) THEN
---                        FF_HSYNC_N <= '1';                       -- PULSE OFF
---                    END IF;
---                ELSIF( FF_SSTATE = SSTATE_B )THEN
---                    IF( (HCOUNTERIN = CLOCKS_PER_LINE-100+1 ) OR (HCOUNTERIN = CLOCKS_PER_LINE/2-100+1) ) THEN
---                        FF_HSYNC_N <= '0';                       -- PULSE ON
---                        VIDEOVSOUT_N <= VIDEOVSIN_N;
---                    ELSIF( (HCOUNTERIN = 1) OR (HCOUNTERIN = CLOCKS_PER_LINE/2+1) ) THEN
---                        FF_HSYNC_N <= '1';                       -- PULSE OFF
---                    END IF;
---                ELSIF( FF_SSTATE = SSTATE_C )THEN
-                    IF( HCOUNTERIN = 1 )THEN
-                        FF_HSYNC_N <= '0';                       -- PULSE ON
---                        VIDEOVSOUT_N <= VIDEOVSIN_N;
-                    ELSIF( HCOUNTERIN = 101 )THEN
-                        FF_HSYNC_N <= '1';                       -- PULSE OFF
-                    END IF;
+        IF( RESET = '1' )THEN
+            FF_HSYNC_N <= '0';
+        ELSIF( CLK21M'EVENT AND CLK21M = '1' )THEN
+--            IF( FF_SSTATE = SSTATE_A )THEN
+--                IF( (HCOUNTERIN = 1) OR (HCOUNTERIN = CLOCKS_PER_LINE/2+1) ) THEN
+--                    FF_HSYNC_N <= '0';                       -- PULSE ON
+--                ELSIF( (HCOUNTERIN = 51) OR (HCOUNTERIN = CLOCKS_PER_LINE/2+51) ) THEN
+--                    FF_HSYNC_N <= '1';                       -- PULSE OFF
 --                END IF;
-            END IF;
+--            ELSIF( FF_SSTATE = SSTATE_B )THEN
+--                IF( (HCOUNTERIN = CLOCKS_PER_LINE-100+1 ) OR (HCOUNTERIN = CLOCKS_PER_LINE/2-100+1) ) THEN
+--                    FF_HSYNC_N <= '0';                       -- PULSE ON
+--                ELSIF( (HCOUNTERIN = 1) OR (HCOUNTERIN = CLOCKS_PER_LINE/2+1) ) THEN
+--                    FF_HSYNC_N <= '1';                       -- PULSE OFF
+--                END IF;
+--            ELSIF( FF_SSTATE = SSTATE_C )THEN
+                IF( HCOUNTERIN = 1 )THEN
+                    FF_HSYNC_N <= '0';                       -- PULSE ON
+                ELSIF( HCOUNTERIN = 101 )THEN
+                    FF_HSYNC_N <= '1';                       -- PULSE OFF
+                END IF;
+--            END IF;
         END IF;
     END PROCESS;
 
