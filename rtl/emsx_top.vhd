@@ -1481,7 +1481,7 @@ begin
         end if;
     end process;
 
-	 pAudioPSG  <= PsgAmp + (KeyClick & "00000");
+	 pAudioPSG  <= ("0" & PsgAmp(9 downto 1)) + (KeyClick & "00000");
 	 pAudioPCM  <= ((Scc1AmpL(14) & Scc1AmpL) + (Scc2AmpL(14) & Scc2AmpL));
 	 
 
