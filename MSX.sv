@@ -39,8 +39,9 @@ module emu
 	output        CE_PIXEL,
 
 	//Video aspect ratio for HDMI. Most retro systems have ratio 4:3.
-	output [11:0] VIDEO_ARX,
-	output [11:0] VIDEO_ARY,
+	//if VIDEO_ARX[12] or VIDEO_ARY[12] is set then [11:0] contains scaled size instead of aspect ratio.
+	output [12:0] VIDEO_ARX,
+	output [12:0] VIDEO_ARY,
 
 	output  [7:0] VGA_R,
 	output  [7:0] VGA_G,
@@ -51,6 +52,9 @@ module emu
 	output        VGA_F1,
 	output [1:0]  VGA_SL,
 	output        VGA_SCALER, // Force VGA scaler
+
+	input  [11:0] HDMI_WIDTH,
+	input  [11:0] HDMI_HEIGHT,
 
 `ifdef USE_FB
 	// Use framebuffer in DDRAM (USE_FB=1 in qsf)
@@ -180,11 +184,6 @@ assign LED_POWER = 0;
 assign BUTTONS   = 0;
 assign VGA_SCALER= 0;
 
-wire [1:0] ar = status[9:8];
-
-assign VIDEO_ARX = (!ar) ? 12'd4 : (ar - 1'd1);
-assign VIDEO_ARY = (!ar) ? 12'd3 : 12'd0;
-
 `include "build_id.v"
 localparam CONF_STR = {
 	"MSX;;",
@@ -193,6 +192,9 @@ localparam CONF_STR = {
 	"-;",
 	"O89,Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
 	"O23,Scanlines,No,25%,50%,75%;",
+	"-;",
+	"OF,Vertical Crop,No,Yes;",
+	"OGH,Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
 	"-;",
 	"O1,CPU speed,Normal,Turbo(+F11);",
 	"OB,CPU type,Z80,R800;",
@@ -362,8 +364,28 @@ gamma_fast gamma
 
 	.HSync_out(VGA_HS),
 	.VSync_out(VGA_VS),
-	.DE_out(VGA_DE),
+	.DE_out(vga_de),
 	.RGB_out({VGA_R,VGA_G,VGA_B})
+);
+
+reg [11:0] vcrop;
+always @(posedge CLK_VIDEO) begin
+	vcrop <= (HDMI_HEIGHT == 1080) ? 12'd216 : 12'd240;
+	if(scandoubler) vcrop <= 12'd480;
+end
+
+wire [1:0] ar = status[9:8];
+wire vcrop_en = status[15];
+wire vga_de;
+video_freak video_freak
+(
+	.*,
+	.VGA_DE_IN(vga_de),
+	.ARX((!ar) ? 12'd4 : (ar - 1'd1)),
+	.ARY((!ar) ? 12'd3 : 12'd0),
+	.CROP_SIZE(vcrop_en ? vcrop : 12'd0),
+	.CROP_OFF(0),
+	.SCALE(status[17:16])
 );
 
 
