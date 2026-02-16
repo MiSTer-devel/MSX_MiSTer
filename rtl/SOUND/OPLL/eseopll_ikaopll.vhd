@@ -160,7 +160,7 @@ begin
       o_IMP_FLUC_SIGNED_MO => open,
       o_IMP_FLUC_SIGNED_RO => open,
       i_ACC_SIGNED_MOVOL   => to_signed(4, 5),
-      i_ACC_SIGNED_ROVOL   => to_signed(5, 5),
+      i_ACC_SIGNED_ROVOL   => to_signed(9, 5),
       o_ACC_SIGNED_STRB    => open,
       o_ACC_SIGNED         => wav16
     );
